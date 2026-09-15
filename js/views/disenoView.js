@@ -3,7 +3,7 @@ import { obtenerDiseno, tieneDiseno, guardarDiseno, reconstruirFilasDeIds, hayDa
 import { generarDiseno, generarDisenoDCA, generarDisenoFranja } from '../domain/randomizer.js';
 import { renderReorderableList } from '../components/dragSortable.js';
 import { renderGrillaEditable, contarSinAsignar } from '../components/gridEditor.js';
-import { reconocerTexto } from '../utils/ocr.js';
+import { reconocerTexto, mensajeProgreso } from '../utils/ocr.js';
 import { emparejarCodigo } from '../utils/textMatch.js';
 import { showToast, confirmDialog, openModal } from '../components/ui.js';
 import { navegar } from '../router.js';
@@ -46,7 +46,7 @@ function abrirImportarDisenoPorFoto({ ensayo, disenoExistente, numFilas, numColu
     box.innerHTML = `
       <h3>Cargar diseño desde una foto</h3>
       <p class="field-hint">Sacá una foto de la grilla ya armada en papel: una línea de texto por fila, con los códigos de tratamiento en orden, separados por espacios. Se necesitan <strong>${numFilas}</strong> filas de <strong>${numColumnas}</strong> códigos cada una. El reconocimiento corre en el celular sin internet y puede equivocarse — vas a poder corregir cada celda antes de guardar.</p>
-      <input type="file" id="foto-ocr-diseno" accept="image/*" capture="environment" hidden>
+      <input type="file" id="foto-ocr-diseno" accept="image/*" hidden>
       <div class="btn-row"><button class="btn btn-primary" id="btn-elegir-foto-diseno" type="button">📷 Elegir / sacar foto</button></div>
       <div id="estado-ocr-diseno"></div>
       <div id="grilla-ocr-diseno"></div>
@@ -67,16 +67,12 @@ function abrirImportarDisenoPorFoto({ ensayo, disenoExistente, numFilas, numColu
       const file = input.files[0];
       input.value = '';
       if (!file) return;
-      estado.innerHTML = '<p class="field-hint">Leyendo la foto... 0%</p>';
+      estado.innerHTML = '<p class="field-hint">Preparando...</p>';
       grillaCont.innerHTML = '';
       acciones.hidden = true;
       try {
         const { lineas } = await reconocerTexto(file, {
-          onProgreso: (m) => {
-            if (m.status === 'recognizing text') {
-              estado.innerHTML = `<p class="field-hint">Leyendo la foto... ${Math.round(m.progress * 100)}%</p>`;
-            }
-          }
+          onProgreso: (m) => { estado.innerHTML = `<p class="field-hint">${mensajeProgreso(m)}</p>`; }
         });
         filasIds = [];
         for (let i = 0; i < numFilas; i++) {

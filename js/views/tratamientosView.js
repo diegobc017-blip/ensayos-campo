@@ -5,7 +5,7 @@ import {
 import { renderReorderableList } from '../components/dragSortable.js';
 import { showToast, confirmDialog, openModal } from '../components/ui.js';
 import { habilitarDictado } from '../components/voiceInput.js';
-import { reconocerTexto } from '../utils/ocr.js';
+import { reconocerTexto, mensajeProgreso } from '../utils/ocr.js';
 import { parsearLineaTratamiento } from '../utils/textMatch.js';
 import { nuevoId } from '../utils/idGen.js';
 
@@ -364,8 +364,8 @@ function abrirImportarPorFoto({ onImportado, agregar }) {
   openModal((box, close) => {
     box.innerHTML = `
       <h3>Cargar por foto</h3>
-      <p class="field-hint">Sacá una foto de la lista escrita (una línea por tratamiento, idealmente "código - nombre"). El reconocimiento corre en el celular, sin internet, así que puede equivocarse con letra manuscrita — vas a poder revisar y corregir todo antes de guardar.</p>
-      <input type="file" id="foto-ocr" accept="image/*" capture="environment" hidden>
+      <p class="field-hint">Sacá una foto (o elegí una de la galería) de la lista escrita — una línea por tratamiento, idealmente "código - nombre - dosis por ha" (ej. "T1 - Fungicida X - 1.5 L/ha"). Si detecta una dosis, además del tratamiento va a cargar el producto con esa dosis. El reconocimiento corre en el celular, sin internet, así que puede equivocarse con letra manuscrita — vas a poder revisar y corregir todo antes de guardar.</p>
+      <input type="file" id="foto-ocr" accept="image/*" hidden>
       <div class="btn-row"><button class="btn btn-primary" id="btn-elegir-foto" type="button">📷 Elegir / sacar foto</button></div>
       <div id="estado-ocr"></div>
       <div id="revision-ocr"></div>
@@ -387,19 +387,15 @@ function abrirImportarPorFoto({ onImportado, agregar }) {
       const file = input.files[0];
       input.value = '';
       if (!file) return;
-      estado.innerHTML = '<p class="field-hint">Leyendo la foto... 0%</p>';
+      estado.innerHTML = '<p class="field-hint">Preparando...</p>';
       revision.innerHTML = '';
       acciones.hidden = true;
       try {
         const { lineas } = await reconocerTexto(file, {
-          onProgreso: (m) => {
-            if (m.status === 'recognizing text') {
-              estado.innerHTML = `<p class="field-hint">Leyendo la foto... ${Math.round(m.progress * 100)}%</p>`;
-            }
-          }
+          onProgreso: (m) => { estado.innerHTML = `<p class="field-hint">${mensajeProgreso(m)}</p>`; }
         });
         filas = lineas.map(parsearLineaTratamiento).filter(Boolean);
-        if (filas.length === 0) filas = [{ codigo: '', nombre: '' }];
+        if (filas.length === 0) filas = [{ codigo: '', nombre: '', dosis: '', unidad: '' }];
         estado.innerHTML = lineas.length
           ? `<p class="field-hint">Se detectaron ${filas.length} línea(s). Revisá y corregí antes de guardar.</p>`
           : '<p class="field-hint">No se detectó texto en la foto. Podés agregar líneas a mano.</p>';
@@ -416,12 +412,19 @@ function abrirImportarPorFoto({ onImportado, agregar }) {
       filas.forEach((f, i) => {
         const fila = document.createElement('div');
         fila.className = 'field-row';
+        fila.style.flexWrap = 'wrap';
         fila.innerHTML = `
-          <div class="field" style="max-width:90px;margin-bottom:8px">
+          <div class="field" style="max-width:80px;margin-bottom:8px">
             <input class="in-ocr-codigo" data-i="${i}" value="${f.codigo || ''}" placeholder="Código">
           </div>
-          <div class="field" style="flex:2;margin-bottom:8px">
-            <input class="in-ocr-nombre" data-i="${i}" value="${f.nombre || ''}" placeholder="Nombre / descripción">
+          <div class="field" style="flex:2;min-width:140px;margin-bottom:8px">
+            <input class="in-ocr-nombre" data-i="${i}" value="${f.nombre || ''}" placeholder="Nombre / producto">
+          </div>
+          <div class="field" style="max-width:90px;margin-bottom:8px">
+            <input class="in-ocr-dosis" data-i="${i}" type="number" step="any" value="${f.dosis ?? ''}" placeholder="Dosis">
+          </div>
+          <div class="field" style="max-width:80px;margin-bottom:8px">
+            <input class="in-ocr-unidad" data-i="${i}" value="${f.unidad || ''}" placeholder="ej. L/ha">
           </div>
           <button class="btn btn-sm btn-danger" data-accion="quitar-ocr" data-i="${i}" type="button" style="align-self:flex-start;margin-top:2px">✕</button>
         `;
@@ -433,23 +436,43 @@ function abrirImportarPorFoto({ onImportado, agregar }) {
       revision.querySelectorAll('.in-ocr-nombre').forEach(inp => {
         inp.addEventListener('input', () => { filas[Number(inp.dataset.i)].nombre = inp.value; });
       });
+      revision.querySelectorAll('.in-ocr-dosis').forEach(inp => {
+        inp.addEventListener('input', () => { filas[Number(inp.dataset.i)].dosis = inp.value; });
+      });
+      revision.querySelectorAll('.in-ocr-unidad').forEach(inp => {
+        inp.addEventListener('input', () => { filas[Number(inp.dataset.i)].unidad = inp.value; });
+      });
       revision.querySelectorAll('[data-accion="quitar-ocr"]').forEach(btn => {
         btn.addEventListener('click', () => { filas.splice(Number(btn.dataset.i), 1); pintarRevision(); });
       });
     }
 
     box.querySelector('#btn-agregar-linea-ocr').addEventListener('click', () => {
-      filas.push({ codigo: '', nombre: '' });
+      filas.push({ codigo: '', nombre: '', dosis: '', unidad: '' });
       pintarRevision();
     });
 
     box.querySelector('#btn-guardar-ocr').addEventListener('click', async () => {
       const validas = filas.filter(f => (f.nombre || '').trim() || (f.codigo || '').trim());
       if (validas.length === 0) { showToast('No hay ninguna línea para guardar', 'error'); return; }
+      let conDosis = 0;
       for (const f of validas) {
-        await agregar({ codigo: f.codigo.trim(), nombre: f.nombre.trim() });
+        const nuevo = await agregar({ codigo: f.codigo.trim(), nombre: f.nombre.trim() });
+        const dosis = (f.dosis ?? '').toString().trim();
+        if (dosis) {
+          conDosis++;
+          await actualizarTratamiento(nuevo.id, {
+            aplicaciones: [{
+              id: nuevoId(),
+              tipo: 'principal',
+              momento: '',
+              caudalAgua: '',
+              productos: [{ id: nuevoId(), nombre: f.nombre.trim(), dosis, unidad: (f.unidad || '').trim() }]
+            }]
+          });
+        }
       }
-      showToast(`${validas.length} tratamiento(s) agregado(s)`);
+      showToast(`${validas.length} tratamiento(s) agregado(s)${conDosis > 0 ? ` (${conDosis} con producto/dosis)` : ''}`);
       close();
       await onImportado();
     });
@@ -467,6 +490,7 @@ function abrirEditorProductos(tratamiento, onGuardado) {
     id: a.id || nuevoId(),
     tipo: a.tipo || 'principal',
     momento: a.momento || '',
+    caudalAgua: a.caudalAgua ?? '',
     productos: (a.productos || []).map(p => ({ ...p }))
   }));
 
@@ -502,6 +526,11 @@ function abrirEditorProductos(tratamiento, onGuardado) {
             <div class="field">
               <label>Momento de aplicación${ap.tipo === 'secuencial' ? ' (ej. "15 días después de la principal")' : ''}</label>
               <input class="in-momento" data-i="${i}" value="${ap.momento}" placeholder="${ap.tipo === 'secuencial' ? 'ej. 15 días después, macollaje...' : 'ej. Pre-emergente, V4...'}">
+            </div>
+            <div class="field" style="max-width:220px">
+              <label>Caudal de agua (L/ha)</label>
+              <input class="in-caudal" data-i="${i}" type="number" step="any" min="0" value="${ap.caudalAgua}" placeholder="ej. 100">
+              <p class="field-hint">Opcional — según el equipo/calibración de quien aplica. Se usa para calcular cuánta agua preparar en "Dosificación".</p>
             </div>
             <div id="productos-${i}"></div>
             <div class="btn-row">
@@ -539,6 +568,9 @@ function abrirEditorProductos(tratamiento, onGuardado) {
         inp.addEventListener('input', () => { aplicaciones[Number(inp.dataset.i)].momento = inp.value; });
         habilitarDictado(inp);
       });
+      cont.querySelectorAll('.in-caudal').forEach(inp => {
+        inp.addEventListener('input', () => { aplicaciones[Number(inp.dataset.i)].caudalAgua = inp.value; });
+      });
       cont.querySelectorAll('.in-prod-nombre').forEach(inp => {
         inp.addEventListener('input', () => { aplicaciones[Number(inp.dataset.i)].productos[Number(inp.dataset.j)].nombre = inp.value; });
         habilitarDictado(inp);
@@ -569,11 +601,11 @@ function abrirEditorProductos(tratamiento, onGuardado) {
       });
 
       box.querySelector('#btn-add-principal').addEventListener('click', () => {
-        aplicaciones.push({ id: nuevoId(), tipo: 'principal', momento: '', productos: [] });
+        aplicaciones.push({ id: nuevoId(), tipo: 'principal', momento: '', caudalAgua: '', productos: [] });
         pintar();
       });
       box.querySelector('#btn-add-secuencial').addEventListener('click', () => {
-        aplicaciones.push({ id: nuevoId(), tipo: 'secuencial', momento: '', productos: [] });
+        aplicaciones.push({ id: nuevoId(), tipo: 'secuencial', momento: '', caudalAgua: '', productos: [] });
         pintar();
       });
       box.querySelector('#btn-guardar-productos').addEventListener('click', async () => {
