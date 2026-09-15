@@ -6,6 +6,7 @@ import { obtenerEnsayo } from './db/ensayosRepo.js';
 import * as ensayosListView from './views/ensayosListView.js';
 import * as ensayoFormView from './views/ensayoFormView.js';
 import * as tratamientosView from './views/tratamientosView.js';
+import * as dosificacionView from './views/dosificacionView.js';
 import * as disenoView from './views/disenoView.js';
 import * as mapaCampoView from './views/mapaCampoView.js';
 import * as resultadosView from './views/resultadosView.js';
@@ -33,6 +34,7 @@ btnRespaldo.addEventListener('click', () => navegar('#/respaldo'));
 
 const TABS_ENSAYO = [
   { key: 'tratamientos', label: 'Tratamientos' },
+  { key: 'dosificacion', label: 'Dosificación' },
   { key: 'diseno', label: 'Diseño' },
   { key: 'mapa', label: 'Mapa de campo' },
   { key: 'resultados', label: 'Resultados' },
@@ -43,6 +45,7 @@ const TABS_ENSAYO = [
 
 const VISTAS_TAB = {
   tratamientos: tratamientosView,
+  dosificacion: dosificacionView,
   diseno: disenoView,
   mapa: mapaCampoView,
   resultados: resultadosView,
