@@ -54,25 +54,63 @@ export function emparejarCodigo(token, opciones) {
   return mejor;
 }
 
+const UNIDADES_DOSIS = [
+  'l\\/ha', 'lt\\/ha', 'lts\\/ha', 'litros?\\/ha',
+  'kg\\/ha', 'kilos?\\/ha',
+  'g\\/ha', 'gr\\/ha', 'gramos?\\/ha',
+  'cc\\/ha', 'ml\\/ha'
+];
+const RE_DOSIS = new RegExp(`(\\d+(?:[.,]\\d+)?)\\s*(${UNIDADES_DOSIS.join('|')})\\b`, 'i');
+
 /**
- * Interpreta una línea de texto suelta como { codigo, nombre } para
- * proponer un tratamiento nuevo a partir de una foto de una lista escrita.
- * Reconoce formatos como "T1 - Fungicida X" o "T1: Fungicida X"; si no hay
- * separador claro, asume que la primera palabra corta es el código.
+ * Busca en una línea de texto una dosis "por hectárea" (ej. "1,5 L/ha",
+ * "2 kg/ha"). Devuelve { dosis, unidad, resto } (resto = la línea sin esa
+ * parte, para poder seguir interpretando código/nombre) o null si no
+ * encuentra ninguna.
+ */
+export function parsearDosis(linea) {
+  const m = linea.match(RE_DOSIS);
+  if (!m) return null;
+  const dosis = parseFloat(m[1].replace(',', '.'));
+  const unidad = m[2];
+  const resto = (linea.slice(0, m.index) + linea.slice(m.index + m[0].length))
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+  return { dosis, unidad, resto };
+}
+
+/**
+ * Interpreta una línea de texto suelta como { codigo, nombre, dosis, unidad }
+ * para proponer un tratamiento (y, si hay dosis, un producto) a partir de
+ * una foto de una lista escrita. Reconoce formatos como "T1 - Fungicida X"
+ * o "T1 - Fungicida X - 1.5 L/ha"; si no hay separador claro, asume que la
+ * primera palabra corta es el código.
  */
 export function parsearLineaTratamiento(linea) {
   const limpio = (linea || '').trim();
   if (!limpio) return null;
 
-  const conSeparador = limpio.match(/^([A-Za-z0-9º°]{1,8})\s*[-–—:.]\s*(.+)$/);
+  const dosisInfo = parsearDosis(limpio);
+  const base = (dosisInfo ? dosisInfo.resto : limpio).replace(/[-–—:.\s]+$/, '').trim();
+
+  let codigo = '';
+  let nombre = base;
+  const conSeparador = base.match(/^([A-Za-z0-9º°]{1,8})\s*[-–—:.]\s*(.+)$/);
   if (conSeparador) {
-    return { codigo: conSeparador[1].trim(), nombre: conSeparador[2].trim() };
+    codigo = conSeparador[1].trim();
+    nombre = conSeparador[2].trim();
+  } else {
+    const partes = base.split(/\s+/);
+    if (partes.length > 1 && /^[A-Za-z0-9º°]{1,5}$/.test(partes[0])) {
+      codigo = partes[0];
+      nombre = partes.slice(1).join(' ');
+    }
   }
 
-  const partes = limpio.split(/\s+/);
-  if (partes.length > 1 && /^[A-Za-z0-9º°]{1,5}$/.test(partes[0])) {
-    return { codigo: partes[0], nombre: partes.slice(1).join(' ') };
-  }
-
-  return { codigo: '', nombre: limpio };
+  return {
+    codigo,
+    nombre,
+    dosis: dosisInfo ? dosisInfo.dosis : '',
+    unidad: dosisInfo ? dosisInfo.unidad : ''
+  };
 }

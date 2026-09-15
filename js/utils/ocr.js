@@ -17,7 +17,7 @@ function obtenerWorker() {
   if (!workerPromise) {
     workerPromise = createWorker('spa', 1, {
       workerPath: new URL('worker.min.js', BASE).href,
-      corePath: new URL('tesseract-core-lstm.js', BASE).href,
+      corePath: new URL('tesseract-core-simd-lstm.wasm.js', BASE).href,
       langPath: new URL('lang/', BASE).href,
       logger: (m) => { if (progresoActual) progresoActual(m); }
     });
@@ -33,10 +33,22 @@ function obtenerWorker() {
  * @param {Blob} imagen
  * @param {{onProgreso?: (m: {status:string, progress:number}) => void}} [opciones]
  */
+/**
+ * Traduce un evento de progreso de Tesseract.js a un texto para mostrar al
+ * usuario. La primera vez que se usa el OCR en el dispositivo hay una etapa
+ * de preparación del motor (unos segundos) antes de poder leer la foto.
+ */
+export function mensajeProgreso(m) {
+  if (m.status === 'recognizing text') return `Leyendo la foto... ${Math.round(m.progress * 100)}%`;
+  if (m.status === 'loading language traineddata') return 'Preparando el motor de lectura (primera vez, no hace falta internet)...';
+  if (m.status && m.status.includes('init')) return 'Preparando el motor de lectura (primera vez)...';
+  return 'Preparando...';
+}
+
 export async function reconocerTexto(imagen, { onProgreso } = {}) {
-  const worker = await obtenerWorker();
   progresoActual = onProgreso || null;
   try {
+    const worker = await obtenerWorker();
     const { data } = await worker.recognize(imagen);
     const lineas = (data.text || '').split('\n').map(l => l.trim()).filter(Boolean);
     return { texto: data.text || '', lineas };
