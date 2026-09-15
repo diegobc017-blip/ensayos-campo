@@ -1,0 +1,9 @@
+@media print {
+  .app-header, .tabs, .btn-fab, .btn-row, .no-print { display: none !important; }
+  body { background: #fff; color: #000; }
+  main#app { max-width: none; padding: 0; margin: 0; }
+  .table-wrap { overflow: visible; }
+  table.table th { background: #eee !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .card { border: 1px solid #999; break-inside: avoid; }
+  .informe-solo-pantalla { display: none !important; }
+}
