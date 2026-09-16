@@ -552,7 +552,15 @@ async function abrirEditorProductos(tratamiento, onGuardado) {
   // ingrediente activo sobre un nombre comercial. Si ya se había cargado
   // una concentración a mano, se conserva.
   function clasificarProducto(p) {
-    if (p.tipo && p.tipo !== 'vacio' && p.ingredientes !== undefined) return p; // ya clasificado en esta sesión
+    if (p.tipo && p.tipo !== 'vacio' && p.ingredientes !== undefined) {
+      // Ya clasificado (en esta sesión, o al importar desde foto/Excel):
+      // igual sincronizamos el campo "% conc." visible con el ingrediente
+      // detectado, por si vino sin ese campo a nivel superior.
+      if (p.tipo === 'activo' && (p.concentracion == null || p.concentracion === '') && p.ingredientes[0]?.concentracion != null) {
+        p.concentracion = p.ingredientes[0].concentracion;
+      }
+      return p;
+    }
     const interpretado = interpretarProducto(p.nombre, productosComerciales);
     p.tipo = interpretado.tipo;
     if (interpretado.tipo === 'activo') {
