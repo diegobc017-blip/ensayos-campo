@@ -207,6 +207,10 @@ export function construirTratamientosDesdeFilas(filas, productosComerciales = []
         dosis: f.dosis || '',
         unidad: f.unidad || '',
         tipo: interpretado.tipo,
+        // Se copia también al nivel superior (además de en `ingredientes[0]`)
+        // porque el editor de productos (tratamientosView) muestra y edita el
+        // campo "% conc." desde acá para el caso de un solo ingrediente activo.
+        concentracion: ingredientes[0]?.concentracion ?? null,
         ingredientes
       };
       (f.secuencial ? productosSecuencial : productosPrincipal).push(producto);
