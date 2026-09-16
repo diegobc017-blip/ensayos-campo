@@ -4,13 +4,24 @@
 // DOM ni la base de datos: recibe texto/celdas ya extraídas y devuelve
 // estructuras de datos listas para revisar en pantalla y, luego, guardar.
 //
-// El modelo intermedio es una lista PLANA de "filas" (una por línea/renglón
-// de la tabla): cada fila puede empezar un tratamiento nuevo o ser una
-// línea más (otro ingrediente) del tratamiento anterior. Mantenerlo plano
-// —en vez de armar de entrada los bloques— es lo que permite que la
-// persona corrija fácilmente en la pantalla de revisión cuándo empieza
-// cada tratamiento, sin depender de que el reconocimiento automático haya
+// El modelo intermedio es una lista PLANA de "filas" (una por producto):
+// cada fila puede empezar un tratamiento nuevo o ser un producto más
+// (principal o secuencial) del tratamiento anterior. Mantenerlo plano —en
+// vez de armar de entrada los bloques— es lo que permite que la persona
+// corrija fácilmente en la pantalla de revisión cuándo empieza cada
+// tratamiento, sin depender de que el reconocimiento automático haya
 // acertado la agrupación.
+//
+// Un mismo renglón de la tabla (una línea de OCR, o una celda de Excel)
+// puede traer VARIOS productos "en fila" — como en la planilla de Franjas
+// Cruzadas o de Instalación DBCA, donde una sola línea grande dice, por
+// ejemplo, "T1  Glifosato 60,2% 2500  Dicamba 300  Duplex 25". Todo eso
+// pertenece a un solo tratamiento (T1): por eso una línea puede generar
+// varias filas de golpe, todas menos la primera con `nuevoTratamiento:
+// false`. La aplicación secuencial (marcada con "SEC", "SECUENCIAL" o
+// variantes/abreviaturas parecidas, en cualquier parte de la línea) tampoco
+// arranca un tratamiento nuevo: sigue siendo del mismo tratamiento, solo
+// que sus productos quedan marcados con `secuencial: true`.
 
 import { interpretarProducto, extraerConcentracion } from './textMatch.js';
 import { nuevoId } from './idGen.js';
@@ -18,66 +29,152 @@ import { nuevoId } from './idGen.js';
 /** Códigos cortos típicos de una franja/tratamiento: "A", "B1", "T1", "T12"... */
 const RE_CODIGO_CORTO = /^[A-Za-zÁÉÍÓÚÑ]{1,3}\d{0,2}$/;
 
-/** Último número "tipo dosis" de una línea (admite miles con punto y decimales con coma). */
-const RE_NUMERO_DOSIS = /(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d+)?|\d+(?:[.,]\d+)?)\s*(?:cc|gr?|ml|kg|lts?|l)?\.?\s*$/i;
+/** Un token que es (o podría ser, con unidad pegada) un número de dosis. */
+const RE_TOKEN_NUMERO = /^(\d{1,3}(?:[.,]\d{3})+(?:[.,]\d+)?|\d+(?:[.,]\d+)?)$/;
+
+/** Unidades típicas de dosis, para separarlas si vienen pegadas al número ("2500cc", "300ml"). */
+const RE_UNIDAD_PEGADA = /^(\d[\d.,]*)(cc|gr?|ml|kg|lts?|l)\.?$/i;
+
+/**
+ * Distintas formas de marcar que lo que sigue es una aplicación secuencial
+ * (una segunda pasada del mismo tratamiento), en cualquier parte de la
+ * línea: "SEC", "SEC.", "SEC:", "SECS", "SECUENCIAL", "SECUENCIALES",
+ * "2DA APLICACION", "SEGUNDA APLICACIÓN"... Los alternativos más largos van
+ * primero para que no se corten a mitad de palabra.
+ */
+const RE_MARCA_SECUENCIAL = /\b(SECUENCIALES|SECUENCIAL|SECS|SEC|2D?A\.?\s*APLICACI[OÓ]N|SEGUNDA\s*APLICACI[OÓ]N)\b/i;
 
 function limpiar(s) {
   return (s || '').replace(/\s+/g, ' ').trim();
 }
 
+/** Quita separadores de miles y normaliza la coma decimal a punto ("2.500" -> "2500", "11,53" -> "11.53"). */
+function normalizarNumero(txt) {
+  return (txt || '')
+    .split('+')
+    .map(seg => seg.trim().replace(/\.(?=\d{3}(?:\D|$))/g, '').replace(',', '.'))
+    .join(' + ');
+}
+
+/** Busca en el texto la primera marca de "aplicación secuencial" (ver RE_MARCA_SECUENCIAL). */
+function buscarMarcaSecuencial(texto) {
+  const m = texto.match(RE_MARCA_SECUENCIAL);
+  if (!m) return null;
+  let fin = m.index + m[0].length;
+  // Consumir puntuación/dos puntos pegados después de la marca (ej. "SEC.:", "SEC:").
+  while (fin < texto.length && /[.:\s]/.test(texto[fin])) fin++;
+  return { inicio: m.index, fin };
+}
+
+function clasificarToken(tok) {
+  if (/%$/.test(tok)) return { tipo: 'nombre' }; // "60,2%", "11.53%": va con el nombre/concentración.
+  const mUnidad = tok.match(RE_UNIDAD_PEGADA);
+  const numTexto = mUnidad ? mUnidad[1] : tok;
+  const unidad = mUnidad ? mUnidad[2] : '';
+  if (RE_TOKEN_NUMERO.test(numTexto)) return { tipo: 'dosis', numero: numTexto, unidad };
+  return { tipo: 'nombre' };
+}
+
 /**
- * Interpreta una línea de texto (leída por OCR de una foto) como una fila
- * de la tabla: { nuevoTratamiento, labelDetectado, ingredienteTexto, dosis, secuencial }.
+ * Recorre un segmento de texto (ya sin código de franja ni marca de
+ * secuencial) y separa los pares "nombre de producto" + "dosis" que
+ * encuentre en fila, en el orden en que aparecen. Soporta que haya más de
+ * un producto en el mismo segmento (ej. "Glifosato 2500 Dicamba 300 Duplex
+ * 25") y que una dosis venga combinada con "+" (ej. "60 + 1.000").
+ */
+function extraerPares(segmento) {
+  const tokens = limpiar(segmento).split(' ').filter(Boolean);
+  const pares = [];
+  let nombreActual = [];
+
+  for (let i = 0; i < tokens.length; i++) {
+    const tok = tokens[i];
+    const clasif = clasificarToken(tok);
+    if (clasif.tipo === 'dosis') {
+      let dosisTexto = clasif.numero;
+      let unidad = clasif.unidad;
+      let j = i + 1;
+      // Dosis combinada tipo "60 + 1.000" (dos ingredientes de un mismo
+      // producto con dosis distinta): se guarda entera para que la persona
+      // la revise/ajuste en la pantalla de revisión.
+      while (tokens[j] === '+' && clasificarToken(tokens[j + 1] || '').tipo === 'dosis') {
+        const sig = clasificarToken(tokens[j + 1]);
+        dosisTexto += ' + ' + sig.numero;
+        if (!unidad) unidad = sig.unidad;
+        j += 2;
+      }
+      pares.push({ nombre: limpiar(nombreActual.join(' ')), dosis: normalizarNumero(dosisTexto), unidad });
+      nombreActual = [];
+      i = j - 1;
+    } else {
+      nombreActual.push(tok);
+    }
+  }
+  const nombreSobrante = limpiar(nombreActual.join(' '));
+  if (nombreSobrante) pares.push({ nombre: nombreSobrante, dosis: '', unidad: '' });
+  return pares;
+}
+
+/**
+ * Interpreta una línea de texto (leída por OCR de una foto, o ya separada
+ * de una celda de Excel) como una o varias filas de revisión —una por cada
+ * producto que traiga esa línea—: { nuevoTratamiento, labelDetectado,
+ * ingredienteTexto, dosis, unidad, secuencial }.
  */
 export function parsearFilaTabla(lineaOriginal) {
-  let linea = limpiar(lineaOriginal);
-  if (!linea) return null;
+  const lineaLimpia = limpiar(lineaOriginal);
+  if (!lineaLimpia) return [];
 
-  // "SEC.:" o "SEC:" al principio marca una aplicación secuencial.
-  const secMatch = linea.match(/^SEC\.?\s*:?\s*/i);
-  const secuencial = !!secMatch;
-  if (secMatch) linea = limpiar(linea.slice(secMatch[0].length));
+  const marca = buscarMarcaSecuencial(lineaLimpia);
+  let textoPrincipal = limpiar(marca ? lineaLimpia.slice(0, marca.inicio) : lineaLimpia);
+  const textoSecuencial = limpiar(marca ? lineaLimpia.slice(marca.fin) : '');
 
-  // ¿Empieza con un código corto de franja/tratamiento (A, B, T1...)
-  // seguido de más texto? Si es así, esa es la marca de "tratamiento nuevo".
+  // ¿La parte principal empieza con un código corto de franja/tratamiento
+  // (A, B, T1...)? Esa es la marca de "tratamiento nuevo".
   let labelDetectado = '';
-  let resto = linea;
-  const partes = linea.split(/\s+/);
-  if (partes.length > 1 && RE_CODIGO_CORTO.test(partes[0])) {
-    labelDetectado = partes[0];
-    resto = limpiar(partes.slice(1).join(' '));
-  } else if (partes.length === 1 && RE_CODIGO_CORTO.test(partes[0])) {
-    // Línea que es solo el código (la tabla lo puso en su propio renglón).
-    labelDetectado = partes[0];
-    resto = '';
+  if (textoPrincipal) {
+    const partes = textoPrincipal.split(' ');
+    if (RE_CODIGO_CORTO.test(partes[0])) {
+      labelDetectado = partes[0];
+      textoPrincipal = limpiar(partes.slice(1).join(' '));
+    }
   }
 
-  // Dosis: el último número de la línea.
-  let dosis = '';
-  let ingredienteTexto = resto;
-  const mNum = resto.match(RE_NUMERO_DOSIS);
-  if (mNum && mNum[1]) {
-    dosis = mNum[1].replace(/\.(?=\d{3}(?:\D|$))/g, '').replace(',', '.');
-    ingredienteTexto = limpiar(resto.slice(0, mNum.index));
+  const filas = [];
+  let esPrimera = true;
+  function empujar(par, secuencial) {
+    if (!par.nombre && !par.dosis) return;
+    filas.push({
+      id: nuevoId(),
+      nuevoTratamiento: esPrimera && !!labelDetectado,
+      labelDetectado: esPrimera ? labelDetectado : '',
+      ingredienteTexto: par.nombre,
+      concentracion: null,
+      dosis: par.dosis || '',
+      unidad: par.unidad || '',
+      secuencial
+    });
+    esPrimera = false;
   }
 
-  if (!ingredienteTexto && !labelDetectado) return null;
+  extraerPares(textoPrincipal).forEach(par => empujar(par, false));
+  extraerPares(textoSecuencial).forEach(par => empujar(par, true));
 
-  return {
-    id: nuevoId(),
-    nuevoTratamiento: !!labelDetectado,
-    labelDetectado,
-    ingredienteTexto,
-    concentracion: null,
-    dosis,
-    unidad: '',
-    secuencial
-  };
+  // Caso especial: la línea es *solo* el código de tratamiento, sin
+  // productos (la tabla lo puso en su propio renglón, ej. "T1" solo).
+  if (filas.length === 0 && labelDetectado) {
+    filas.push({
+      id: nuevoId(), nuevoTratamiento: true, labelDetectado,
+      ingredienteTexto: '', concentracion: null, dosis: '', unidad: '', secuencial: false
+    });
+  }
+
+  return filas;
 }
 
 /** Convierte las líneas detectadas por OCR en filas de revisión. */
 export function filasDesdeLineasOCR(lineas) {
-  const filas = (lineas || []).map(parsearFilaTabla).filter(Boolean);
+  const filas = (lineas || []).flatMap(linea => parsearFilaTabla(linea));
   // Si nada trajo código de tratamiento, al menos la primera fila arranca uno.
   if (filas.length > 0 && !filas.some(f => f.nuevoTratamiento)) filas[0].nuevoTratamiento = true;
   return aplicarConcentracionInicial(filas);
@@ -100,7 +197,10 @@ function buscarIndiceHeader(filas2D) {
  * Busca la fila de encabezados por palabras clave para ubicar las columnas
  * de "ingredientes activos" y "dosis" aunque no estén en el orden habitual;
  * si no encuentra encabezados, asume columnas A=código, B=ingrediente,
- * C=dosis (el orden de las planillas de ejemplo).
+ * C=dosis (el orden de las planillas de ejemplo). Si la celda de
+ * "ingrediente" trae más de un producto (ej. varios separados por coma o
+ * ";", además del que ya separa `interpretarProducto` con "+"), cada uno
+ * se reparte la misma dosis de la celda salvo que traiga la suya propia.
  */
 export function filasDesdeHojaExcel(filas2D) {
   if (!Array.isArray(filas2D) || filas2D.length === 0) return [];
@@ -127,9 +227,9 @@ export function filasDesdeHojaExcel(filas2D) {
     const dosisCelda = fila[colDosis] == null ? '' : String(fila[colDosis]).trim();
     if (!labelCelda && !ingredienteCelda && !dosisCelda) continue; // fila vacía
 
-    const secMatch = ingredienteCelda.match(/^SEC\.?\s*:?\s*/i);
-    const secuencial = !!secMatch;
-    if (secMatch) ingredienteCelda = limpiar(ingredienteCelda.slice(secMatch[0].length));
+    const marca = buscarMarcaSecuencial(ingredienteCelda);
+    const secuencial = !!marca;
+    if (marca) ingredienteCelda = limpiar(ingredienteCelda.slice(0, marca.inicio) + ' ' + ingredienteCelda.slice(marca.fin));
 
     // También puede venir un título de tabla en una fila entera (ninguna
     // columna de dosis con número) antes del encabezado real — se ignora.
@@ -141,7 +241,7 @@ export function filasDesdeHojaExcel(filas2D) {
       labelDetectado: labelCelda,
       ingredienteTexto: ingredienteCelda,
       concentracion: null,
-      dosis: dosisCelda.replace(/\.(?=\d{3}(?:\D|$))/g, '').replace(',', '.'),
+      dosis: normalizarNumero(dosisCelda),
       unidad: '',
       secuencial
     });
