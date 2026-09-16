@@ -1,5 +1,5 @@
 const DB_NAME = 'ensayosBCA_db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbPromise = null;
 
@@ -58,6 +58,17 @@ function abrirDB() {
         s.createIndex('by_bloqueId', 'bloqueId');
         s.createIndex('by_celdaId', 'celdaId');
       }
+
+      // v2: productos comerciales "aprendidos" — mezclas de ingredientes
+      // activos que se guardan por su nombre comercial (ej. "Jinete" =
+      // Fluroxipir 11.53% + Triclopir 34%) la primera vez que se cargan a
+      // mano, para reconocerlos solos la próxima vez (por texto, voz o
+      // foto/planilla). No están atados a un ensayo: se comparten entre
+      // todos, como un maletín de productos conocidos.
+      if (!db.objectStoreNames.contains('productosComerciales')) {
+        const s = db.createObjectStore('productosComerciales', { keyPath: 'id' });
+        s.createIndex('by_nombreNormalizado', 'nombreNormalizado', { unique: true });
+      }
     };
 
     req.onsuccess = () => resolve(req.result);
@@ -93,6 +104,11 @@ export async function dbGetAll(storeName) {
 export async function dbGetAllByIndex(storeName, indexName, valor) {
   const store = await getStore(storeName);
   return promisifyRequest(store.index(indexName).getAll(valor));
+}
+
+export async function dbGetByIndex(storeName, indexName, valor) {
+  const store = await getStore(storeName);
+  return promisifyRequest(store.index(indexName).get(valor));
 }
 
 export async function dbPut(storeName, valor) {
@@ -134,7 +150,8 @@ export async function dbClear(storeName) {
 
 export const ALL_STORES = [
   'ensayos', 'tratamientos', 'bloques', 'celdas',
-  'variablesResultado', 'resultados', 'imagenes', 'notas'
+  'variablesResultado', 'resultados', 'imagenes', 'notas',
+  'productosComerciales'
 ];
 
 export async function estimarAlmacenamiento() {
