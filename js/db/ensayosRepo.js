@@ -30,6 +30,7 @@ export async function crearEnsayo(datos) {
     numBloques: Number(datos.numBloques) || 0,
     numFactorA: Number(datos.numFactorA) || 0,
     numFactorB: Number(datos.numFactorB) || 0,
+    orientacionArriba: datos.orientacionArriba || null,
     dimensionParcela: {
       ancho: datos.dimensionParcela?.ancho ? Number(datos.dimensionParcela.ancho) : null,
       largo: datos.dimensionParcela?.largo ? Number(datos.dimensionParcela.largo) : null,
