@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ensayos-campo-v8';
+const CACHE_NAME = 'ensayos-campo-v9';
 
 const APP_SHELL = [
   './',
@@ -37,6 +37,7 @@ const APP_SHELL = [
   './js/components/ui.js',
   './js/components/dragSortable.js',
   './js/components/imagePicker.js',
+  './js/components/recorteFotoGeneral.js',
   './js/components/gallery.js',
   './js/components/tabs.js',
   './js/components/voiceInput.js',
