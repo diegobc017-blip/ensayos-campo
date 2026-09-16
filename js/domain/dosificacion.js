@@ -60,3 +60,46 @@ export function contarParcelasPorTratamiento(ensayo, tratamientos, celdas) {
   }
   return conteo;
 }
+
+// ---------------------------------------------------------------------
+// Ingrediente activo puro y preparación en un recipiente (botella,
+// mochila o el tanque del aplicador) — para saber cuánto producto
+// "comercial" corresponde poner en un volumen de agua puntual, además de
+// la dosis total del ensayo.
+// ---------------------------------------------------------------------
+
+/**
+ * Cantidad de ingrediente activo puro aplicada por hectárea, a partir de
+ * la dosis del producto comercial (por ha) y su % de concentración. Ej.:
+ * 2500 cc/ha de un producto al 60,2% de glifosato -> ~1505 cc/ha de
+ * glifosato puro (mismo criterio que usan las recomendaciones agronómicas
+ * para pasar de dosis de producto comercial a dosis de i.a.).
+ */
+export function dosisIngredienteActivoPorHa(dosisProductoPorHa, concentracionPct) {
+  if (dosisProductoPorHa === '' || dosisProductoPorHa == null) return null;
+  if (concentracionPct === '' || concentracionPct == null) return null;
+  const dosis = Number(dosisProductoPorHa);
+  const conc = Number(concentracionPct);
+  if (Number.isNaN(dosis) || Number.isNaN(conc)) return null;
+  return dosis * (conc / 100);
+}
+
+/**
+ * Cuánto producto hay que cargar en un recipiente (botella, mochila,
+ * tanque) de agua de `volumenRecipienteL` litros, a partir del caudal de
+ * agua por hectárea (L/ha) de esa aplicación y la dosis del producto por
+ * hectárea. El recipiente representa una fracción de hectárea —
+ * volumenRecipienteL / caudalAguaLHa— y esa misma fracción de la dosis por
+ * hectárea es la que corresponde poner adentro.
+ *
+ * @returns {number|null} cantidad de producto (misma unidad que
+ *   `dosisProductoPorHa`) para ese recipiente, o null si falta algún dato.
+ */
+export function calcularDosisPorRecipiente({ caudalAguaLHa, dosisProductoPorHa, volumenRecipienteL }) {
+  const caudal = Number(caudalAguaLHa);
+  const dosis = Number(dosisProductoPorHa);
+  const volumen = Number(volumenRecipienteL);
+  if (!caudal || Number.isNaN(dosis) || !volumen) return null;
+  const fraccionHa = volumen / caudal;
+  return dosis * fraccionHa;
+}
