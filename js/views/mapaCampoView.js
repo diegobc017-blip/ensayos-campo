@@ -7,6 +7,7 @@ import { agregarNota, listarNotas } from '../db/notasRepo.js';
 import { crearBotonImagen } from '../components/imagePicker.js';
 import { navegar } from '../router.js';
 import { calcularLadosOrientacion, ETIQUETAS_PUNTO_CARDINAL } from '../domain/orientacion.js';
+import { abrirRecorteFotoGeneral } from '../components/recorteFotoGeneral.js';
 
 export async function render(main, ensayo) {
   const [tratamientos, { bloques, celdasPorBloque }] = await Promise.all([
@@ -43,8 +44,22 @@ export async function render(main, ensayo) {
       <p class="field-hint">Tocá una parcela para ver detalle, editarla manualmente o agregar fotos/notas.</p>
       ${lados ? `<p class="field-hint">&#129517; Orientación (referencia): ${ETIQUETAS_PUNTO_CARDINAL[lados.arriba]} arriba · ${ETIQUETAS_PUNTO_CARDINAL[lados.derecha]} a la derecha · ${ETIQUETAS_PUNTO_CARDINAL[lados.abajo]} abajo · ${ETIQUETAS_PUNTO_CARDINAL[lados.izquierda]} a la izquierda.</p>` : ''}
       <div class="campo-grid" id="campo-grid"></div>
+      <div class="btn-row">
+        <button class="btn" id="btn-foto-general" type="button">📷 Foto general del campo (recorte automático)</button>
+      </div>
+      <p class="field-hint">Subí una foto aérea/general del lote y ajustá una cuadrícula para que la app recorte y guarde sola la foto de cada parcela.</p>
     </div>
   `;
+
+  main.querySelector('#btn-foto-general').addEventListener('click', () => {
+    abrirRecorteFotoGeneral({
+      ensayo,
+      bloques,
+      celdasPorBloque,
+      tratamientosPorId,
+      onGuardado: () => render(main, ensayo)
+    });
+  });
 
   const grid = main.querySelector('#campo-grid');
 
