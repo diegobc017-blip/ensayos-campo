@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ensayos-campo-v6';
+const CACHE_NAME = 'ensayos-campo-v7';
 
 const APP_SHELL = [
   './',
@@ -21,6 +21,7 @@ const APP_SHELL = [
   './js/domain/randomizer.js',
   './js/domain/reportes.js',
   './js/domain/dosificacion.js',
+  './js/domain/orientacion.js',
   './js/data/ingredientesActivos.js',
   './js/views/ensayosListView.js',
   './js/views/ensayoFormView.js',
