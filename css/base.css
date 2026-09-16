@@ -1,6 +1,7 @@
 :root {
   --color-bg: #f5f7f2;
   --color-surface: #ffffff;
+  --color-surface-alt: #f5f7f2;
   --color-text: #1b1f18;
   --color-text-muted: #5b6357;
   --color-border: #d7ddd0;
@@ -20,6 +21,7 @@
   :root {
     --color-bg: #12140f;
     --color-surface: #1c1f18;
+    --color-surface-alt: #262b1f;
     --color-text: #eef0e8;
     --color-text-muted: #a3ab99;
     --color-border: #333a2c;
