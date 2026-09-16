@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ensayos-campo-v5';
+const CACHE_NAME = 'ensayos-campo-v6';
 
 const APP_SHELL = [
   './',
@@ -17,9 +17,11 @@ const APP_SHELL = [
   './js/db/imagenesRepo.js',
   './js/db/notasRepo.js',
   './js/db/resultadosRepo.js',
+  './js/db/productosComercialesRepo.js',
   './js/domain/randomizer.js',
   './js/domain/reportes.js',
   './js/domain/dosificacion.js',
+  './js/data/ingredientesActivos.js',
   './js/views/ensayosListView.js',
   './js/views/ensayoFormView.js',
   './js/views/tratamientosView.js',
@@ -30,6 +32,7 @@ const APP_SHELL = [
   './js/views/informeView.js',
   './js/views/fotosNotasView.js',
   './js/views/backupView.js',
+  './js/views/importarTablaModal.js',
   './js/components/ui.js',
   './js/components/dragSortable.js',
   './js/components/imagePicker.js',
@@ -43,13 +46,16 @@ const APP_SHELL = [
   './js/utils/csvExport.js',
   './js/utils/ocr.js',
   './js/utils/textMatch.js',
+  './js/utils/tablaImport.js',
+  './js/utils/xlsxImport.js',
   './icons/icon-192.png',
   './icons/icon-512.png'
-  // Nota: los archivos del motor de OCR (js/vendor/tesseract/*, ~5 MB) NO se
-  // precachean acá a propósito, para no forzar esa descarga a quien nunca
-  // usa "cargar por foto". Quedan cacheados solos (vía el handler `fetch` de
-  // abajo) la primera vez que se usa esa función; de ahí en más funciona
-  // 100% offline igual que el resto de la app.
+  // Nota: los archivos del motor de OCR (js/vendor/tesseract/*, ~5 MB) y de
+  // lectura de Excel (js/vendor/xlsx/*, ~400 KB) NO se precachean acá a
+  // propósito, para no forzar esa descarga a quien nunca usa "cargar por
+  // foto" o "importar Excel". Quedan cacheados solos (vía el handler
+  // `fetch` de abajo) la primera vez que se usa cada función; de ahí en
+  // más funcionan 100% offline igual que el resto de la app.
 ];
 
 self.addEventListener('install', (event) => {
