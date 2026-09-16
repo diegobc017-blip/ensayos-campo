@@ -150,7 +150,7 @@ export async function render(main, ensayo) {
         const ingredientesTexto = (p.ingredientes || []).length
           ? p.ingredientes.map(ing => {
               const iaPorHa = dosisIngredienteActivoPorHa(p.dosis, ing.concentracion);
-              return `${ing.nombre}${ing.concentracion != null ? ` (${ing.concentracion}%)` : ''}${iaPorHa != null ? ` → ${iaPorHa.toFixed(3)} ${unidadBase} i.a./ha` : ''}`;
+              return `${ing.nombre}${ing.concentracion != null ? ` (${ing.concentracion}%)` : ''}${iaPorHa != null ? ` → ${iaPorHa.toFixed(2)} ${unidadBase} i.a./ha` : ''}`;
             }).join('<br>')
           : '<span class="field-hint">—</span>';
         return `
@@ -158,8 +158,8 @@ export async function render(main, ensayo) {
             <td>${p.nombre || '(sin nombre)'}</td>
             <td>${p.dosis !== '' && p.dosis != null ? p.dosis : '—'} ${p.dosis ? (p.unidad || '') : ''}</td>
             <td>${ingredientesTexto}</td>
-            <td>${porParcela != null ? porParcela.toFixed(4) + ' ' + unidadBase : '—'}</td>
-            <td>${total != null ? total.toFixed(4) + ' ' + unidadBase : (nParcelas === 0 && hayDiseno ? '0' : (hayDiseno ? '—' : 'sin diseño'))}</td>
+            <td>${porParcela != null ? porParcela.toFixed(2) + ' ' + unidadBase : '—'}</td>
+            <td>${total != null ? total.toFixed(2) + ' ' + unidadBase : (nParcelas === 0 && hayDiseno ? '0' : (hayDiseno ? '—' : 'sin diseño'))}</td>
           </tr>
         `;
       }).join('');
@@ -183,7 +183,7 @@ export async function render(main, ensayo) {
       const idRecipiente = `recipiente-${t.id}-${apIdx}`;
       const recipienteDiv = document.createElement('div');
       recipienteDiv.className = 'card';
-      recipienteDiv.style.background = 'var(--color-fondo-suave, #f5f7f2)';
+      recipienteDiv.style.background = 'var(--color-surface-alt)';
       const caudalPorDefecto = ap.caudalAgua || ensayo.caudalAplicador || '';
       const volumenPorDefecto = ensayo.volumenTanque || '';
       recipienteDiv.innerHTML = `
@@ -222,7 +222,7 @@ export async function render(main, ensayo) {
           const cantidad = calcularDosisPorRecipiente({ caudalAguaLHa: caudal, dosisProductoPorHa: p.dosis, volumenRecipienteL: volumen });
           const unidadBase = unidadSinPorHectarea(p.unidad) || '';
           if (cantidad == null) return `<li>${p.nombre || '(sin nombre)'}: <span class="field-hint">sin dosis cargada</span></li>`;
-          return `<li>${p.nombre || '(sin nombre)'}: <strong>${cantidad.toFixed(3)} ${unidadBase}</strong></li>`;
+          return `<li>${p.nombre || '(sin nombre)'}: <strong>${cantidad.toFixed(2)} ${unidadBase}</strong></li>`;
         }).join('');
         resultadoDiv.innerHTML = `
           <p class="field-hint">En ${volumen} L de agua (con este caudal, equivalen a ${(Number(volumen) / Number(caudal)).toFixed(5)} ha):</p>

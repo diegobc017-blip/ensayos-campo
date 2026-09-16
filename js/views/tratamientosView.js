@@ -10,6 +10,14 @@ import { parsearLineaTratamiento, interpretarProducto } from '../utils/textMatch
 import { nuevoId } from '../utils/idGen.js';
 import { abrirImportarTablaCompleta, abrirDefinirProductoComercial } from './importarTablaModal.js';
 import { listarProductosComerciales } from '../db/productosComercialesRepo.js';
+import { INGREDIENTES_ACTIVOS } from '../data/ingredientesActivos.js';
+
+const DATALIST_INGREDIENTES_ACTIVOS_ID = 'lista-ingredientes-activos-global';
+const DATALIST_INGREDIENTES_ACTIVOS_HTML = `
+  <datalist id="${DATALIST_INGREDIENTES_ACTIVOS_ID}">
+    ${INGREDIENTES_ACTIVOS.map(a => `<option value="${a.nombre}">`).join('')}
+  </datalist>
+`;
 
 const ETIQUETAS_TIPO_PRODUCTO = {
   activo: '✓ Ingrediente activo',
@@ -589,6 +597,7 @@ async function abrirEditorProductos(tratamiento, onGuardado) {
           <button class="btn btn-primary" id="btn-guardar-productos" type="button">Guardar</button>
           <button class="btn" id="btn-cerrar-productos" type="button">Cerrar sin guardar</button>
         </div>
+        ${DATALIST_INGREDIENTES_ACTIVOS_HTML}
       `;
 
       const cont = box.querySelector('#lista-aplicaciones');
@@ -629,13 +638,13 @@ async function abrirEditorProductos(tratamiento, onGuardado) {
               const esComercial = p.tipo === 'comercial';
               const fila = document.createElement('div');
               fila.className = 'card';
-              fila.style.background = 'var(--color-fondo-suave, #f5f7f2)';
+              fila.style.background = 'var(--color-surface-alt)';
               fila.style.padding = '8px';
               fila.style.marginBottom = '8px';
               fila.innerHTML = `
                 <div class="field-row" style="flex-wrap:wrap">
                   <div class="field" style="flex:2;min-width:140px;margin-bottom:6px">
-                    <input class="in-prod-nombre" data-i="${i}" data-j="${j}" value="${p.nombre || ''}" placeholder="Ingrediente activo o producto">
+                    <input class="in-prod-nombre" list="${DATALIST_INGREDIENTES_ACTIVOS_ID}" data-i="${i}" data-j="${j}" value="${p.nombre || ''}" placeholder="Ingrediente activo o producto">
                   </div>
                   <div class="field" style="margin-bottom:6px;max-width:100px">
                     <input class="in-prod-dosis" data-i="${i}" data-j="${j}" type="number" step="any" value="${p.dosis ?? ''}" placeholder="Dosis">

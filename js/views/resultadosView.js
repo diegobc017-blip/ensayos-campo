@@ -2,7 +2,8 @@ import { obtenerDiseno, tieneDiseno, etiquetaBloque } from '../db/layoutRepo.js'
 import { listarTratamientos } from '../db/tratamientosRepo.js';
 import {
   listarVariables, agregarVariable, eliminarVariable,
-  listarResultados, agregarResultado, eliminarResultado
+  listarResultados, agregarResultado, eliminarResultado,
+  variableAplicaAParcela
 } from '../db/resultadosRepo.js';
 import { openModal, showToast, confirmDialog } from '../components/ui.js';
 
@@ -50,14 +51,15 @@ export async function render(main, ensayo) {
     <div class="card" id="card-cargar">
       <h3>Cargar medición</h3>
       <div class="field">
-        <label for="sel-variable">Variable</label>
-        <select id="sel-variable"></select>
-      </div>
-      <div class="field">
         <label for="sel-parcela">Parcela</label>
         <select id="sel-parcela">
           ${celdas.map(c => `<option value="${c.id}">${c.etiqueta}</option>`).join('')}
         </select>
+      </div>
+      <div class="field">
+        <label for="sel-variable">Variable</label>
+        <select id="sel-variable"></select>
+        <p class="field-hint" id="hint-sin-variables" hidden>Esta parcela no tiene variables "individuales" asignadas ni hay variables "generales" cargadas.</p>
       </div>
       <div class="field">
         <label for="input-valor">Valor</label>
@@ -83,16 +85,24 @@ export async function render(main, ensayo) {
   `;
 
   const selVariable = main.querySelector('#sel-variable');
+  const selParcela = main.querySelector('#sel-parcela');
   const cardCargar = main.querySelector('#card-cargar');
+  const hintSinVariables = main.querySelector('#hint-sin-variables');
 
   function actualizarVisibilidadCarga() {
     cardCargar.hidden = variables.length === 0 || celdas.length === 0;
   }
 
+  // Solo se puede cargar una medición de una variable "individual" en las
+  // parcelas que se eligieron al crearla; las "generales" están disponibles
+  // en cualquier parcela del ensayo.
   function actualizarSelectVariable() {
-    selVariable.innerHTML = variables
-      .map(v => `<option value="${v.id}">${v.nombre}${v.unidad ? ' (' + v.unidad + ')' : ''}</option>`)
+    const celdaId = selParcela.value;
+    const disponibles = variables.filter(v => variableAplicaAParcela(v, celdaId));
+    selVariable.innerHTML = disponibles
+      .map(v => `<option value="${v.id}">${v.nombre}${v.unidad ? ' (' + v.unidad + ')' : ''}${v.alcance === 'individual' ? ' · individual' : ''}</option>`)
       .join('');
+    hintSinVariables.hidden = disponibles.length > 0;
   }
 
   function refrescarVariables() {
@@ -107,9 +117,14 @@ export async function render(main, ensayo) {
     variables.forEach((v) => {
       const li = document.createElement('li');
       li.className = 'list-item';
+      const esIndividual = v.alcance === 'individual';
+      const etiquetasParcelas = esIndividual
+        ? (v.celdaIds || []).map(id => celdasPorId.get(id)?.etiqueta).filter(Boolean).join(', ')
+        : '';
       li.innerHTML = `
         <div class="list-item-main">
           <div class="list-item-title">${v.nombre}${v.unidad ? ' (' + v.unidad + ')' : ''}</div>
+          <div class="list-item-sub">${esIndividual ? `Individual — ${etiquetasParcelas || 'sin parcelas asignadas'}` : 'General — todas las parcelas'}</div>
         </div>
         <button class="btn btn-sm btn-danger" data-id="${v.id}">Eliminar</button>
       `;
@@ -175,43 +190,79 @@ export async function render(main, ensayo) {
 
   main.querySelector('#btn-agregar-variable').addEventListener('click', () => {
     openModal((box, close) => {
-      box.innerHTML = `
-        <h3>Agregar variable</h3>
-        <div class="field">
-          <label for="var-nombre">Nombre</label>
-          <input type="text" id="var-nombre" placeholder="Ej: Altura de planta">
-        </div>
-        <div class="field">
-          <label for="var-unidad">Unidad</label>
-          <input type="text" id="var-unidad" placeholder="Ej: cm (opcional)">
-        </div>
-        <div class="btn-row">
-          <button class="btn btn-primary" id="btn-guardar-variable">Guardar</button>
-        </div>
-      `;
-      box.querySelector('#btn-guardar-variable').addEventListener('click', async () => {
-        const nombre = box.querySelector('#var-nombre').value.trim();
-        if (!nombre) { showToast('Ponele un nombre a la variable', 'error'); return; }
-        const unidad = box.querySelector('#var-unidad').value.trim();
-        const variable = await agregarVariable(ensayo.id, { nombre, unidad });
-        variables.push(variable);
-        refrescarVariables();
-        actualizarSelectVariable();
-        actualizarVisibilidadCarga();
-        close();
-        showToast('Variable agregada');
-      });
+      function pintarModalVariable() {
+        box.innerHTML = `
+          <h3>Agregar variable</h3>
+          <div class="field">
+            <label for="var-nombre">Nombre</label>
+            <input type="text" id="var-nombre" placeholder="Ej: Altura de planta">
+          </div>
+          <div class="field">
+            <label for="var-unidad">Unidad</label>
+            <input type="text" id="var-unidad" placeholder="Ej: cm (opcional)">
+          </div>
+          <div class="field">
+            <label for="var-alcance">Se mide en</label>
+            <select id="var-alcance">
+              <option value="general">Todo el ensayo (todas las parcelas)</option>
+              <option value="individual">Solo algunas parcelas puntuales</option>
+            </select>
+          </div>
+          <div id="var-celdas-wrap" hidden>
+            <p class="field-hint">Elegí en qué parcela(s) se va a cargar esta variable.</p>
+            <div id="var-celdas-lista" style="max-height:200px;overflow-y:auto"></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" id="btn-guardar-variable">Guardar</button>
+          </div>
+        `;
+
+        const wrapCeldas = box.querySelector('#var-celdas-wrap');
+        const listaCeldas = box.querySelector('#var-celdas-lista');
+        listaCeldas.innerHTML = celdas.map(c => `
+          <label style="display:flex;align-items:center;gap:6px;padding:4px 0">
+            <input type="checkbox" class="chk-celda-variable" value="${c.id}">
+            <span>${c.etiqueta}</span>
+          </label>
+        `).join('');
+
+        box.querySelector('#var-alcance').addEventListener('change', (e) => {
+          wrapCeldas.hidden = e.target.value !== 'individual';
+        });
+
+        box.querySelector('#btn-guardar-variable').addEventListener('click', async () => {
+          const nombre = box.querySelector('#var-nombre').value.trim();
+          if (!nombre) { showToast('Ponele un nombre a la variable', 'error'); return; }
+          const unidad = box.querySelector('#var-unidad').value.trim();
+          const alcance = box.querySelector('#var-alcance').value;
+          const celdaIds = Array.from(box.querySelectorAll('.chk-celda-variable:checked')).map(chk => chk.value);
+          if (alcance === 'individual' && celdaIds.length === 0) {
+            showToast('Elegí al menos una parcela para una variable individual', 'error');
+            return;
+          }
+          const variable = await agregarVariable(ensayo.id, { nombre, unidad, alcance, celdaIds });
+          variables.push(variable);
+          refrescarVariables();
+          actualizarSelectVariable();
+          actualizarVisibilidadCarga();
+          close();
+          showToast('Variable agregada');
+        });
+      }
+
+      pintarModalVariable();
     });
   });
 
+  selParcela.addEventListener('change', actualizarSelectVariable);
+
   main.querySelector('#btn-guardar-resultado').addEventListener('click', async () => {
     const variableId = selVariable.value;
-    const selParcela = main.querySelector('#sel-parcela');
     const celdaId = selParcela.value;
     const inputValor = main.querySelector('#input-valor');
     const valorStr = inputValor.value;
 
-    if (!variableId) { showToast('Agregá una variable primero', 'error'); return; }
+    if (!variableId) { showToast(variables.length === 0 ? 'Agregá una variable primero' : 'No hay ninguna variable disponible para esta parcela', 'error'); return; }
     if (!celdaId) { showToast('No hay parcelas disponibles: cargá el diseño primero', 'error'); return; }
     if (valorStr === '') { showToast('Ingresá un valor', 'error'); return; }
 
