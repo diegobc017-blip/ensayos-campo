@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ensayos-campo-v7';
+const CACHE_NAME = 'ensayos-campo-v8';
 
 const APP_SHELL = [
   './',
