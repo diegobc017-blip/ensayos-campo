@@ -3,6 +3,7 @@ import { tieneDiseno, obtenerDiseno } from '../db/layoutRepo.js';
 import { navegar } from '../router.js';
 import { showToast, confirmDialog } from '../components/ui.js';
 import { habilitarDictado } from '../components/voiceInput.js';
+import { ETIQUETAS_PUNTO_CARDINAL } from '../domain/orientacion.js';
 
 export async function render(main, setHeader, ensayoId) {
   const esEdicion = !!ensayoId;
@@ -95,6 +96,16 @@ export async function render(main, setHeader, ensayoId) {
       </div>
       <p class="field-hint" id="area-hint"></p>
       <div class="field">
+        <label>Orientación de los bloques (opcional)</label>
+        <p class="field-hint">¿Qué punto cardinal queda hacia arriba cuando mirás el Mapa de campo? Es solo una referencia para ubicarte en el lote y para el informe — no cambia el diseño ni el orden de los bloques.</p>
+        <div class="chip-select" id="chip-orientacion">
+          ${Object.entries(ETIQUETAS_PUNTO_CARDINAL).map(([valor, etiqueta]) => `
+            <button type="button" class="chip${(ensayo?.orientacionArriba || '') === valor ? ' active' : ''}" data-valor="${valor}">${etiqueta}</button>
+          `).join('')}
+          <button type="button" class="chip${!ensayo?.orientacionArriba ? ' active' : ''}" data-valor="">Sin definir</button>
+        </div>
+      </div>
+      <div class="field">
         <label for="f-notas">Notas</label>
         <textarea id="f-notas">${ensayo?.notas || ''}</textarea>
       </div>
@@ -122,6 +133,15 @@ export async function render(main, setHeader, ensayoId) {
   habilitarDictado(main.querySelector('#f-cultivo'));
   habilitarDictado(main.querySelector('#f-ubicacion'));
   habilitarDictado(main.querySelector('#f-notas'));
+
+  let orientacionArriba = ensayo?.orientacionArriba || '';
+  const chipOrientacion = main.querySelector('#chip-orientacion');
+  chipOrientacion.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      orientacionArriba = chip.dataset.valor;
+      chipOrientacion.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c === chip));
+    });
+  });
 
   const HINTS_DISENO = {
     BCA: 'Cada bloque contiene una vez cada tratamiento; el orden se sortea evitando repeticiones adyacentes entre bloques.',
@@ -177,6 +197,7 @@ export async function render(main, setHeader, ensayoId) {
       numBloques: esFranja() ? numBloquesFranjaInput.value : numBloquesInput.value,
       numFactorA: esFranja() ? numFactorAInput.value : 0,
       numFactorB: esFranja() ? numFactorBInput.value : 0,
+      orientacionArriba: orientacionArriba || null,
       dimensionParcela: {
         ancho: anchoInput.value || null,
         largo: largoInput.value || null,

@@ -4,6 +4,7 @@ import { obtenerDiseno, tieneDiseno } from '../db/layoutRepo.js';
 import { calcularInforme } from '../domain/reportes.js';
 import { descargarCSV } from '../utils/csvExport.js';
 import { ETIQUETAS_DISENO } from '../db/ensayosRepo.js';
+import { calcularLadosOrientacion, ETIQUETAS_PUNTO_CARDINAL } from '../domain/orientacion.js';
 
 function fmt(n) {
   return n == null ? '' : Math.round(n * 100) / 100;
@@ -46,6 +47,7 @@ export async function render(main, ensayo) {
   }
 
   const informe = calcularInforme(resultados, variables, tratamientos, bloques);
+  const lados = calcularLadosOrientacion(ensayo.orientacionArriba);
 
   main.innerHTML = `
     <div class="btn-row no-print">
@@ -58,6 +60,8 @@ export async function render(main, ensayo) {
     <div class="card">
       <h3>Ensayo: ${ensayo.nombre}</h3>
       <p class="card-sub">${ensayo.cultivo || ''} · ${ensayo.ubicacion || ''} · Diseño: ${ETIQUETAS_DISENO[ensayo.tipoDiseno] || 'BCA'} · Generado: ${new Date().toLocaleString()}</p>
+      ${lados ? `<p class="card-sub">Orientación del mapa de campo: ${ETIQUETAS_PUNTO_CARDINAL[lados.arriba]} arriba · ${ETIQUETAS_PUNTO_CARDINAL[lados.derecha]} a la derecha · ${ETIQUETAS_PUNTO_CARDINAL[lados.abajo]} abajo · ${ETIQUETAS_PUNTO_CARDINAL[lados.izquierda]} a la izquierda.</p>` : ''}
+      ${ensayo.tipoPulverizadora || ensayo.velocidadAplicador || ensayo.caudalAplicador ? `<p class="card-sub">Aplicador: ${ensayo.tipoPulverizadora || '(tipo sin especificar)'}${ensayo.velocidadAplicador ? ' · ' + ensayo.velocidadAplicador + ' km/h' : ''}${ensayo.caudalAplicador ? ' · ' + ensayo.caudalAplicador + ' L/ha' : ''}</p>` : ''}
     </div>
 
     <div class="card">

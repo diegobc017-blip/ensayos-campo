@@ -6,6 +6,16 @@ import {
   dosisIngredienteActivoPorHa, calcularDosisPorRecipiente
 } from '../domain/dosificacion.js';
 
+const ETIQUETAS_PULVERIZADORA = {
+  mochila_manual: 'Mochila manual',
+  mochila_motor: 'Mochila a motor/batería',
+  mochila_co2: 'Mochila a CO2',
+  arrastre: 'Pulverizadora de arrastre (tractor)',
+  autopropulsada: 'Autopropulsada',
+  dron: 'Dron',
+  otra: 'Otra'
+};
+
 export async function render(main, ensayo) {
   const [tratamientos, { bloques, celdasPorBloque }] = await Promise.all([
     listarTratamientos(ensayo.id),
@@ -52,7 +62,22 @@ export async function render(main, ensayo) {
     </div>
     <div class="card">
       <h4>Calibración del aplicador (opcional)</h4>
-      <p class="field-hint">Cargá acá el caudal habitual de tu mochila/pulverizadora y el volumen de su tanque (o de la botella que uses). Se van a usar como valor por defecto en "Preparar en un recipiente" de cada aplicación, pero podés cambiarlos ahí puntualmente para probar otro tamaño.</p>
+      <p class="field-hint">Datos del equipo con el que se va a pulverizar el ensayo. El caudal y el volumen del tanque/botella se usan como valor por defecto en "Preparar en un recipiente" de cada aplicación (podés cambiarlos ahí puntualmente para probar otro tamaño); el tipo y la velocidad quedan como referencia del método usado, y en el futuro también van a servir para sugerir la presión/configuración del pulverizador.</p>
+      <div class="field-row">
+        <div class="field" style="max-width:220px">
+          <label for="f-tipo-pulverizadora">Tipo de pulverizadora</label>
+          <select id="f-tipo-pulverizadora">
+            <option value="">Sin especificar</option>
+            ${Object.entries(ETIQUETAS_PULVERIZADORA).map(([valor, etiqueta]) => `
+              <option value="${valor}" ${ensayo.tipoPulverizadora === valor ? 'selected' : ''}>${etiqueta}</option>
+            `).join('')}
+          </select>
+        </div>
+        <div class="field" style="max-width:180px">
+          <label for="f-velocidad-aplicador">Velocidad de aplicación (km/h)</label>
+          <input id="f-velocidad-aplicador" type="number" step="any" min="0" value="${ensayo.velocidadAplicador ?? ''}" placeholder="ej. 5">
+        </div>
+      </div>
       <div class="field-row">
         <div class="field" style="max-width:220px">
           <label for="f-caudal-aplicador">Caudal del aplicador (L/ha)</label>
@@ -67,17 +92,23 @@ export async function render(main, ensayo) {
     <div id="lista-dosificacion"></div>
   `;
 
+  const inTipoPulverizadora = main.querySelector('#f-tipo-pulverizadora');
+  const inVelocidadAplicador = main.querySelector('#f-velocidad-aplicador');
   const inCaudalAplicador = main.querySelector('#f-caudal-aplicador');
   const inVolumenTanque = main.querySelector('#f-volumen-tanque');
   async function guardarCalibracion() {
-    await actualizarEnsayo(ensayo.id, {
+    const cambios = {
+      tipoPulverizadora: inTipoPulverizadora.value || null,
+      velocidadAplicador: inVelocidadAplicador.value === '' ? null : Number(inVelocidadAplicador.value),
       caudalAplicador: inCaudalAplicador.value === '' ? null : Number(inCaudalAplicador.value),
       volumenTanque: inVolumenTanque.value === '' ? null : Number(inVolumenTanque.value)
-    });
-    ensayo.caudalAplicador = inCaudalAplicador.value === '' ? null : Number(inCaudalAplicador.value);
-    ensayo.volumenTanque = inVolumenTanque.value === '' ? null : Number(inVolumenTanque.value);
+    };
+    await actualizarEnsayo(ensayo.id, cambios);
+    Object.assign(ensayo, cambios);
     actualizarTodosLosRecipientes();
   }
+  inTipoPulverizadora.addEventListener('change', guardarCalibracion);
+  inVelocidadAplicador.addEventListener('change', guardarCalibracion);
   inCaudalAplicador.addEventListener('change', guardarCalibracion);
   inVolumenTanque.addEventListener('change', guardarCalibracion);
 

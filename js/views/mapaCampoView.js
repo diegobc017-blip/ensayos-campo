@@ -6,6 +6,7 @@ import { agregarImagen, listarImagenes } from '../db/imagenesRepo.js';
 import { agregarNota, listarNotas } from '../db/notasRepo.js';
 import { crearBotonImagen } from '../components/imagePicker.js';
 import { navegar } from '../router.js';
+import { calcularLadosOrientacion, ETIQUETAS_PUNTO_CARDINAL } from '../domain/orientacion.js';
 
 export async function render(main, ensayo) {
   const [tratamientos, { bloques, celdasPorBloque }] = await Promise.all([
@@ -34,10 +35,13 @@ export async function render(main, ensayo) {
   // Reconstruye la matriz de filas de tratamientoId (para validar adyacencia)
   const filas = bloques.map(b => (celdasPorBloque.get(b.id) || []).map(c => c.tratamientoId));
 
+  const lados = calcularLadosOrientacion(ensayo.orientacionArriba);
+
   main.innerHTML = `
     <div class="card">
       <h3>Mapa de campo</h3>
       <p class="field-hint">Tocá una parcela para ver detalle, editarla manualmente o agregar fotos/notas.</p>
+      ${lados ? `<p class="field-hint">&#129517; Orientación (referencia): ${ETIQUETAS_PUNTO_CARDINAL[lados.arriba]} arriba · ${ETIQUETAS_PUNTO_CARDINAL[lados.derecha]} a la derecha · ${ETIQUETAS_PUNTO_CARDINAL[lados.abajo]} abajo · ${ETIQUETAS_PUNTO_CARDINAL[lados.izquierda]} a la izquierda.</p>` : ''}
       <div class="campo-grid" id="campo-grid"></div>
     </div>
   `;
