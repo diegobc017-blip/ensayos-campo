@@ -20,6 +20,7 @@ const titleEl = document.getElementById('app-title');
 const btnBack = document.getElementById('btn-back');
 const btnRespaldo = document.getElementById('btn-respaldo');
 const btnInstalar = document.getElementById('btn-instalar');
+const btnAyuda = document.getElementById('btn-ayuda');
 
 let onBackHandler = null;
 
@@ -31,6 +32,49 @@ function setHeader(titulo, mostrarBack, onBack) {
 
 btnBack.addEventListener('click', () => onBackHandler && onBackHandler());
 btnRespaldo.addEventListener('click', () => navegar('#/respaldo'));
+
+// --- Ayuda: qué hace cada pantalla ----------------------------------------
+
+btnAyuda.addEventListener('click', () => {
+  openModal((box, close) => {
+    box.innerHTML = `
+      <h3>¿Cómo funciona la app?</h3>
+      <p class="field-hint">Funciona sin conexión: todo se guarda en este dispositivo. Podés instalarla como app (botón &#8615;) y usar el botón &#128190; para respaldar/pasar los datos a otro celular.</p>
+      <div class="section-title">
+        <p><strong>1. Creá el ensayo</strong></p>
+        <p class="field-hint">Nombre, cultivo, tipo de diseño (BCA, DCA o Franjas cruzadas), cantidad de tratamientos/bloques y tamaño de parcela. Podés editarlo después desde "✎ Editar".</p>
+      </div>
+      <div class="section-title">
+        <p><strong>2. Tratamientos</strong></p>
+        <p class="field-hint">Cargá cada tratamiento a mano, dictando por voz, con "Cargar por foto" (una línea = un tratamiento simple), o con "Importar tabla completa" desde una foto o un Excel/CSV de una planilla con varios productos por tratamiento — se arman como "Tratamiento 1, 2..." y siempre te muestra una pantalla para revisar y corregir antes de guardar. En "Productos" de cada tratamiento cargás el ingrediente activo (o nombre comercial) y el % de concentración; si es una mezcla comercial (ej. "Jinete" = dos activos), la podés definir una vez y la app la reconoce sola después.</p>
+      </div>
+      <div class="section-title">
+        <p><strong>3. Diseño</strong></p>
+        <p class="field-hint">Fijás el primer bloque y la app sortea el resto, evitando que un mismo tratamiento quede adyacente entre bloques (en BCA). Ahí también podés indicar la orientación (Norte/Sur/Este/Oeste) para ubicarte en el lote.</p>
+      </div>
+      <div class="section-title">
+        <p><strong>4. Mapa de campo</strong></p>
+        <p class="field-hint">Es el plano ya sorteado: tocá una parcela para cambiar el tratamiento a mano, o para sacarle fotos y agregar notas puntuales de esa parcela.</p>
+      </div>
+      <div class="section-title">
+        <p><strong>5. Dosificación</strong></p>
+        <p class="field-hint">Calcula sola la dosis por parcela y por todo el ensayo a partir de la dosis por hectárea que cargaste. También podés cargar la calibración del aplicador (tipo de pulverizadora, velocidad, caudal, tamaño del tanque) y usar "Preparar en un recipiente" para saber cuánto producto poner en una botella o mochila puntual.</p>
+      </div>
+      <div class="section-title">
+        <p><strong>6. Resultados e Informe</strong></p>
+        <p class="field-hint">Cargás las mediciones de campo (por variable y parcela) y el Informe arma automáticamente los promedios por tratamiento y por bloque, listo para exportar a PDF o CSV.</p>
+      </div>
+      <div class="section-title">
+        <p><strong>7. Fotos y notas</strong></p>
+        <p class="field-hint">Fotos y observaciones generales del ensayo (además de las que podés sacar parcela por parcela desde el Mapa de campo).</p>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btn-cerrar-ayuda">Entendido</button>
+      </div>
+    `;
+    box.querySelector('#btn-cerrar-ayuda').addEventListener('click', close);
+  });
+});
 
 const TABS_ENSAYO = [
   { key: 'tratamientos', label: 'Tratamientos' },
