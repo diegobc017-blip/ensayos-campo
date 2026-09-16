@@ -23,7 +23,7 @@
 // arranca un tratamiento nuevo: sigue siendo del mismo tratamiento, solo
 // que sus productos quedan marcados con `secuencial: true`.
 
-import { interpretarProducto, extraerConcentracion } from './textMatch.js';
+import { interpretarProducto, extraerConcentracion, buscarIngredienteActivo } from './textMatch.js';
 import { nuevoId } from './idGen.js';
 
 /** Códigos cortos típicos de una franja/tratamiento: "A", "B1", "T1", "T12"... */
@@ -89,6 +89,23 @@ function extraerPares(segmento) {
 
   for (let i = 0; i < tokens.length; i++) {
     const tok = tokens[i];
+
+    // El OCR a veces separa el "%" del número con un espacio ("11.53 %" en
+    // vez de "11.53%"). Sin este caso especial, ese número se confundiría
+    // con una dosis y cortaría el nombre del ingrediente activo a la mitad
+    // (arruinando el reconocimiento de todo lo que viene después). Un "%"
+    // suelto (pegado al número anterior, o el número que lo precede) se
+    // trata como parte del nombre/concentración, nunca como dosis.
+    if (tok === '%' && nombreActual.length > 0) {
+      nombreActual[nombreActual.length - 1] += '%';
+      continue;
+    }
+    if (RE_TOKEN_NUMERO.test(tok) && tokens[i + 1] === '%') {
+      nombreActual.push(tok + '%');
+      i++; // consume el "%" suelto también.
+      continue;
+    }
+
     const clasif = clasificarToken(tok);
     if (clasif.tipo === 'dosis') {
       let dosisTexto = clasif.numero;
@@ -250,11 +267,29 @@ export function filasDesdeHojaExcel(filas2D) {
   return aplicarConcentracionInicial(filas);
 }
 
+/**
+ * Si el texto leído (de una sola línea, sin "+") coincide, tolerando
+ * errores típicos de OCR, con alguno de los ingredientes activos de
+ * referencia, se reemplaza por su nombre canónico — así se prioriza
+ * mostrar el nombre correcto del ingrediente activo en la pantalla de
+ * revisión en vez de dejar una lectura ruidosa de la foto/planilla. Un
+ * texto con "+" (varios ingredientes en una sola celda/renglón) se deja
+ * intacto acá: separarlo y reconocer cada parte ya lo hace
+ * `interpretarProducto` más adelante, y reemplazarlo entero por un solo
+ * nombre reconocido perdería el resto de la mezcla.
+ */
+function priorizarNombreConocido(texto) {
+  const limpio = (texto || '').trim();
+  if (!limpio || limpio.includes('+')) return limpio;
+  const activo = buscarIngredienteActivo(limpio);
+  return activo ? activo.nombre : limpio;
+}
+
 /** Separa el "% de concentración" del texto del ingrediente, si lo trae. */
 function aplicarConcentracionInicial(filas) {
   return filas.map(f => {
     const { texto, concentracion } = extraerConcentracion(f.ingredienteTexto);
-    return { ...f, ingredienteTexto: texto, concentracion };
+    return { ...f, ingredienteTexto: priorizarNombreConocido(texto), concentracion };
   });
 }
 

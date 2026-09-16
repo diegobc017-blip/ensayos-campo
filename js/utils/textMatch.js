@@ -175,19 +175,30 @@ export function buscarIngredienteActivo(texto, lista = INGREDIENTES_ACTIVOS) {
   });
   if (porInclusion) return porInclusion;
 
-  // Si no, distancia de edición sobre la primera palabra significativa
-  // (para tolerar errores de OCR letra por letra).
-  const primeraPalabra = t.split(' ')[0];
+  // Si no, distancia de edición — probando CADA palabra del texto leído
+  // (no solo la primera) contra el nombre completo de cada ingrediente y
+  // contra cada una de sus palabras. Esto prioriza reconocer el nombre del
+  // ingrediente activo aunque el OCR haya agregado ruido antes/después
+  // (letras sueltas, un código de franja pegado, etc.) o la coincidencia
+  // esté en la 2da palabra de un nombre compuesto (ej. "amonio" de
+  // "Glufosinato de amonio").
+  const palabrasTexto = t.split(' ').filter(p => p.length >= 3);
+  if (palabrasTexto.length === 0) return null;
+
   let mejor = null;
   let mejorDist = Infinity;
   for (const i of lista) {
     const n = normalizarNombreProducto(i.nombre);
-    const primeraDeN = n.split(' ')[0];
-    const d = distanciaLevenshtein(primeraPalabra, primeraDeN);
-    const umbral = primeraDeN.length <= 5 ? 1 : Math.min(3, Math.ceil(primeraDeN.length / 4));
-    if (d <= umbral && d < mejorDist) {
-      mejor = i;
-      mejorDist = d;
+    const palabrasIngrediente = [n, ...n.split(' ')].filter((p, idx, arr) => p.length >= 3 && arr.indexOf(p) === idx);
+    for (const palabraTexto of palabrasTexto) {
+      for (const palabraIng of palabrasIngrediente) {
+        const d = distanciaLevenshtein(palabraTexto, palabraIng);
+        const umbral = palabraIng.length <= 5 ? 1 : Math.min(3, Math.ceil(palabraIng.length / 4));
+        if (d <= umbral && d < mejorDist) {
+          mejor = i;
+          mejorDist = d;
+        }
+      }
     }
   }
   return mejor;
