@@ -6,8 +6,18 @@ import { renderReorderableList } from '../components/dragSortable.js';
 import { showToast, confirmDialog, openModal } from '../components/ui.js';
 import { habilitarDictado } from '../components/voiceInput.js';
 import { reconocerTexto, mensajeProgreso } from '../utils/ocr.js';
-import { parsearLineaTratamiento } from '../utils/textMatch.js';
+import { parsearLineaTratamiento, interpretarProducto } from '../utils/textMatch.js';
 import { nuevoId } from '../utils/idGen.js';
+import { abrirImportarTablaCompleta, abrirDefinirProductoComercial } from './importarTablaModal.js';
+import { listarProductosComerciales } from '../db/productosComercialesRepo.js';
+
+const ETIQUETAS_TIPO_PRODUCTO = {
+  activo: '✓ Ingrediente activo',
+  comercial: '✓ Producto comercial (mezcla)',
+  coadyuvante: 'Coadyuvante / adyuvante',
+  desconocido: '⚠ No reconocido',
+  vacio: ''
+};
 
 export async function render(main, ensayo) {
   if (ensayo.tipoDiseno === 'FRANJA') {
@@ -44,7 +54,10 @@ async function renderSimple(main, ensayo) {
       </div>
       <button type="submit" class="btn btn-primary btn-block">+ Agregar tratamiento</button>
       <div class="btn-row">
-        <button type="button" class="btn" id="btn-importar-foto">📷 Cargar por foto</button>
+        <button type="button" class="btn" id="btn-importar-foto">📷 Cargar por foto (una línea = un tratamiento)</button>
+      </div>
+      <div class="btn-row">
+        <button type="button" class="btn" id="btn-importar-tabla">📋 Importar tabla completa (foto o Excel)</button>
       </div>
     </form>
   `;
@@ -60,6 +73,19 @@ async function renderSimple(main, ensayo) {
         pintarLista();
       },
       agregar: (datos) => agregarTratamiento(ensayo.id, datos)
+    });
+  });
+
+  main.querySelector('#btn-importar-tabla').addEventListener('click', () => {
+    abrirImportarTablaCompleta({
+      onImportado: async () => {
+        const actualizados = await listarTratamientosBase(ensayo.id);
+        tratamientos.length = 0;
+        tratamientos.push(...actualizados);
+        pintarLista();
+      },
+      agregar: (datos) => agregarTratamiento(ensayo.id, datos),
+      actualizar: (id, cambios) => actualizarTratamiento(id, cambios)
     });
   });
 
@@ -136,6 +162,7 @@ async function renderFranja(main, ensayo) {
       </form>
       <div class="btn-row">
         <button type="button" class="btn" id="btn-importar-foto-a">📷 Cargar Factor A por foto</button>
+        <button type="button" class="btn" id="btn-importar-tabla-a">📋 Importar tabla completa</button>
       </div>
     </div>
     <div class="card">
@@ -154,6 +181,7 @@ async function renderFranja(main, ensayo) {
       </form>
       <div class="btn-row">
         <button type="button" class="btn" id="btn-importar-foto-b">📷 Cargar Factor B por foto</button>
+        <button type="button" class="btn" id="btn-importar-tabla-b">📋 Importar tabla completa</button>
       </div>
     </div>
     <div class="card">
@@ -226,6 +254,30 @@ async function renderFranja(main, ensayo) {
         await sincronizarCombinaciones();
       },
       agregar: (datos) => agregarTratamiento(ensayo.id, { ...datos, factor: 'B' })
+    });
+  });
+
+  main.querySelector('#btn-importar-tabla-a').addEventListener('click', () => {
+    abrirImportarTablaCompleta({
+      onImportado: async () => {
+        factorA = await listarTratamientosBase(ensayo.id, 'A');
+        pintarA();
+        await sincronizarCombinaciones();
+      },
+      agregar: (datos) => agregarTratamiento(ensayo.id, { ...datos, factor: 'A' }),
+      actualizar: (id, cambios) => actualizarTratamiento(id, cambios)
+    });
+  });
+
+  main.querySelector('#btn-importar-tabla-b').addEventListener('click', () => {
+    abrirImportarTablaCompleta({
+      onImportado: async () => {
+        factorB = await listarTratamientosBase(ensayo.id, 'B');
+        pintarB();
+        await sincronizarCombinaciones();
+      },
+      agregar: (datos) => agregarTratamiento(ensayo.id, { ...datos, factor: 'B' }),
+      actualizar: (id, cambios) => actualizarTratamiento(id, cambios)
     });
   });
 
@@ -485,7 +537,7 @@ function abrirImportarPorFoto({ onImportado, agregar }) {
 // es decir, aplicada más adelante en el tiempo) con uno o varios productos
 // (mezcla de tanque).
 // ---------------------------------------------------------------------
-function abrirEditorProductos(tratamiento, onGuardado) {
+async function abrirEditorProductos(tratamiento, onGuardado) {
   let aplicaciones = (tratamiento.aplicaciones || []).map(a => ({
     id: a.id || nuevoId(),
     tipo: a.tipo || 'principal',
@@ -493,6 +545,27 @@ function abrirEditorProductos(tratamiento, onGuardado) {
     caudalAgua: a.caudalAgua ?? '',
     productos: (a.productos || []).map(p => ({ ...p }))
   }));
+  let productosComerciales = await listarProductosComerciales();
+
+  // Reconoce (o vuelve a reconocer) el ingrediente activo / producto
+  // comercial de un producto a partir de su nombre, priorizando siempre el
+  // ingrediente activo sobre un nombre comercial. Si ya se había cargado
+  // una concentración a mano, se conserva.
+  function clasificarProducto(p) {
+    if (p.tipo && p.tipo !== 'vacio' && p.ingredientes !== undefined) return p; // ya clasificado en esta sesión
+    const interpretado = interpretarProducto(p.nombre, productosComerciales);
+    p.tipo = interpretado.tipo;
+    if (interpretado.tipo === 'activo') {
+      const conc = (p.concentracion != null && p.concentracion !== '') ? Number(p.concentracion) : interpretado.ingredientes[0]?.concentracion ?? null;
+      p.concentracion = conc;
+      p.ingredientes = [{ nombre: interpretado.ingredientes[0].nombre, concentracion: conc }];
+    } else if (interpretado.tipo === 'comercial') {
+      p.ingredientes = interpretado.ingredientes;
+    } else {
+      p.ingredientes = [];
+    }
+    return p;
+  }
 
   openModal((box, close) => {
     function pintar() {
@@ -544,19 +617,33 @@ function abrirEditorProductos(tratamiento, onGuardado) {
             prodCont.innerHTML = '<p class="field-hint">Sin productos en esta aplicación.</p>';
           } else {
             ap.productos.forEach((p, j) => {
+              clasificarProducto(p);
+              const esComercial = p.tipo === 'comercial';
               const fila = document.createElement('div');
-              fila.className = 'field-row';
+              fila.className = 'card';
+              fila.style.background = 'var(--color-fondo-suave, #f5f7f2)';
+              fila.style.padding = '8px';
+              fila.style.marginBottom = '8px';
               fila.innerHTML = `
-                <div class="field" style="flex:2;margin-bottom:6px">
-                  <input class="in-prod-nombre" data-i="${i}" data-j="${j}" value="${p.nombre || ''}" placeholder="Producto">
+                <div class="field-row" style="flex-wrap:wrap">
+                  <div class="field" style="flex:2;min-width:140px;margin-bottom:6px">
+                    <input class="in-prod-nombre" data-i="${i}" data-j="${j}" value="${p.nombre || ''}" placeholder="Ingrediente activo o producto">
+                  </div>
+                  <div class="field" style="margin-bottom:6px;max-width:100px">
+                    <input class="in-prod-dosis" data-i="${i}" data-j="${j}" type="number" step="any" value="${p.dosis ?? ''}" placeholder="Dosis">
+                  </div>
+                  <div class="field" style="max-width:90px;margin-bottom:6px">
+                    <input class="in-prod-unidad" data-i="${i}" data-j="${j}" value="${p.unidad || ''}" placeholder="Unidad">
+                  </div>
+                  ${!esComercial ? `
+                  <div class="field" style="max-width:90px;margin-bottom:6px">
+                    <input class="in-prod-conc" data-i="${i}" data-j="${j}" type="number" step="any" min="0" max="100" value="${p.concentracion ?? ''}" placeholder="% conc.">
+                  </div>` : ''}
+                  <button class="btn btn-sm btn-danger" data-accion="quitar-producto" data-i="${i}" data-j="${j}" type="button" style="align-self:flex-start;margin-top:2px">✕</button>
                 </div>
-                <div class="field" style="margin-bottom:6px">
-                  <input class="in-prod-dosis" data-i="${i}" data-j="${j}" type="number" step="any" value="${p.dosis ?? ''}" placeholder="Dosis">
-                </div>
-                <div class="field" style="max-width:90px;margin-bottom:6px">
-                  <input class="in-prod-unidad" data-i="${i}" data-j="${j}" value="${p.unidad || ''}" placeholder="Unidad">
-                </div>
-                <button class="btn btn-sm btn-danger" data-accion="quitar-producto" data-i="${i}" data-j="${j}" type="button" style="align-self:flex-start;margin-top:2px">✕</button>
+                <p class="field-hint">${ETIQUETAS_TIPO_PRODUCTO[p.tipo] || ''}</p>
+                ${esComercial ? `<p class="field-hint">Mezcla: ${p.ingredientes.map(ing => `${ing.nombre}${ing.concentracion != null ? ' ' + ing.concentracion + '%' : ''}`).join(' + ')} <button class="btn btn-sm" data-accion="editar-mezcla" data-i="${i}" data-j="${j}" type="button">Editar mezcla</button></p>` : ''}
+                ${p.tipo === 'desconocido' && p.nombre.trim() ? `<button class="btn btn-sm" data-accion="definir-comercial" data-i="${i}" data-j="${j}" type="button">¿Es un producto comercial (mezcla)? Definirlo</button>` : ''}
               `;
               prodCont.appendChild(fila);
             });
@@ -573,6 +660,13 @@ function abrirEditorProductos(tratamiento, onGuardado) {
       });
       cont.querySelectorAll('.in-prod-nombre').forEach(inp => {
         inp.addEventListener('input', () => { aplicaciones[Number(inp.dataset.i)].productos[Number(inp.dataset.j)].nombre = inp.value; });
+        inp.addEventListener('blur', () => {
+          const p = aplicaciones[Number(inp.dataset.i)].productos[Number(inp.dataset.j)];
+          p.tipo = null;
+          p.ingredientes = undefined;
+          p.concentracion = null; // el nombre cambió: recalcular concentración desde cero
+          pintar();
+        });
         habilitarDictado(inp);
       });
       cont.querySelectorAll('.in-prod-dosis').forEach(inp => {
@@ -581,9 +675,36 @@ function abrirEditorProductos(tratamiento, onGuardado) {
       cont.querySelectorAll('.in-prod-unidad').forEach(inp => {
         inp.addEventListener('input', () => { aplicaciones[Number(inp.dataset.i)].productos[Number(inp.dataset.j)].unidad = inp.value; });
       });
+      cont.querySelectorAll('.in-prod-conc').forEach(inp => {
+        inp.addEventListener('input', () => {
+          const p = aplicaciones[Number(inp.dataset.i)].productos[Number(inp.dataset.j)];
+          p.concentracion = inp.value === '' ? null : Number(inp.value);
+          if (p.ingredientes && p.ingredientes[0]) p.ingredientes[0].concentracion = p.concentracion;
+        });
+      });
+      cont.querySelectorAll('[data-accion="editar-mezcla"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const p = aplicaciones[Number(btn.dataset.i)].productos[Number(btn.dataset.j)];
+          abrirDefinirProductoComercial(p.nombre, async () => {
+            productosComerciales = await listarProductosComerciales();
+            p.tipo = null; p.ingredientes = undefined;
+            pintar();
+          }, p.ingredientes);
+        });
+      });
+      cont.querySelectorAll('[data-accion="definir-comercial"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const p = aplicaciones[Number(btn.dataset.i)].productos[Number(btn.dataset.j)];
+          abrirDefinirProductoComercial(p.nombre, async () => {
+            productosComerciales = await listarProductosComerciales();
+            p.tipo = null; p.ingredientes = undefined;
+            pintar();
+          });
+        });
+      });
       cont.querySelectorAll('[data-accion="agregar-producto"]').forEach(btn => {
         btn.addEventListener('click', () => {
-          aplicaciones[Number(btn.dataset.i)].productos.push({ id: nuevoId(), nombre: '', dosis: '', unidad: '' });
+          aplicaciones[Number(btn.dataset.i)].productos.push({ id: nuevoId(), nombre: '', dosis: '', unidad: '', tipo: 'vacio', concentracion: null, ingredientes: [] });
           pintar();
         });
       });
