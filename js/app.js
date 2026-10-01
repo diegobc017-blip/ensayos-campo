@@ -1701,7 +1701,7 @@ const h = location.hash.slice(1);
 if (USERS[h]) entrar(USERS[h]); // atajo: #marta, #ana, #luis, #carlos
 else if (h === 'tour') tourEmpezar(0); else if (h === 'ayuda') abrirAyuda();
 else if (SESION?.user && USERS[SESION.user]) { S.user = USERS[SESION.user]; if (SESION.rubro && RUBROS[SESION.rubro]) { S.rubro = SESION.rubro; irInicio(); } else irRubro(); }
-$('#carga')?.remove();
+$('#carga')?.remove(); try { sessionStorage.removeItem('ec-recarga'); } catch (e) {}
 /* ================= app instalable y sin internet ================= */
 let pedidoInstalar = null;
 addEventListener('beforeinstallprompt', e => { e.preventDefault(); pedidoInstalar = e; $('#btn-instalar').hidden = false; });
