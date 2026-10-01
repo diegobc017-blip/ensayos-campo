@@ -34,3 +34,33 @@ export function tukey(medias,cme,gle,r){ const t=Object.keys(medias).length, q=q
  const v=Object.keys(medias).sort((a,b)=>medias[b]-medias[a]).map(k=>medias[k]);
  return {q,hsd,letras:letras(medias,(i,j)=>Math.abs(v[i]-v[j])<hsd)}; }
 export function interpretarCV(cv){ return cv<10?'variabilidad baja, precisión alta':cv<20?'variabilidad media, precisión aceptable':cv<30?'variabilidad alta, precisión baja':'variabilidad muy alta, revisar datos'; }
+// Análisis combinado de una red de ensayos (DBCA repetido en varios lugares, balanceado).
+// datos: [{y, trat, bloque, sitio}]. Lugares aleatorios: los tratamientos se prueban contra la interacción T×L.
+export function anovaCombinado(datos){
+ const ys=datos.map(d=>d.y), gm=mean(ys), n=datos.length;
+ const grp=f=>{const m=new Map(); for(const d of datos){const k=f(d); if(!m.has(k)) m.set(k,[]); m.get(k).push(d.y);} return m;};
+ const L=grp(d=>String(d.sitio)), T=grp(d=>String(d.trat)), LB=grp(d=>d.sitio+'|'+d.bloque), LT=grp(d=>d.sitio+'|'+d.trat);
+ const a=L.size, t=T.size, r=n/(a*t);
+ const mL=new Map([...L].map(([k,v])=>[k,mean(v)])), mT=new Map([...T].map(([k,v])=>[k,mean(v)]));
+ const sct=ys.reduce((s,v)=>s+(v-gm)**2,0);
+ const scl=[...L.values()].reduce((s,v)=>s+v.length*(mean(v)-gm)**2,0);
+ const scb=[...LB].reduce((s,[k,v])=>s+v.length*(mean(v)-mL.get(k.split('|')[0]))**2,0);
+ const sctr=[...T.values()].reduce((s,v)=>s+v.length*(mean(v)-gm)**2,0);
+ const sclt=[...LT].reduce((s,[k,v])=>{const [l,tr]=k.split('|'); return s+v.length*(mean(v)-mL.get(l)-mT.get(tr)+gm)**2;},0);
+ const sce=sct-scl-scb-sctr-sclt;
+ const gl={l:a-1,b:a*(r-1),t:t-1,lt:(a-1)*(t-1),e:a*(t-1)*(r-1)};
+ const cm={l:scl/gl.l,b:scb/gl.b,t:sctr/gl.t,lt:sclt/gl.lt,e:sce/gl.e};
+ const F={l:cm.l/cm.b,t:cm.t/cm.lt,lt:cm.lt/cm.e,tE:cm.t/cm.e};
+ const medias={}; for(const [k,v] of mT) medias[k]=v;
+ const porSitio={}; for(const [k,v] of LT){const [l,tr]=k.split('|'); (porSitio[l]=porSitio[l]||{})[tr]=mean(v);}
+ const cmeSitio={}; for(const l of L.keys()){ const R=anovaDBCA(datos.filter(d=>String(d.sitio)===l)); cmeSitio[l]=R.cme; }
+ const ce=Object.values(cmeSitio), fmax=Math.max(...ce)/Math.min(...ce);
+ return { tabla:[
+   {fuente:'Lugares',gl:gl.l,sc:scl,cm:cm.l,F:F.l,p:pF(F.l,gl.l,gl.b)},
+   {fuente:'Bloques dentro de lugares',gl:gl.b,sc:scb,cm:cm.b},
+   {fuente:'Tratamientos',gl:gl.t,sc:sctr,cm:cm.t,F:F.t,p:pF(F.t,gl.t,gl.lt)},
+   {fuente:'Tratamientos × lugares',gl:gl.lt,sc:sclt,cm:cm.lt,F:F.lt,p:pF(F.lt,gl.lt,gl.e)},
+   {fuente:'Error',gl:gl.e,sc:sce,cm:cm.e},{fuente:'Total',gl:n-1,sc:sct}],
+   media:gm, cv:Math.sqrt(cm.e)/gm*100, medias, porSitio, cmeSitio, fmax, a, t, r, cmLT:cm.lt, glLT:gl.lt, cme:cm.e, gle:gl.e,
+   pT:pF(F.t,gl.t,gl.lt), pLT:pF(F.lt,gl.lt,gl.e), mediasSitio:Object.fromEntries(mL) };
+}

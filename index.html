@@ -240,6 +240,10 @@ pre.code{margin:0;max-height:260px;overflow:auto;background:var(--soft);border-r
 .link-app{background:var(--soft);border-radius:8px;padding:8px 10px;word-break:break-all;font-size:.9rem}
 .qr{justify-self:center;width:180px;background:#fff;border-radius:8px;padding:4px} .qr svg{width:100%;height:auto;display:block}
 @media (max-width:600px){.welcome .hero .tri{display:none}}
+.sitios-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-6px 0 12px} .sitios-bar .seg{flex-wrap:wrap}
+.mini-sitios{display:flex;flex-wrap:wrap;gap:6px 14px;margin:6px 0 2px;font-size:12.5px;color:var(--muted)} .mini-sitios>span{display:inline-flex;align-items:center;gap:6px} .mini-sitios .bar{display:inline-block;width:56px}
+.sitios{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px} .sitio .bar{display:block}
+.sitio h3{font-size:1.05rem}
 .calc{display:grid;gap:8px;background:var(--soft);border-radius:8px;padding:10px}
 .gwrap{overflow-x:auto} .gwrap svg{min-width:600px}
 .gtip{position:absolute;z-index:3;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);padding:8px 10px;display:grid;gap:3px;font-size:.8rem;min-width:150px;pointer-events:none}
@@ -323,6 +327,7 @@ pre.code{margin:0;max-height:260px;overflow:auto;background:var(--soft);border-r
           <p class="note" style="margin:0">El perfil queda guardado en este equipo. Si varias personas usan el mismo equipo, cada una puede tener su perfil.</p>
           <button class="btn primary" type="submit">Crear perfil y continuar</button>
         </form>
+        <div class="row" style="border-top:1px solid var(--line);padding-top:12px"><span class="note" style="flex:1;min-width:160px">¿Te mandaron un ensayo por WhatsApp o correo? Abrilo acá y entrás directo.</span><button class="btn" id="btn-recibir-ini" type="button">📥 Recibir archivo</button></div>
       </div>
     </div>
   </section>
@@ -350,6 +355,7 @@ pre.code{margin:0;max-height:260px;overflow:auto;background:var(--soft);border-r
       </div>
       <div class="row" id="e-leyenda"></div>
     </div>
+    <div class="sitios-bar" id="e-sitios" hidden></div>
     <div class="shell">
       <nav class="steps" id="steps" aria-label="Pasos del ensayo"></nav>
       <main>
@@ -390,7 +396,7 @@ pre.code{margin:0;max-height:260px;overflow:auto;background:var(--soft);border-r
 
 <div class="carga" id="carga"><div class="spin"></div><span>Abriendo Ensayos de Campo…</span></div>
 <noscript><p style="padding:20px">Esta aplicación necesita JavaScript activado.</p></noscript>
-<script type="module" src="./js/app.js?v=4cfa4164a8"></script>
+<script type="module" src="./js/app.js?v=a76e1c9264"></script>
 <script>window.addEventListener('unhandledrejection', e => { const c = document.getElementById('carga'); if (c) c.innerHTML = '<span>No se pudo abrir la app: ' + (e.reason && e.reason.message || 'error') + '. Abrila con iniciar-app.cmd.</span>'; });
 window.addEventListener('error', e => { try { if (document.getElementById('carga') && !sessionStorage.getItem('ec-recarga')) { sessionStorage.setItem('ec-recarga', '1'); setTimeout(() => location.reload(), 600); return; } } catch (x) {} const c = document.getElementById('carga'); if (c) c.innerHTML = '<span>No se pudo abrir la app: ' + (e.message || 'error') + '. Probá abrirla con iniciar-app.cmd (no con doble clic en index.html).</span>'; });</script>
 </body>

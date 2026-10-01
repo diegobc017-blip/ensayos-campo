@@ -1,6 +1,6 @@
 // app.js — Ensayos de Campo v2 (rubros, roles, control de parcela, mediciones, aplicaciones, análisis).
 // Todo se guarda en este equipo (IndexedDB, ver db.js) y funciona sin internet.
-import {anovaDBCA, tukey, interpretarCV} from './estadistica.js';
+import {anovaDBCA, tukey, interpretarCV, anovaCombinado} from './estadistica.js';
 import * as DB from './db.js';
 import {crearZip, crearDocx, crearXlsx, crearCsv, crearGeojson, crearQml, crearKml, poligonosCroquis, graficoBarras} from './exportar.js';
 
@@ -60,13 +60,15 @@ const RUBROS = {
     cultivos: ['Urochloa brizantha (Marandu)', 'Urochloa híbrida (Mulato II)', 'Megathyrsus maximus (Gatton panic)', 'Megathyrsus maximus (Mombaça)', 'Cenchrus ciliaris (Buffel)', 'Chloris gayana (Grama Rhodes)', 'Digitaria (Pangola)', 'Cynodon (Tifton 85)', 'Pennisetum purpureum (Camerún)', 'Avena o raigrás (invierno)', 'Alfalfa', 'Leucaena', 'Mezcla gramínea–leguminosa', 'Gramíneas tropicales'],
     icono: '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M10 44c0-12 2-22 8-30M18 44c0-10 0-20-4-30M24 44c0-13 3-26 10-34M30 44c0-9 2-17 8-24M38 44c0-8-1-14-6-20" stroke="currentColor" stroke-width="3.2" fill="none" stroke-linecap="round"/><path d="M6 44h36" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>'}
 };
-const PERFILES = {independiente: 'Independiente', gerente: 'Gerente', operador: 'Operador'};
+const PERFILES = {independiente: 'Independiente', gerente: 'Gerente', operador: 'Operador', observador: 'Observador'};
 const EQUIPOS = {eq1: {nombre: 'Equipo Itapúa', codigo: 'ITA-4821', ejemplo: true}};
 const USERS = {
   marta: {id: 'marta', nombre: 'Marta Ortiz', perfil: 'gerente', equipo: 'eq1', color: '#1f6b52', ejemplo: true},
   ana: {id: 'ana', nombre: 'Ana Ramírez', perfil: 'operador', equipo: 'eq1', color: '#0e7490', ejemplo: true},
   luis: {id: 'luis', nombre: 'Luis Acosta', perfil: 'operador', equipo: 'eq1', color: '#b45309', ejemplo: true},
-  carlos: {id: 'carlos', nombre: 'Carlos Giménez', perfil: 'independiente', equipo: null, color: '#7c3aed', ejemplo: true}
+  carlos: {id: 'carlos', nombre: 'Carlos Giménez', perfil: 'independiente', equipo: null, color: '#7c3aed', ejemplo: true},
+  pedro: {id: 'pedro', nombre: 'Pedro Duarte', perfil: 'operador', equipo: 'eq1', color: '#be185d', ejemplo: true},
+  lucia: {id: 'lucia', nombre: 'Lucía Gómez', perfil: 'observador', equipo: null, color: '#475569', ejemplo: true}
 };
 const ini = n => n.split(' ').map(x => x[0]).slice(0, 2).join('').toUpperCase();
 const avatar = u => `<span class="av" style="background:${u.color}">${ini(u.nombre)}</span>`;
@@ -125,7 +127,7 @@ function recalc(T) {
 }
 const TRIALS = [ensayoRico(E0), ...EJ.map(ensayoSimple)];
 const byId = id => TRIALS.find(T => T.id === id);
-byId('DEMO-AG-01').notas.push({nivel: 'bloque', ref: 1, texto: 'Bloque 1 junto a la cortina de árboles: sombra por la tarde en las primeras parcelas.', autor: 'marta', fecha: '02/12 11:30'});
+byId('DEMO-AG-01').notas.push({nivel: 'bloque', ref: 'S1|1', texto: 'Bloque 1 junto a la cortina de árboles: sombra por la tarde en las primeras parcelas.', autor: 'marta', fecha: '02/12 11:30'});
 byId('DEMO-FO-01').notas.push({nivel: 'tratamiento', ref: 'CL5', texto: 'Material de semilla con más fallas y rebrotes desparejos.', autor: 'carlos', fecha: '20/08 15:00'});
 /* registro de aplicaciones y labores (lo que se va aplicando) */
 TRIALS[0].aplicaciones = [
@@ -157,23 +159,86 @@ function cargarEstado(ensayos, cfg) {
 }
 if (GUARD?.config) cargarEstado(GUARD.ensayos, GUARD.config);
 else META.creado = new Date().toISOString();
-const EJ_ = () => byId('DEMO-AG-02'), PA_ = () => byId('DEMO-PA-01');
+const EJ_ = () => byId('DEMO-AG-02'), PA_ = () => byId('DEMO-PA-01'), RED_ = () => byId('DEMO-AG-01');
 
 /* ================= estado y permisos ================= */
-const S = {user: null, rubro: null, T: null, paso: 0, sel: null};
+const S = {user: null, rubro: null, T: null, paso: 0, sel: null, sitio: null};
 var ULT_LISTO = false;
 try { const r = localStorage.getItem('ec-rubro'); if (r && RUBROS[r]) S.rubro = r; } catch (e) {}
 
-const tieneOp = (T, pn, uid) => T.asig[pn] === uid || T.trabajo?.[uid] === 'ensayo';
+const sitioDe = (T, pn) => T.sitios?.find(s => s.n === Math.floor(pn / 1000));
+const tieneOp = (T, pn, uid) => T.asig[pn] === uid || T.trabajo?.[uid] === 'ensayo' || !!sitioDe(T, pn)?.ops?.includes(uid);
+const asigDe = (T, pn) => USERS[T.asig[pn]] || USERS[sitioDe(T, pn)?.ops?.[0]] || USERS[Object.keys(T.trabajo || {}).find(k => T.trabajo[k] === 'ensayo')];
+const sitiosDeOp = (T, uid) => (T.sitios || []).filter(s => s.ops?.includes(uid));
+const refBloque = (T, p) => T.sitios ? `${p.sitio}|${p.bloque}` : p.bloque;
+const nomSitio = (T, id) => T.sitios?.find(s => s.id === id)?.nombre || id;
+const etiq = (T, p) => T.sitios ? `${nomSitio(T, p.sitio)} · ${p.parcela % 1000}` : String(p.parcela);
+const enSitio = (T, lista = T.parcelas) => T.sitios && S.sitio && S.sitio !== 'todos' ? lista.filter(p => p.sitio === S.sitio) : lista;
+function vistaS(T, sid = S.sitio) { if (!T.sitios || !sid || sid === 'todos') return T; const v = Object.create(T); v.parcelas = T.parcelas.filter(p => p.sitio === sid); v.__vista = sid; return v; }
+function avance(T, ps) { const vars = T.variables.filter(v => !auto(v) && v.tipo !== 'texto'), tot = vars.length * ps.length; return tot ? ps.reduce((s, p) => s + vars.filter(v => p.valores[v.id] != null && p.valores[v.id] !== '').length, 0) / tot : 1; }
+/* ----- ensayo en varios lugares (red) ----- */
+function croquisSitio(T, n, sid) { const rnd = mulberry((Date.now() + n * 7919) % 100000), out = [];
+  for (let b = 1; b <= T.bloques; b++) { const orden = T.tratamientos.map(t => t.cod).sort(() => rnd() - 0.5); orden.forEach((c, i) => out.push({parcela: n * 1000 + b * 100 + i + 1, bloque: b, trat: c, sitio: sid, valores: {}, sub: {}})); }
+  return out; }
+async function convertirARed(T) {
+  if (T.sitios) return; const mapa = new Map(T.parcelas.map(p => [p.parcela, 1000 + p.parcela]));
+  T.sitios = [{id: 'S1', n: 1, nombre: (T.lugar || 'Lugar 1').split(',')[0], lugar: T.lugar || '', ops: Object.keys(T.trabajo || {}).filter(u => T.trabajo[u]), geo: T.geo || null}];
+  T.parcelas.forEach(p => { p.parcela = mapa.get(p.parcela); p.sitio = 'S1'; });
+  T.asig = Object.fromEntries(Object.entries(T.asig).map(([k, v]) => [mapa.get(+k) || k, v]));
+  T.notas.forEach(n => { if (n.nivel === 'parcela' && mapa.has(+n.ref)) n.ref = mapa.get(+n.ref); if (n.nivel === 'bloque' && !String(n.ref).includes('|')) n.ref = `S1|${n.ref}`; });
+  T.cambios.forEach(c => { if (mapa.has(+c.parcela)) c.parcela = mapa.get(+c.parcela); });
+  T.aplicaciones.forEach(a => { if (!a.sitio) a.sitio = 'S1'; }); delete T.geo;
+  try { for (const im of await DB.imagenesDe(T.id)) if (im.parcela != null && mapa.has(+im.parcela)) await DB.guardarImagen({...im, parcela: mapa.get(+im.parcela)}); } catch (e) { console.warn(e); }
+}
+async function agregarSitio(T, nombre, lugar, ops = []) {
+  await convertirARed(T); const n = Math.max(...T.sitios.map(x => x.n)) + 1, id = 'S' + n;
+  T.sitios.push({id, n, nombre: nombre || `Lugar ${n}`, lugar: lugar || '', ops, geo: null});
+  T.parcelas.push(...croquisSitio(T, n, id)); T.lugar = `${T.sitios.length} lugares (red)`;
+  T.cambios.unshift({fecha: ahora(), usuario: S.user.id, parcela: '—', variable: 'Lugar agregado', antes: null, despues: `${nombre} (${lugar})`, estado: 'aprobado'});
+  return id;
+}
+function infoSitio(T, st) {
+  const ps = T.parcelas.filter(p => p.sitio === st.id), pend = T.cambios.filter(c => c.estado === 'pendiente' && Math.floor(+c.parcela / 1000) === st.n).length;
+  const ap = T.aplicaciones.filter(a => a.sitio === st.id || !a.sitio || a.sitio === 'todos'), hechas = ap.filter(a => a.estado === 'realizada').sort((a, b) => b.fecha.localeCompare(a.fecha)), prox = ap.filter(a => a.estado !== 'realizada').sort((a, b) => a.fecha.localeCompare(b.fecha))[0];
+  return {ps, pr: avance(T, ps), pend, ult: hechas[0], prox};
+}
+function tablaSitios(T) {
+  const gestion = puede.asignar(T), cand = operadoresEquipo(T);
+  return `<div class="sitios">${T.sitios.map(st => { const i = infoSitio(T, st);
+    return `<div class="card sitio"><div class="row" style="justify-content:space-between"><h3>${esc(st.nombre)}</h3><span class="chip ${i.pr >= 1 ? 'ok' : i.pr > 0 ? 'acc' : 'neu'}">${Math.round(i.pr * 100)} %</span></div>
+      <span class="note">${esc(st.lugar || '')}</span><span class="bar"><i style="width:${Math.round(i.pr * 100)}%"></i></span>
+      <div class="row" style="gap:6px">${(st.ops || []).map(id => USERS[id] ? `<span class="row" style="gap:5px">${avatar(USERS[id])}<span style="font-size:.86rem">${esc(USERS[id].nombre)}</span></span>` : '').join('') || '<span class="note">Sin operador asignado</span>'}</div>
+      <span class="note">${i.ult ? `Última: ${esc(i.ult.tipo)} ${cuando(i.ult.fecha)}` : 'Sin aplicaciones registradas'}${i.prox ? ` · Próxima: ${esc(i.prox.tipo)} ${cuando(i.prox.fecha)}` : ''}${i.pend ? ` · <b>${i.pend} cambio${i.pend > 1 ? 's' : ''} por revisar</b>` : ''}</span>
+      <div class="row" style="gap:6px"><button class="btn small" data-ver-sitio="${st.id}">Ver croquis y datos</button>
+        ${gestion ? `<select data-sitio-op="${st.id}" aria-label="Operador de ${esc(st.nombre)}"><option value="">Asignar operador…</option>${cand.map(u => `<option value="${u.id}" ${(st.ops || []).includes(u.id) ? 'selected' : ''}>${esc(u.nombre)}</option>`).join('')}</select>` : ''}
+        ${gestion && (st.ops || []).length ? `<button class="btn small" data-enviar="${st.ops[0]}" data-sitio="${st.id}">📤 Enviar a ${esc(USERS[st.ops[0]]?.nombre.split(' ')[0] || '')}</button>` : ''}</div></div>`; }).join('')}</div>`;
+}
+function clicSitios(e, T) {
+  const v = e.target.closest('[data-ver-sitio]'); if (v) { S.sitio = v.dataset.verSitio; irPaso(PASOS.findIndex(x => x[0] === 'campo')); scrollTo({top: 0}); return true; }
+  const en = e.target.closest('[data-enviar]'); if (en) { enviarPaquete(T, en.dataset.enviar); return true; }
+  return false;
+}
+function cambioSitioOp(e, T) {
+  const sel = e.target.dataset.sitioOp; if (sel == null) return false; const st = T.sitios.find(x => x.id === sel), id = e.target.value;
+  st.ops = id ? [id] : []; if (id && !T.equipo) T.invitados = [...new Set([...(T.invitados || []), id])];
+  T.cambios.unshift({fecha: ahora(), usuario: S.user.id, parcela: '—', variable: `Operador de ${st.nombre}`, antes: null, despues: id ? USERS[id].nombre : 'Sin operador', estado: 'aprobado'});
+  toast(id ? `${USERS[id].nombre} asignado a ${st.nombre}` : `${st.nombre} sin operador`); return true;
+}
+function barraSitios(T) {
+  const b = $('#e-sitios'); if (!T.sitios) { b.hidden = true; b.innerHTML = ''; return; }
+  if (!S.sitio || (S.sitio !== 'todos' && !T.sitios.some(x => x.id === S.sitio))) S.sitio = rolEn(T) === 'operador' ? (sitiosDeOp(T, S.user.id)[0]?.id || T.sitios[0].id) : 'todos';
+  b.hidden = false; b.innerHTML = `<span class="note">Lugar:</span><div class="seg" id="seg-sitio"></div>`;
+  seg('#seg-sitio', [['todos', `Todos (${T.sitios.length})`], ...T.sitios.map(x => [x.id, x.nombre + (sitiosDeOp(T, S.user.id).some(y => y.id === x.id) ? ' ★' : '')])], S.sitio, v => { S.sitio = v; cerrarDrawer(); mapa.reset(); RENDER[PASOS[S.paso][0]](S.T); vozEn(P()); });
+}
 function rolEn(T, u = S.user) {
   if (!u || !T) return null;
   if (T.owner === u.id) return 'dueño';
   if (T.equipo && u.equipo === T.equipo && u.perfil === 'gerente') return 'gerente';
-  if (u.perfil === 'operador' && (Object.values(T.asig).includes(u.id) || T.trabajo?.[u.id])) return 'operador';
+  if (u.perfil === 'operador' && (Object.values(T.asig).includes(u.id) || T.trabajo?.[u.id] || sitiosDeOp(T, u.id).length)) return 'operador';
   if (T.compartido?.[u.id]) return T.compartido[u.id];
   return null;
 }
-const ROLNOM = {dueño: 'Dueño', gerente: 'Gerente', operador: 'Operador', lector: 'Lector', editor: 'Editor'};
+const ROLNOM = {dueño: 'Dueño', gerente: 'Gerente', operador: 'Operador', lector: 'Observador', editor: 'Editor'};
 const puede = {
   diseno: T => ['dueño', 'gerente', 'editor'].includes(rolEn(T)),
   asignar: T => ['dueño', 'gerente'].includes(rolEn(T)),
@@ -181,7 +246,7 @@ const puede = {
   datos: (T, p) => { const r = rolEn(T); return ['dueño', 'gerente', 'editor'].includes(r) || (r === 'operador' && tieneOp(T, p, S.user.id)); },
   nota: (T, nivel, ref) => { const r = rolEn(T); if (!r || r === 'lector') return false; if (r !== 'operador') return true;
     if (nivel === 'parcela') return tieneOp(T, ref, S.user.id);
-    if (nivel === 'bloque') return T.parcelas.some(p => p.bloque == ref && tieneOp(T, p.parcela, S.user.id));
+    if (nivel === 'bloque') return T.parcelas.some(p => String(refBloque(T, p)) === String(ref) && tieneOp(T, p.parcela, S.user.id));
     return T.parcelas.some(p => p.trat === ref && tieneOp(T, p.parcela, S.user.id)); }
 };
 const visibles = rubro => TRIALS.filter(T => T.rubro === rubro && rolEn(T));
@@ -208,7 +273,7 @@ $('#bar-rubro').onclick = () => { cerrarDrawer(); irRubro(); };
 /* ================= bienvenida ================= */
 function segAcceso(v) { seg('#seg-acceso', [['ingresar', 'Elegir perfil'], ['crear', 'Crear perfil']], v, x => segAcceso(x));
   $('#acc-ingresar').hidden = v !== 'ingresar'; $('#acc-crear').hidden = v !== 'crear'; }
-const DESCR = {marta: 'Equipo Itapúa · asigna parcelas y revisa cambios', ana: 'Equipo Itapúa · bloques 1 y 2', luis: 'Equipo Itapúa · bloques 3 y 4', carlos: 'Trabaja por su cuenta (forestal y pasturas) · ve ensayos de Marta como lector'};
+const DESCR = {marta: 'Equipo Itapúa · asigna parcelas y revisa cambios', ana: 'Equipo Itapúa · Hohenau y bloques 1-2 del ensayo de fungicidas', luis: 'Equipo Itapúa · Naranjal y bloques 3-4 del ensayo de fungicidas', pedro: 'Equipo Itapúa · lugar de San Pedro', lucia: 'Observadora: ve los avances sin modificar', carlos: 'Trabaja por su cuenta (forestal y pasturas) · ve ensayos de Marta como lector'};
 function listaCuentas() {
   const propios = Object.values(USERS).filter(u => !u.ejemplo), ej = Object.values(USERS).filter(u => u.ejemplo);
   const b = u => `<button class="acct" data-u="${u.id}">${avatar(u)}<span><b>${esc(u.nombre)}</b><br><span class="note">${esc((u.ejemplo && DESCR[u.id]) || (u.equipo ? EQUIPOS[u.equipo]?.nombre || 'Equipo' : 'Trabaja por su cuenta'))}</span></span><span class="chip neu">${PERFILES[u.perfil]}</span></button>`;
@@ -220,7 +285,7 @@ function listaCuentas() {
 listaCuentas();
 $('#lista-cuentas').onclick = e => { const b = e.target.closest('[data-u]'); if (b) entrar(USERS[b.dataset.u]); };
 let ncPerfil = 'independiente';
-const PERF_TXT = {independiente: 'Trabajo solo y puedo sumar operadores', gerente: 'Organizo un equipo y reviso', operador: 'Cargo datos de parcelas asignadas'};
+const PERF_TXT = {observador: 'Miro los avances de los ensayos que me comparten, sin modificar nada', independiente: 'Trabajo solo y puedo sumar operadores', gerente: 'Organizo un equipo y reviso', operador: 'Cargo datos de parcelas asignadas'};
 function perfilesUI() { $('#nc-perfiles').innerHTML = Object.entries(PERFILES).map(([k, v]) => `<button type="button" class="perfil" aria-pressed="${k === ncPerfil}" data-p="${k}"><b>${v}</b>${PERF_TXT[k]}</button>`).join(''); $('#nc-codigo-l').hidden = ncPerfil !== 'operador'; }
 perfilesUI();
 $('#nc-perfiles').onclick = e => { const b = e.target.closest('[data-p]'); if (b) { ncPerfil = b.dataset.p; perfilesUI(); } };
@@ -249,16 +314,16 @@ $('#rubros').onclick = e => { const b = e.target.closest('[data-r]'); if (!b) re
 function progreso(T) { const vars = T.variables.filter(v => !auto(v) && v.tipo !== 'texto'); const tot = vars.length * T.parcelas.length; if (!tot) return 1;
   return T.parcelas.reduce((s, p) => s + vars.filter(v => p.valores[v.id] != null && p.valores[v.id] !== '').length, 0) / tot; }
 function irInicio() {
-  const R = RUBROS[S.rubro], u = S.user, lista = visibles(S.rubro), op = u.perfil === 'operador';
-  let h = `<div class="row" style="justify-content:space-between"><div style="display:grid;gap:4px"><span class="chip neu" style="justify-self:start">${R.nombre}</span><h1>${op ? 'Mis tareas' : 'Mis ensayos'}</h1></div>
-    ${op ? '' : '<button class="btn primary" id="btn-nuevo">+ Nuevo ensayo</button>'}</div>`;
+  const R = RUBROS[S.rubro], u = S.user, lista = visibles(S.rubro), op = u.perfil === 'operador', obs = u.perfil === 'observador';
+  let h = `<div class="row" style="justify-content:space-between"><div style="display:grid;gap:4px"><span class="chip neu" style="justify-self:start">${R.nombre}</span><h1>${op ? 'Mis tareas' : obs ? 'Ensayos que observás' : 'Mis ensayos'}</h1></div>
+    <div class="row"><button class="btn" id="btn-recibir">📥 Recibir archivo</button>${op || obs ? '' : '<button class="btn primary" id="btn-nuevo">+ Nuevo ensayo</button>'}</div></div>`;
   if (op) {
     const tareas = lista.map(T => ({T, ps: T.parcelas.filter(p => tieneOp(T, p.parcela, u.id))}));
     h += tareas.length ? tareas.map(({T, ps}) => { const pend = ps.filter(p => pendientes(T, p).length);
       if (!ps.length) return `<div class="card"><div class="trial"><div><h3>${esc(T.titulo)}</h3><div class="note">${T.id} · te sumó ${esc(USERS[T.owner]?.nombre || '')} a este trabajo</div></div><button class="btn" data-abrir="${T.id}">Ver ensayo</button></div><p class="note" style="margin:0">Todavía no tenés parcelas asignadas en este ensayo.</p></div>`;
-      return `<div class="card"><div class="trial"><div><h3>${esc(T.titulo)}</h3><div class="note">${T.id} · asignado por ${esc(USERS[T.owner]?.nombre || '')} · ${T.trabajo?.[u.id] === 'ensayo' ? 'todo el ensayo' : ps.length + ' parcelas'}</div></div>
+      return `<div class="card"><div class="trial"><div><h3>${esc(T.titulo)}</h3><div class="note">${T.id} · asignado por ${esc(USERS[T.owner]?.nombre || '')} · ${sitiosDeOp(T, u.id).length ? 'Lugar: ' + sitiosDeOp(T, u.id).map(x => esc(x.nombre + (x.lugar ? ' (' + x.lugar + ')' : ''))).join(', ') : T.trabajo?.[u.id] === 'ensayo' ? 'todo el ensayo' : ps.length + ' parcelas'}</div></div>
         <button class="btn" data-abrir="${T.id}">Abrir ensayo</button></div>
-        <div>${[...ps].sort((x, y) => (pendientes(T, y).length > 0) - (pendientes(T, x).length > 0)).slice(0, 6).map(p => { const pe = pendientes(T, p); return `<div class="task"><span class="pnum">${p.parcela}</span><span>Bloque ${p.bloque} · ${esc(tratNom(T, p.trat))}<br><span class="note">${pe.length ? 'Falta: ' + pe.map(v => v.nombre).join(', ') : 'Todo cargado'}</span></span>
+        <div>${[...ps].sort((x, y) => (pendientes(T, y).length > 0) - (pendientes(T, x).length > 0)).slice(0, 6).map(p => { const pe = pendientes(T, p); return `<div class="task"><span class="pnum">${T.sitios ? p.parcela % 1000 : p.parcela}</span><span>Bloque ${p.bloque} · ${esc(tratNom(T, p.trat))}<br><span class="note">${pe.length ? 'Falta: ' + pe.map(v => v.nombre).join(', ') : 'Todo cargado'}</span></span>
           <button class="btn small ${pe.length ? 'primary' : ''}" data-ctl="${T.id}|${p.parcela}">Controlar</button></div>`; }).join('')}</div>
         <p class="note" style="margin:0">${pend.length} de ${ps.length} parcelas con mediciones pendientes.${ps.length > 6 ? ` Se muestran las primeras 6; el resto está en “Abrir ensayo” → Carga de datos.` : ''}</p></div>`; }).join('')
       : `<div class="card"><h3>Todavía no tenés parcelas asignadas en ${R.nombre.toLowerCase()}</h3><p class="note" style="margin:0">${u.equipo ? `Tu gerente del ${esc(EQUIPOS[u.equipo].nombre)} te asigna parcelas y aparecen acá.` : 'Uní tu cuenta a un equipo con el código de tu gerente.'} Probá con otro rubro desde el botón de arriba.</p></div>`;
@@ -269,8 +334,10 @@ function irInicio() {
         return `<div class="card"><div class="trial"><div><h3>${esc(T.titulo)}</h3><div class="note">${T.id} · ${esc(T.cultivo)} · ${esc(T.lugar || '')}</div></div><span class="chip ${r === 'lector' ? 'neu' : 'acc'}">${ROLNOM[r]}</span></div>
         <div class="row note">${T.tratamientos.length} tratamientos × ${T.bloques} bloques${r === 'lector' ? ` · compartido por ${esc(USERS[T.owner].nombre)}` : ''}${puede.revisar(T) && pc ? ` · <span class="chip warn">${pc} cambios por revisar</span>` : ''}</div>
         <div style="display:grid;gap:4px"><div class="bar"><i style="width:${Math.round(pr * 100)}%"></i></div><span class="note">${Math.round(pr * 100)} % de las mediciones cargadas</span></div>
+        ${T.sitios ? `<div class="mini-sitios">${T.sitios.map(st => { const x = avance(T, T.parcelas.filter(p => p.sitio === st.id)); return `<span><b>${esc(st.nombre)}</b> ${Math.round(x * 100)} %<span class="bar"><i style="width:${Math.round(x * 100)}%"></i></span></span>`; }).join('')}</div>` : ''}
         <div class="row"><button class="btn primary" data-abrir="${T.id}">Abrir</button>${puede.revisar(T) ? `<button class="btn" data-abrir="${T.id}" data-paso="equipo">Equipo y cambios</button>` : ''}</div></div>`; }).join('')}</div>`;
-    } else h += `<div class="card como"><h3>Así se trabaja un ensayo</h3><ol class="pasos3">
+    } else if (obs) h += `<div class="card"><h3>Todavía no observás ensayos de ${R.nombre.toLowerCase()}</h3><p class="note" style="margin:0">Cuando el gerente o el responsable te comparta un ensayo, aparece acá. Si te lo mandó como archivo (por WhatsApp o correo), tocá <b>📥 Recibir archivo</b>. Probá también otro rubro desde el botón de arriba.</p></div>`;
+    else h += `<div class="card como"><h3>Así se trabaja un ensayo</h3><ol class="pasos3">
         <li><b>Crealo</b><span>Tocá <b>+ Nuevo ensayo</b>: nombre, cultivo, tratamientos y qué vas a medir. La app sortea el croquis.</span></li>
         <li><b>Cargá en el campo</b><span>Tocá cada parcela para anotar lo que medís, sacar fotos y dejar notas. Registrá cada aplicación.</span></li>
         <li><b>Mirá los resultados</b><span>Con todo cargado, la app hace el análisis y arma el informe en Word, Excel o PDF.</span></li></ol>
@@ -287,6 +354,7 @@ function irInicio() {
 }
 $('#s-inicio').addEventListener('click', e => {
   const n = e.target.closest('#btn-nuevo, #btn-nuevo-2'); if (n) return nuevoEnsayo();
+  if (e.target.closest('#btn-recibir')) return recibirArchivo();
   if (e.target.closest('#btn-ver-ej')) return tourEmpezar(0);
   if (e.target.closest('#ban-cerrar')) { META.ocultarInstalar = true; guardarPronto(); return e.target.closest('.banner').remove(); }
   if (e.target.closest('#ban-como')) return abrirInstalar();
@@ -299,7 +367,7 @@ const NV = {};
 const opsDisponibles = () => (S.user.perfil === 'gerente' ? Object.values(USERS).filter(u => u.perfil === 'operador' && u.equipo === S.user.equipo) : S.user.perfil === 'operador' ? [] : Object.values(USERS).filter(u => u.perfil === 'operador')).filter(u => !u.ejemplo || S.user.ejemplo);
 function nuevoEnsayo() {
   const R = RUBROS[S.rubro];
-  Object.assign(NV, {paso: 1, titulo: '', cultivo: R.cultivos[0], tipo: R.tipos[0], lugar: '', bloques: 4,
+  Object.assign(NV, {paso: 1, titulo: '', cultivo: R.cultivos[0], tipo: R.tipos[0], lugar: '', otros: '', bloques: 4,
     trats: S.rubro === 'forestal' ? 'Testigo comercial\nClon A\nClon B\nClon C' : S.rubro === 'pasturas' ? 'Marandu (testigo)\nCultivar 2\nCultivar 3\nCultivar 4\nCultivar 5' : 'Testigo sin tratar\nTratamiento 2\nTratamiento 3\nTratamiento 4\nTratamiento 5',
     par: S.rubro === 'agricola' ? {hileras: 4, dist: 0.45, largo: 5, util: 2} : S.rubro === 'horticola' ? {plantas: 20, utiles: 12, entre: 1.2, sobre: 0.4} : S.rubro === 'pasturas' ? {ancho: 3, largo: 5, borde: 0.5, marco: 0.25, marcos: 2, altura_corte: 20} : {filas: 5, columnas: 5, e1: 3, e2: 2, borde: 1},
     vars: new Set(MET[S.rubro].filter(v => v.origen !== 'dron').slice(0, 3).map(v => v.id)), ops: new Set(), modoOps: 'bloques', dron: false});
@@ -322,6 +390,7 @@ function renderNuevo() {
       <label class="f">Cultivo o especie<input type="text" id="nv-cultivo" list="nv-cult-l" value="${esc(NV.cultivo)}"><datalist id="nv-cult-l">${R.cultivos.map(c => `<option value="${c}">`).join('')}</datalist></label>
       <label class="f">Tipo de ensayo<select id="nv-tipo">${R.tipos.map(t => `<option ${t === NV.tipo ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
       <label class="f">Lugar<input type="text" id="nv-lugar" value="${esc(NV.lugar)}" placeholder="Departamento, distrito o establecimiento"></label>
+      <label class="f">¿Se repite en otros lugares? (opcional, uno por renglón)<textarea id="nv-otros" rows="2" placeholder="Ej.: Naranjal, Alto Paraná&#10;Santa Rosa, San Pedro">${esc(NV.otros || '')}</textarea><span class="note">Cada lugar tiene su croquis sorteado y puede tener su propio operador.</span></label>
       <label class="f">Imágenes de dron<select id="nv-dron"><option value="no" ${NV.dron ? '' : 'selected'}>No uso dron (solo mediciones de campo)</option><option value="si" ${NV.dron ? 'selected' : ''}>Sí, voy a cargar imágenes de dron</option></select></label></div>
       <p class="note" style="margin:0">El dron es opcional: sin él, el ensayo se centra en lo que medís a campo y en lo que vas aplicando. Se puede activar después en “Planificación”.</p>`;
     const cand = opsDisponibles();
@@ -351,7 +420,7 @@ function renderNuevo() {
 }
 $('#s-nuevo').addEventListener('input', e => {
   const t = e.target;
-  if (t.id === 'nv-titulo') NV.titulo = t.value; if (t.id === 'nv-cultivo') NV.cultivo = t.value; if (t.id === 'nv-lugar') NV.lugar = t.value;
+  if (t.id === 'nv-titulo') NV.titulo = t.value; if (t.id === 'nv-cultivo') NV.cultivo = t.value; if (t.id === 'nv-lugar') NV.lugar = t.value; if (t.id === 'nv-otros') NV.otros = t.value;
   if (t.dataset.par) { NV.par[t.dataset.par] = parseFloat(t.value) || 0; const A = areaNueva(); t.closest('.card').querySelector('p.note').textContent = `${A.txt}: ${fmt(A.area, 1)} m² por parcela, ${fmt(A.util, 1)} m² útiles.`; }
   if (t.id === 'nv-trats') NV.trats = t.value;
 });
@@ -373,7 +442,7 @@ $('#s-nuevo').addEventListener('click', e => {
     crearEnsayo();
   }
 });
-function crearEnsayo() {
+async function crearEnsayo() {
   const trs = NV.trats.split('\n').map(s => s.trim()).filter(Boolean), pref = S.rubro === 'forestal' ? 'C' : 'T';
   const tratamientos = trs.map((n, i) => ({cod: pref + (i + 1), nombre: n, testigo: i === 0, productos: []}));
   const rnd = mulberry(Date.now() % 100000), parcelas = [];
@@ -387,17 +456,23 @@ function crearEnsayo() {
   if (S.rubro === 'pasturas') { T.porCorte = T.variables.filter(v => v.porCorte).map(v => v.id); T.variables = T.variables.filter(v => !v.porCorte); T.cortes = []; }
   const ops = [...NV.ops]; T.trabajo = {};
   if (ops.length) { if (!T.equipo) T.invitados = ops; ops.forEach(id => T.trabajo[id] = NV.modoOps === 'ensayo' ? 'ensayo' : 'parcelas'); if (NV.modoOps === 'bloques') repartir(T, ops); }
-  TRIALS.push(T); toast(ops.length ? `Ensayo creado y asignado a ${ops.map(id => USERS[id].nombre.split(' ')[0]).join(', ')}` : 'Ensayo creado y croquis sorteado'); abrir(T, 'campo');
+  TRIALS.push(T);
+  const otros = String(NV.otros || '').split('\n').map(x => x.trim()).filter(Boolean);
+  if (otros.length) { await convertirARed(T); T.sitios[0].nombre = (NV.lugar || 'Lugar 1').split(',')[0].trim() || 'Lugar 1';
+    for (const l of otros) await agregarSitio(T, l.split(',')[0].trim(), l);
+    if (ops.length && NV.modoOps === 'bloques') { repartir(T, ops); T.asig = {}; } T.cambios = []; }
+  toast(otros.length ? `Ensayo creado en ${T.sitios.length} lugares` : ops.length ? `Ensayo creado y asignado a ${ops.map(id => USERS[id].nombre.split(' ')[0]).join(', ')}` : 'Ensayo creado y croquis sorteado'); abrir(T, 'campo');
 }
 
 /* ================= ensayo ================= */
 const PASOS = [['plan', 'Planificación'], ['trat', 'Tratamientos y dosis'], ['aplic', 'Aplicaciones y manejo'], ['campo', 'Croquis y parcelas'], ['medir', 'Mediciones'], ['datos', 'Carga de datos'], ['equipo', 'Equipo y cambios'], ['anal', 'Análisis'], ['exp', 'Informe y exportar']];
+const metaEnsayo = T => `<span>${RUBROS[T.rubro].nombre}</span><span>${esc(T.cultivo)}</span><span>${esc(T.tipo)}</span><span>${esc(T.sitios ? T.sitios.map(x => x.nombre).join(' · ') : T.lugar)}</span><span>DBCA · ${T.tratamientos.length} × ${T.bloques}${T.sitios ? ` × ${T.sitios.length} lugares` : ''}</span>`;
 function abrir(T, paso) {
-  S.T = T; S.sel = null; S.rubro = T.rubro; mapa.reset(); aplForm = false; aplReal = null;
+  if (S.T !== T) S.sitio = null; S.T = T; S.sel = null; S.rubro = T.rubro; mapa.reset(); aplForm = false; aplReal = null;
   const r = rolEn(T);
   $('#e-id').textContent = T.id; $('#e-titulo').textContent = T.titulo; $('#e-ren').hidden = !puede.diseno(T); $('#e-ren-box').hidden = true; $('#e-tit-box').hidden = false;
   $('#e-rol').innerHTML = `<span class="chip ${r === 'lector' ? 'neu' : 'acc'}">Tu rol: ${ROLNOM[r]}</span>`;
-  $('#e-meta').innerHTML = `<span>${RUBROS[T.rubro].nombre}</span><span>${esc(T.cultivo)}</span><span>${esc(T.tipo)}</span><span>${esc(T.lugar)}</span><span>DBCA · ${T.tratamientos.length} × ${T.bloques}</span>`;
+  $('#e-meta').innerHTML = metaEnsayo(T);
   $('#e-leyenda').innerHTML = T.imagen && T.dron ? '<span class="chip hypo">● Dato hipotético</span><span class="chip dron">● Medido del dron</span>' : '';
   pantalla('ensayo');
   irPaso(paso ? Math.max(0, PASOS.findIndex(p => p[0] === paso)) : 0);
@@ -413,14 +488,14 @@ function irPaso(i) {
   const pc = T.cambios.filter(c => c.estado === 'pendiente').length;
   $('#steps').innerHTML = PASOS.map((p, j) => `<button role="tab" aria-selected="${j === S.paso}" data-i="${j}"><span class="n">${j + 1}</span><span>${p[0] === 'campo' && T.dron ? 'Campo y dron' : p[1]}</span>${p[0] === 'equipo' && pc && puede.revisar(T) ? `<span class="chip warn">${pc}</span>` : '<span></span>'}</button>`).join('');
   $('#prev').style.visibility = S.paso ? 'visible' : 'hidden'; $('#next').style.visibility = S.paso < PASOS.length - 1 ? 'visible' : 'hidden';
-  RENDER[PASOS[S.paso][0]](T); vozEn(P());
+  barraSitios(T); RENDER[PASOS[S.paso][0]](T); vozEn(P());
   const act = $('#steps [aria-selected="true"]'); if (act && innerWidth <= 900) act.parentElement.scrollLeft = act.offsetLeft - (act.parentElement.clientWidth - act.offsetWidth) / 2;
 }
 $('#steps').onclick = e => { const b = e.target.closest('button'); if (b) irPaso(+b.dataset.i); };
 $('#prev').onclick = () => { irPaso(S.paso - 1); scrollTo({top: 0}); };
 $('#next').onclick = () => { irPaso(S.paso + 1); scrollTo({top: 0}); };
 const P = () => $('#panel');
-const aviso = (T, que) => rolEn(T) === 'lector' ? `<div class="callout warn">Estás viendo este ensayo como lector: podés mirar y exportar, pero no modificar.</div>`
+const aviso = (T, que) => rolEn(T) === 'lector' ? `<div class="callout warn">Estás como <b>observador</b>: ves todos los avances y podés descargar informes, pero no modificar nada.</div>`
   : rolEn(T) === 'operador' && que ? `<div class="callout">${que}</div>` : '';
 
 const RENDER = {};
@@ -441,7 +516,7 @@ function agregarCorte(T) {
   const f = $('#nc-fecha').value, prev = T.cortes.length ? T.cortes[T.cortes.length - 1].fecha : T.uniformizacion, d = Math.round((Date.parse(f) - Date.parse(prev)) / 86400000);
   if (!f || d <= 0) { $('#nc-msg').textContent = `La fecha tiene que ser posterior al ${fechaTxt(prev)}.`; return false; }
   const c = {n: T.cortes.length + 1, fecha: f, dias: d}; T.cortes.push(c); armarCortes(T);
-  T.aplicaciones.push({id: Math.max(0, ...T.aplicaciones.map(x => x.id)) + 1, tipo: 'Corte de forraje', fecha: f, estado: f <= HOY ? 'realizada' : 'planificada', trats: 'todos', producto: `Corte ${c.n} de evaluación`, dosis: `${d} días de rebrote`, resp: S.user.id});
+  T.aplicaciones.push({id: nuevoIdAp(), tipo: 'Corte de forraje', fecha: f, estado: f <= HOY ? 'realizada' : 'planificada', trats: 'todos', producto: `Corte ${c.n} de evaluación`, dosis: `${d} días de rebrote`, resp: S.user.id});
   T.cambios.unshift({fecha: ahora(), usuario: S.user.id, parcela: '—', variable: `Corte ${c.n} agregado`, antes: null, despues: fechaTxt(f), estado: 'aprobado'});
   toast(`Corte ${c.n} agregado (${d} días de rebrote)`); return true;
 }
@@ -641,7 +716,7 @@ function ultimaAplic(T, cod) { return (T.aplicaciones || []).filter(a => a.estad
 const puedeAplic = T => puede.diseno(T) || rolEn(T) === 'operador';
 let aplForm = false, aplReal = null;
 RENDER.aplic = T => {
-  const C = colTrat(T), ed = puede.diseno(T), reg = puedeAplic(T), L = [...T.aplicaciones].sort((x, y) => y.fecha.localeCompare(x.fecha));
+  const C = colTrat(T), ed = puede.diseno(T), reg = puedeAplic(T), L = T.aplicaciones.filter(a => !T.sitios || S.sitio === 'todos' || !a.sitio || a.sitio === 'todos' || a.sitio === S.sitio).sort((x, y) => y.fecha.localeCompare(x.fecha));
   const hechas = L.filter(a => a.estado === 'realizada'), prox = L.filter(a => a.estado !== 'realizada').sort((x, y) => x.fecha.localeCompare(y.fecha))[0], ult = hechas[0];
   const conProd = T.tratamientos.filter(t => t.productos?.length);
   const detalle = a => {
@@ -654,18 +729,19 @@ RENDER.aplic = T => {
     return `<div class="row"><span>${a.trats === 'todos' ? '<span class="chip neu">Todo el ensayo</span>' : a.trats.map(c => `<span class="row" style="gap:4px"><span class="swatch" style="background:${C[c]}"></span>${c}</span>`).join(' ')}</span>${a.producto ? `<span><b>${esc(a.producto)}</b>${a.dosis ? ' · ' + esc(a.dosis) : ''}</span>` : ''}</div>`; };
   const item = a => { const [k, l, cls] = estadoApl(a), d = new Date(a.fecha + 'T12:00'), fl = fueraLey(a.cond);
     return `<div class="apl ${cls}"><div class="fe"><b>${d.getDate()}</b><span>${MES[d.getMonth()]} ${d.getFullYear()}</span></div><div class="cuerpo">
-      <div class="row" style="justify-content:space-between"><b>${esc(a.tipo)}</b><span class="row" style="gap:6px"><span class="chip ${k}">${l}</span><span class="note">${cuando(a.fecha)}</span></span></div>
+      <div class="row" style="justify-content:space-between"><b>${esc(a.tipo)}${T.sitios ? ` <span class="chip neu">${a.sitio && a.sitio !== 'todos' ? esc(nomSitio(T, a.sitio)) : 'Todos los lugares'}</span>` : ''}</b><span class="row" style="gap:6px"><span class="chip ${k}">${l}</span><span class="note">${cuando(a.fecha)}</span></span></div>
       ${a.estadio ? `<span class="note">Momento: ${esc(a.estadio)}</span>` : ''}${detalle(a)}
       ${a.cond ? `<div class="row" style="gap:6px"><span class="note">Condiciones: ${a.cond.t ?? '—'} °C · HR ${a.cond.hr ?? '—'} % · viento ${a.cond.viento ?? '—'} km/h</span>${PULVERIZA.includes(a.tipo) ? (fl.length ? `<span class="chip warn">Fuera de lo permitido: ${esc(fl.join(', '))}</span>` : '<span class="chip ok">Dentro de la Ley 3742/09</span>') : ''}</div>` : ''}
       ${a.obs ? `<span class="note">${esc(a.obs)}</span>` : ''}
       <span class="note">${a.estado === 'realizada' ? 'Registró' : 'Responsable'}: ${esc(USERS[a.resp]?.nombre || '—')}</span>
       ${a.estado !== 'realizada' && reg ? (aplReal === a.id ? `<div class="card" style="gap:8px"><b>Registrar como realizada</b><div class="grid3"><label class="f">Fecha<input type="date" id="rr-fecha" value="${HOY}"></label><label class="f">Temperatura (°C)<input type="number" id="rr-t" step="0.5"></label><label class="f">Humedad relativa (%)<input type="number" id="rr-hr" step="1"></label><label class="f">Viento (km/h)<input type="number" id="rr-v" step="0.5"></label></div><label class="f">Observaciones<input type="text" id="rr-obs" data-voz placeholder="Opcional"></label><div class="row"><button class="btn primary small" data-confirmar="${a.id}">Confirmar</button><button class="btn small" data-cancelar>Cancelar</button><span class="note" id="rr-aviso"></span></div></div>`
         : `<button class="btn small" data-realizar="${a.id}" style="justify-self:start">Registrar como realizada</button>`) : ''}</div></div>`; };
-  const resp = [T.owner, ...Object.keys(T.trabajo || {})].filter((x, i, arr) => USERS[x] && arr.indexOf(x) === i);
+  const resp = [T.owner, ...Object.keys(T.trabajo || {}), ...(T.sitios || []).flatMap(x => x.ops || [])].filter((x, i, arr) => USERS[x] && arr.indexOf(x) === i);
   const form = ed && aplForm ? `<div class="card" id="apl-form"><h3>Nueva aplicación o tarea</h3><div class="grid3">
       <label class="f">Tipo<select id="af-tipo">${TIPOS_APL.map(t => `<option>${t}</option>`).join('')}</select></label>
       <label class="f">Fecha<input type="date" id="af-fecha" value="${HOY}"></label>
       <label class="f">Momento o estadio<input type="text" id="af-estadio" placeholder="Ej.: V6, floración, 24 meses"></label>
+      ${T.sitios ? `<label class="f">Lugar<select id="af-sitio">${T.sitios.map(x => `<option value="${x.id}" ${S.sitio === x.id ? 'selected' : ''}>${esc(x.nombre)}</option>`).join('')}<option value="todos">Todos los lugares</option></select></label>` : ''}
       <label class="f">Responsable<select id="af-resp">${resp.map(u => `<option value="${u}">${esc(USERS[u].nombre)}</option>`).join('')}</select></label></div>
     <div style="display:grid;gap:6px"><span class="note">Se aplica a</span><div class="row"><label class="pill"><input type="checkbox" id="af-todos">Todo el ensayo (manejo general)</label>${T.tratamientos.map(t => `<label class="pill"><input type="checkbox" data-aft="${t.cod}" ${t.productos?.length ? 'checked' : ''}><span class="swatch" style="background:${C[t.cod]}"></span>${t.cod}</label>`).join('')}</div></div>
     <div class="grid3" id="af-prod"><label class="f">Producto o insumo<input type="text" id="af-producto" placeholder="Ej.: urea, glifosato, riego"></label><label class="f">Dosis<input type="text" id="af-dosis" placeholder="Ej.: 100 kg/ha"></label></div>
@@ -699,8 +775,9 @@ RENDER.aplic = T => {
       const todos = $('#af-todos').checked, trs = $$('[data-aft]').filter(c => c.checked).map(c => c.dataset.aft), tipo = $('#af-tipo').value;
       if (!todos && !trs.length) { $('#af-msg').textContent = 'Elegí a qué tratamientos se aplica.'; return; }
       const num = id => $(id).value === '' ? null : +$(id).value, hecha = $('#af-hecha').checked;
-      const a = {id: Math.max(0, ...T.aplicaciones.map(x => x.id)) + 1, tipo, fecha: $('#af-fecha').value || HOY, estado: hecha ? 'realizada' : 'planificada', trats: todos ? 'todos' : trs,
+      const a = {id: nuevoIdAp(), tipo, fecha: $('#af-fecha').value || HOY, estado: hecha ? 'realizada' : 'planificada', trats: todos ? 'todos' : trs,
         estadio: $('#af-estadio').value.trim(), resp: $('#af-resp').value, obs: $('#af-obs').value.trim()};
+      if (T.sitios) a.sitio = $('#af-sitio').value;
       if (tipo === 'Aplicación de tratamientos') a.caldo = num('#af-caldo'); else { a.producto = $('#af-producto').value.trim(); a.dosis = $('#af-dosis').value.trim(); }
       if (hecha) a.cond = {t: num('#af-t'), hr: num('#af-hr'), viento: num('#af-v')};
       T.aplicaciones.push(a); aplForm = false;
@@ -763,7 +840,7 @@ const mapa = (() => {
       const p = T.parcelas.find(p => x >= PX(p)[0] && x <= PX(p)[0] + PX(p)[2] && y >= PX(p)[1] && y <= PX(p)[1] + PX(p)[3]); if (p) { S.sel = p.parcela; dibujarTodo(); abrirDrawer(p.parcela); } });
     vw.c.addEventListener('pointermove', e => { const [x, y, fx, ox, oy] = toImg(e); if (drag) { st.swipe = Math.max(0, Math.min(1, fx)); dibujarTodo(); return; }
       const p = T.parcelas.find(p => x >= PX(p)[0] && x <= PX(p)[0] + PX(p)[2] && y >= PX(p)[1] && y <= PX(p)[1] + PX(p)[3]);
-      let txt = p ? `Parcela ${p.parcela} · ${p.trat}` : '';
+      let txt = p ? `Parcela ${p.parcela % (T.sitios ? 1000 : 100000)} · ${p.trat}` : '';
       if (usaImg()) { const capa = vw.capa === 'B' || (st.modo === 'cortina' && fx > st.swipe) || st.modo === 'superponer' ? st.B : st.A; const k = CAPAS[capa].tipo === 'idx' ? capa : (CAPAS[st.B].tipo === 'idx' ? st.B : 'ndvi');
         const i = Math.floor(y) * W0 + Math.floor(x); if (i >= 0 && i < W0 * H0) txt = (txt ? txt + ' · ' : '') + `${CAPAS[k].n} ${fmt(valor[k](i), k === 'termico' ? 1 : 3)}`; }
       vw.tip.hidden = !txt; vw.tip.textContent = txt; vw.tip.style.left = ox + 'px'; vw.tip.style.top = oy + 'px';
@@ -781,7 +858,7 @@ const mapa = (() => {
       x.textAlign = 'left'; x.fillText('↑ N', (T._W - 40) * k, 14 * k); }
     if (!st.grilla && usaImg()) return etiquetas(vw);
     x.font = `600 ${Math.round(11 * k)}px Archivo, system-ui, sans-serif`; x.textBaseline = 'top';
-    for (const p of T.parcelas) { const [px, py, pw, ph] = PX(p), X = (px - sx) * k, Y = (py - sy) * k, Wd = pw * k, Hd = ph * k, mia = tieneOp(T, p.parcela, yo), asg = USERS[T.asig[p.parcela]];
+    for (const p of T.parcelas) { const [px, py, pw, ph] = PX(p), X = (px - sx) * k, Y = (py - sy) * k, Wd = pw * k, Hd = ph * k, mia = tieneOp(T, p.parcela, yo), asg = asigDe(T, p.parcela);
       if (!usaImg()) { x.fillStyle = st.colorT ? C[p.trat] + '55' : panelCol; x.fillRect(X, Y, Wd, Hd); }
       else if (st.colorT) { x.fillStyle = C[p.trat] + '55'; x.fillRect(X, Y, Wd, Hd); }
       if (st.colorOp && asg) { x.fillStyle = asg.color + '66'; x.fillRect(X, Y, Wd, Hd); }
@@ -789,7 +866,7 @@ const mapa = (() => {
       const sel = S.sel === p.parcela; x.lineWidth = (sel ? 3.4 : esOp && mia ? 2.6 : 1.6) * k;
       x.strokeStyle = sel ? '#ffffff' : esOp && mia ? '#38e1ff' : usaImg() ? (st.colorT ? C[p.trat] : 'rgba(255,238,88,.95)') : C[p.trat]; if (sel && !usaImg()) x.strokeStyle = '#111';
       x.strokeRect(X, Y, Wd, Hd);
-      if (!usaImg() || st.zoom === 'ensayo') { const lab = `${p.parcela} · ${p.trat}`, tw = x.measureText(lab).width; x.fillStyle = 'rgba(10,14,12,.74)'; x.fillRect(X + 4 * k, Y + 4 * k, tw + 8 * k, 16 * k); x.fillStyle = '#fff'; x.fillText(lab, X + 8 * k, Y + 6 * k);
+      if (!usaImg() || st.zoom === 'ensayo') { const lab = `${p.parcela % (T.sitios ? 1000 : 100000)} · ${p.trat}`, tw = x.measureText(lab).width; x.fillStyle = 'rgba(10,14,12,.74)'; x.fillRect(X + 4 * k, Y + 4 * k, tw + 8 * k, 16 * k); x.fillStyle = '#fff'; x.fillText(lab, X + 8 * k, Y + 6 * k);
         const pe = pendientes(T, p).length, nn = T.notas.filter(n => n.nivel === 'parcela' && n.ref === p.parcela).length;
         if (pe || nn) { x.font = `600 ${Math.round(10 * k)}px Archivo, system-ui, sans-serif`; let yy = Y + Hd - 18 * k;
           const pill = (t, bg) => { const w = x.measureText(t).width + 8 * k; x.fillStyle = bg; x.fillRect(X + 4 * k, yy, w, 14 * k); x.fillStyle = '#fff'; x.fillText(t, X + 8 * k, yy + 1.5 * k); yy -= 17 * k; };
@@ -846,7 +923,12 @@ const mapa = (() => {
   window.addEventListener('resize', () => dibujarTodo());
   return {render, redibujar: dibujarTodo, reset: () => { st.modo = 'una'; }, layout};
 })();
-RENDER.campo = T => mapa.render(T);
+RENDER.campo = T => {
+  if (!T.sitios) return mapa.render(T);
+  if (S.sitio === 'todos') { P().innerHTML = `<section class="panel"><h2>Lugares del ensayo</h2><p class="lead">El mismo ensayo repetido en ${T.sitios.length} lugares. Cada lugar tiene su croquis sorteado y su operador. Elegí un lugar arriba (o “Ver croquis y datos”) para ver sus parcelas.</p>${tablaSitios(T)}</section>`;
+    P().onclick = e => clicSitios(e, T); P().onchange = e => { if (cambioSitioOp(e, T)) RENDER.campo(T); }; P().oninput = null; return; }
+  mapa.render(vistaS(T));
+};
 
 /* ---------- 4 mediciones (variables y métodos) ---------- */
 let medirAbierto = null;
@@ -904,7 +986,7 @@ const segCorte = (host, T, cb) => T.cortes?.length && seg(host, [...T.cortes.map
 RENDER.datos = T => {
   if (T.cortes?.length && corteSel !== 'otras' && corteSel !== 'todas' && !T.cortes.some(c => c.n === corteSel)) corteSel = 1;
   const C = colTrat(T), vars = filtroCorte(T, vis(T)), op = rolEn(T) === 'operador';
-  const orden = [...T.parcelas].sort((a, b) => (op ? (T.asig[b.parcela] === S.user.id) - (T.asig[a.parcela] === S.user.id) : 0) || a.parcela - b.parcela);
+  const orden = [...enSitio(T)].sort((a, b) => (op ? (T.asig[b.parcela] === S.user.id) - (T.asig[a.parcela] === S.user.id) : 0) || a.parcela - b.parcela);
   const cel = (p, v) => { const val = p.valores[v.id], ok = puede.datos(T, p.parcela) && !auto(v);
     if (v.tipo === 'texto') return `<td>${val ? esc(String(val).slice(0, 30)) : '<span class="note">—</span>'}</td>`;
     if (!ok || v.sub > 1 || v.tipo === 'escala' || v.entrada) return `<td class="num">${val == null || val === '' ? `<span class="${ok ? 'chip warn' : 'note'}">${ok ? 'cargar' : '—'}</span>` : fmt(val, v.dec ?? 2)}</td>`;
@@ -912,8 +994,8 @@ RENDER.datos = T => {
   P().innerHTML = `<section class="panel"><h2>Carga de datos</h2>${aviso(T, 'Podés cargar datos solo en tus parcelas (arriba de la tabla). Las demás están bloqueadas.')}
     <p class="lead">Un renglón por parcela. Las mediciones con submuestras, escala o calculadora se cargan con el botón <b>Controlar</b>, que muestra cómo se mide y hace la cuenta. Cada cambio queda en el historial.</p>${rolEn(T) !== 'lector' ? '<div class="row"><button class="btn" id="btn-importar">⇪ Importar datos (Excel, CSV o foto)</button><span class="note">También sirve para traer los índices del dron calculados en QGIS.</span></div>' : ''}${T.cortes?.length ? '<div class="seg" id="seg-corte-d"></div>' : ''}
     <div class="tw"><table><thead><tr><th></th><th class="num">Parcela</th><th class="num">Bl.</th><th>Trat.</th><th>Asignada</th>${vars.map(v => `<th class="num" title="${esc(v.metodo)}">${esc(v.nombre)}${v.unidad ? `<br><span style="text-transform:none">${esc(v.unidad)}</span>` : ''}${v.origen === 'dron' ? '<br><span class="chip dron">dron</span>' : ''}${v.origen === 'calc' ? '<br><span class="chip neu">calculada</span>' : ''}${v.entrada ? '<br><span class="chip acc">calculadora</span>' : v.sub > 1 ? `<br><span class="chip neu">${v.sub} submuestras</span>` : ''}</th>`).join('')}<th class="num">Notas</th></tr></thead><tbody>
-    ${orden.map(p => { const lock = !puede.datos(T, p.parcela), a = USERS[T.asig[p.parcela]] || USERS[Object.keys(T.trabajo || {}).find(k => T.trabajo[k] === 'ensayo')], nn = T.notas.filter(n => n.nivel === 'parcela' && n.ref === p.parcela).length;
-      return `<tr class="${lock ? 'locked' : ''}"><td><button class="btn small ${lock ? '' : 'primary'}" data-ctl="${p.parcela}">${lock ? 'Ver' : 'Controlar'}</button></td><td class="num">${p.parcela}</td><td class="num">${p.bloque}</td><td><span class="swatch" style="background:${C[p.trat]}"></span> ${p.trat}</td>
+    ${orden.map(p => { const lock = !puede.datos(T, p.parcela), a = asigDe(T, p.parcela), nn = T.notas.filter(n => n.nivel === 'parcela' && n.ref === p.parcela).length;
+      return `<tr class="${lock ? 'locked' : ''}"><td><button class="btn small ${lock ? '' : 'primary'}" data-ctl="${p.parcela}">${lock ? 'Ver' : 'Controlar'}</button></td><td class="num">${T.sitios ? `${S.sitio === 'todos' ? `<span class="note">${esc(nomSitio(T, p.sitio))}</span> ` : ''}${p.parcela % 1000}` : p.parcela}</td><td class="num">${p.bloque}</td><td><span class="swatch" style="background:${C[p.trat]}"></span> ${p.trat}</td>
         <td>${a ? `<span class="row" style="gap:5px;flex-wrap:nowrap">${avatar(a)}${esc(a.nombre.split(' ')[0])}</span>` : '<span class="note">—</span>'}</td>${vars.map(v => cel(p, v)).join('')}<td class="num">${nn || ''}</td></tr>`; }).join('')}</tbody></table></div></section>`;
   segCorte('#seg-corte-d', T, () => RENDER.datos(T));
   P().onclick = e => { if (e.target.closest('#btn-importar')) return importarDatos(T); const b = e.target.closest('[data-ctl]'); if (b) abrirDrawer(Number(b.dataset.ctl)); };
@@ -924,7 +1006,7 @@ function guardarValor(T, pn, vid, nuevo, sub) {
   const p = T.parcelas.find(x => x.parcela === pn), antes = p.valores[vid];
   if (sub) p.sub[vid] = sub;
   if (antes === nuevo || (antes == null && nuevo == null)) return false;
-  p.valores[vid] = nuevo; recalc(T);
+  p.valores[vid] = nuevo; (p.ts = p.ts || {})[vid] = new Date().toISOString(); recalc(T);
   const rev = ['dueño', 'gerente'].includes(rolEn(T));
   T.cambios.unshift({fecha: ahora(), usuario: S.user.id, parcela: pn, variable: vid, antes: antes ?? null, despues: nuevo, estado: rev ? 'aprobado' : 'pendiente'});
   return true;
@@ -937,62 +1019,80 @@ RENDER.equipo = T => {
   const ops = operadoresEquipo(T); if (asigSel == null && ops.length) asigSel = ops[0].id;
   const varNom = id => T.variables.find(v => v.id === id)?.nombre || id;
   const cambios = T.cambios.filter(c => !op || c.usuario === yo);
-  const grid = Array.from({length: T.bloques}, (_, i) => T.parcelas.filter(p => p.bloque === i + 1).sort((a, b) => a.parcela - b.parcela));
+  const grid = T.sitios && S.sitio === 'todos' ? [] : Array.from({length: T.bloques}, (_, i) => enSitio(T).filter(p => p.bloque === i + 1).sort((a, b) => a.parcela - b.parcela));
   const ALC = {'': 'No asignado', ensayo: 'Todo el ensayo', parcelas: 'Solo parcelas asignadas'};
   const enTrabajo = ops.filter(u => T.trabajo?.[u.id]);
   P().innerHTML = `<section class="panel"><h2>Equipo y cambios</h2>
-    ${asignar ? `<div class="card"><div class="row" style="justify-content:space-between"><h3>Operadores de este trabajo</h3><span class="note">${enTrabajo.length} de ${ops.length} operadores asignados</span></div>
+    ${T.sitios ? `<div class="card"><div class="row" style="justify-content:space-between"><h3>Lugares del ensayo</h3><span class="note">${T.sitios.length} lugares · cada operador carga solo su lugar</span></div>${tablaSitios(T)}</div>` : ''}
+    ${puede.asignar(T) ? `<div class="card"><h3>${T.sitios ? 'Agregar otro lugar' : 'Repetir este ensayo en otros lugares'}</h3><p class="note" style="margin:0">${T.sitios ? 'Se suma un lugar nuevo con su propio croquis sorteado, los mismos tratamientos y mediciones.' : 'Convierte el ensayo en una red: el mismo diseño en varios lugares del país, cada uno con su croquis y su operador. Lo cargado hasta ahora queda como el primer lugar.'}</p>
+      <form class="row" id="f-sitio" style="align-items:end"><label class="f">Nombre corto<input type="text" name="nombre" required placeholder="Ej.: Naranjal"></label><label class="f" style="flex:1">Lugar (distrito, departamento)<input type="text" name="lugar" placeholder="Ej.: Naranjal, Alto Paraná"></label>
+        <label class="f">Operador<select name="op"><option value="">Más adelante</option>${operadoresEquipo(T).map(u => `<option value="${u.id}">${esc(u.nombre)}</option>`).join('')}</select></label><button class="btn primary" type="submit">+ Agregar lugar</button></form></div>` : ''}
+    ${asignar ? `<div class="card"><div class="row" style="justify-content:space-between"><h3>${T.sitios ? 'Operadores con acceso a todo el ensayo' : 'Operadores de este trabajo'}</h3><span class="note">${T.sitios ? 'Opcional: en una red cada lugar ya tiene su operador' : `${enTrabajo.length} de ${ops.length} operadores asignados`}</span></div>
       ${ops.length ? `<div class="tw"><table><thead><tr><th>Operador</th><th>Alcance</th><th class="num">Parcelas</th></tr></thead><tbody>${ops.map(u => `<tr><td><span class="row" style="gap:6px;flex-wrap:nowrap">${avatar(u)}${esc(u.nombre)}</span></td>
         <td><select data-alc="${u.id}">${Object.entries(ALC).map(([k, l]) => `<option value="${k}" ${(T.trabajo?.[u.id] || '') === k ? 'selected' : ''}>${l}</option>`).join('')}</select></td>
         <td class="num">${T.trabajo?.[u.id] === 'ensayo' ? 'todas' : T.parcelas.filter(p => T.asig[p.parcela] === u.id).length}</td></tr>`).join('')}</tbody></table></div>
-        <div class="row"><button class="btn small" id="btn-repartir" ${enTrabajo.length ? '' : 'disabled'}>Repartir los bloques entre los operadores del trabajo</button><span class="note">“Todo el ensayo”: carga en todas las parcelas. “Solo parcelas asignadas”: únicamente las que le asignes abajo.</span></div>`
+        <div class="row"><button class="btn small" id="btn-repartir" ${enTrabajo.length ? '' : 'disabled'}>${T.sitios ? 'Repartir los lugares entre los operadores del trabajo' : 'Repartir los bloques entre los operadores del trabajo'}</button><span class="note">“Todo el ensayo”: carga en todas las parcelas. “Solo parcelas asignadas”: únicamente las que le asignes abajo.</span></div>`
         : '<p class="note" style="margin:0">Todavía no hay operadores para sumar.</p>'}</div>` : ''}
     <div class="grid2"><div class="card"><h3>${asignar ? 'Asignar parcelas a operadores' : op ? 'Tus parcelas' : 'Asignaciones'}</h3>
       ${asignar ? (ops.length ? `<div class="row"><span class="note">Operador:</span>${ops.map(u => `<button class="pill" data-op="${u.id}" style="${asigSel === u.id ? 'border-color:var(--accent);background:var(--accent-soft)' : ''}">${avatar(u)}${esc(u.nombre)}</button>`).join('')}<button class="pill" data-op="" style="${asigSel === '' ? 'border-color:var(--accent);background:var(--accent-soft)' : ''}">Quitar asignación</button></div>
         <p class="note" style="margin:0">Tocá parcelas o un bloque entero para asignarlas a ${asigSel ? esc(USERS[asigSel].nombre.split(' ')[0]) : 'nadie'}.</p>`
         : `<p class="note" style="margin:0">${T.equipo ? 'Todavía no hay operadores en el equipo. Compartí el código de invitación.' : 'Trabajás por tu cuenta. Si querés, invitá operadores y asignales parcelas.'}</p>`) : ''}
       ${asignar && !T.equipo ? `<div class="row"><label class="f" style="flex:1">Invitar operador<select id="invitar">${Object.values(USERS).filter(u => u.perfil === 'operador' && !(T.invitados || []).includes(u.id) && (!u.ejemplo || T.ejemplo || S.user.ejemplo)).map(u => `<option value="${u.id}">${esc(u.nombre)}</option>`).join('')}</select></label><button class="btn small" id="btn-invitar" style="align-self:end">Invitar</button></div>` : ''}
+      ${T.sitios && S.sitio === 'todos' ? '<p class="note" style="margin:0">Elegí un lugar arriba para asignar parcelas sueltas, o asigná el lugar completo a un operador en “Lugares del ensayo”.</p>' : ''}
       <div style="display:grid;gap:6px;overflow-x:auto;min-width:0">${grid.map((fila, i) => `<div class="row" style="flex-wrap:nowrap;gap:6px">${asignar && ops.length ? `<button class="btn small" data-bloque="${i + 1}">B${i + 1}</button>` : `<span class="note" style="width:28px">B${i + 1}</span>`}
-        ${fila.map(p => { const u = USERS[T.asig[p.parcela]] || (T.trabajo && USERS[Object.keys(T.trabajo).find(k => T.trabajo[k] === 'ensayo')]); return `<button class="btn small" data-asp="${p.parcela}" ${asignar && ops.length ? '' : 'disabled style="opacity:1"'} style="min-width:58px;display:grid;gap:2px;${u ? `background:${u.color}22;border-color:${u.color}` : ''}${op && !tieneOp(T, p.parcela, yo) ? ';opacity:.4' : ''}"><span class="code">${p.parcela}</span><span style="font-size:.7rem;color:var(--muted)">${u ? esc(u.nombre.split(' ')[0]) : 'libre'}</span></button>`; }).join('')}</div>`).join('')}</div></div>
+        ${fila.map(p => { const u = asigDe(T, p.parcela); return `<button class="btn small" data-asp="${p.parcela}" ${asignar && ops.length ? '' : 'disabled style="opacity:1"'} style="min-width:58px;display:grid;gap:2px;${u ? `background:${u.color}22;border-color:${u.color}` : ''}${op && !tieneOp(T, p.parcela, yo) ? ';opacity:.4' : ''}"><span class="code">${p.parcela}</span><span style="font-size:.7rem;color:var(--muted)">${u ? esc(u.nombre.split(' ')[0]) : 'libre'}</span></button>`; }).join('')}</div>`).join('')}</div></div>
+    ${cardIntercambio(T)}
     <div class="card"><h3>Personas en este ensayo</h3>
       <div style="display:grid;gap:8px">${[T.owner, ...ops.map(u => u.id), ...Object.keys(T.compartido)].filter((v, i, a) => USERS[v] && a.indexOf(v) === i).map(id => { const u = USERS[id], r = rolEn(T, u), n = T.parcelas.filter(p => T.asig[p.parcela] === id).length;
-        return `<div class="row">${avatar(u)}<span style="flex:1">${esc(u.nombre)}<br><span class="note">${r ? ROLNOM[r] : PERFILES[u.perfil] + ' · sin asignar'}${T.trabajo?.[id] === 'ensayo' ? ' · todo el ensayo' : n ? ` · ${n} parcelas` : ''}</span></span></div>`; }).join('')}</div>
-      ${asignar && Object.values(USERS).some(u => u.id !== T.owner && !T.compartido[u.id] && u.perfil !== 'operador') ? `<div class="row"><label class="f" style="flex:1">Compartir para observar<select id="compartir">${Object.values(USERS).filter(u => u.id !== T.owner && !T.compartido[u.id] && u.perfil !== 'operador').map(u => `<option value="${u.id}">${esc(u.nombre)}</option>`).join('')}</select></label><button class="btn small" id="btn-compartir" style="align-self:end">Compartir como lector</button></div>` : ''}
+        return `<div class="row">${avatar(u)}<span style="flex:1">${esc(u.nombre)}<br><span class="note">${r ? ROLNOM[r] : PERFILES[u.perfil] + ' · sin asignar'}${sitiosDeOp(T, id).length ? ' · ' + sitiosDeOp(T, id).map(x => esc(x.nombre)).join(', ') : T.trabajo?.[id] === 'ensayo' ? ' · todo el ensayo' : n ? ` · ${n} parcelas` : ''}</span></span>${id !== S.user.id && puede.asignar(T) ? `<button class="btn small" data-enviar="${id}">📤 Enviar</button>` : ''}</div>`; }).join('')}</div>
+      ${asignar && Object.values(USERS).some(u => u.id !== T.owner && !T.compartido[u.id] && u.perfil !== 'operador' && (!u.ejemplo || T.ejemplo || S.user.ejemplo)) ? `<div class="row"><label class="f" style="flex:1">Sumar un observador (ve todo, no modifica)<select id="compartir">${Object.values(USERS).filter(u => u.id !== T.owner && !T.compartido[u.id] && u.perfil !== 'operador' && (!u.ejemplo || T.ejemplo || S.user.ejemplo)).sort((a, b) => (b.perfil === 'observador') - (a.perfil === 'observador')).map(u => `<option value="${u.id}">${esc(u.nombre)} · ${PERFILES[u.perfil]}</option>`).join('')}</select></label><button class="btn small" id="btn-compartir" style="align-self:end">Sumar como observador</button></div>` : ''}
+      ${asignar ? `<div class="row"><button class="btn small" id="btn-nuevo-obs">+ Crear un observador nuevo</button><span class="note">Para alguien que no está en este equipo: después le mandás el ensayo con “Enviar”.</span></div>` : ''}
         ${asignar && T.equipo ? `<p class="note" style="margin:0">Código para sumar operadores: <b class="code">${EQUIPOS[T.equipo].codigo}</b></p>` : ''}</div></div>
     <div class="card"><div class="row" style="justify-content:space-between"><h3>Historial de cambios</h3>${revisar ? `<span class="note">${T.cambios.filter(c => c.estado === 'pendiente').length} por revisar</span>` : ''}</div>
       <div class="tw"><table><thead><tr><th>Fecha</th><th>Quién</th><th class="num">Parcela</th><th>Qué</th><th class="num">Antes</th><th class="num">Después</th><th>Estado</th>${revisar ? '<th></th>' : ''}</tr></thead><tbody>
-      ${cambios.map((c, i) => { const u = USERS[c.usuario], idx = T.cambios.indexOf(c); return `<tr><td class="num">${c.fecha}</td><td>${u ? `<span class="row" style="gap:5px;flex-wrap:nowrap">${avatar(u)}${esc(u.nombre.split(' ')[0])}</span>` : ''}</td><td class="num">${c.parcela}</td><td>${esc(varNom(c.variable))}</td>
+      ${cambios.map((c, i) => { const u = USERS[c.usuario], idx = T.cambios.indexOf(c); return `<tr><td class="num">${c.fecha}</td><td>${u ? `<span class="row" style="gap:5px;flex-wrap:nowrap">${avatar(u)}${esc(u.nombre.split(' ')[0])}</span>` : ''}</td><td class="num">${T.sitios && +c.parcela ? esc(etiq(T, {parcela: +c.parcela, sitio: sitioDe(T, +c.parcela)?.id})) : c.parcela}</td><td>${esc(varNom(c.variable))}</td>
         <td class="num">${c.antes == null ? '—' : typeof c.antes === 'number' ? fmt(c.antes, 2) : esc(c.antes)}</td><td class="num">${c.despues == null ? '—' : typeof c.despues === 'number' ? fmt(c.despues, 2) : esc(c.despues)}</td>
         <td><span class="chip ${c.estado === 'aprobado' ? 'ok' : c.estado === 'observado' ? 'bad' : 'warn'}">${c.estado[0].toUpperCase() + c.estado.slice(1)}</span>${c.comentario ? `<br><span class="note">${esc(c.comentario)}</span>` : ''}</td>
         ${revisar ? `<td>${c.estado === 'pendiente' ? `<div class="row" style="flex-wrap:nowrap;gap:4px"><button class="btn small" data-aprobar="${idx}">Aprobar</button><button class="btn small" data-observar="${idx}">Observar</button></div>` : ''}</td>` : ''}</tr>`; }).join('') || `<tr><td colspan="8" class="note">Sin cambios todavía.</td></tr>`}</tbody></table></div>
       <div id="obs-box" hidden class="row"><input type="text" id="obs-txt" placeholder="Qué hay que revisar (ej.: repetir la lectura del bloque 2)" style="flex:1;min-width:220px"><button class="btn small primary" id="obs-ok">Guardar observación</button></div></div>
     <div class="card"><h3>Notas del ensayo</h3>${listaNotas(T, T.notas)}</div></section>`;
   let obsIdx = null;
-  P().onchange = e => { const id = e.target.dataset.alc; if (!id) return; T.trabajo = T.trabajo || {}; const v = e.target.value;
+  const fs = $('#f-sitio'); if (fs) fs.onsubmit = async e => { e.preventDefault(); const f = new FormData(fs), op = f.get('op');
+    const id = await agregarSitio(T, String(f.get('nombre')).trim(), String(f.get('lugar')).trim(), op ? [op] : []); if (op && !T.equipo) T.invitados = [...new Set([...(T.invitados || []), op])];
+    S.sitio = 'todos'; toast('Lugar agregado con su croquis sorteado'); $('#e-meta').innerHTML = metaEnsayo(T); irPaso(S.paso); };
+  P().onchange = e => { if (cambioSitioOp(e, T)) return RENDER.equipo(T); const id = e.target.dataset.alc; if (!id) return; T.trabajo = T.trabajo || {}; const v = e.target.value;
     if (v) T.trabajo[id] = v; else { delete T.trabajo[id]; Object.keys(T.asig).forEach(k => { if (T.asig[k] === id) delete T.asig[k]; }); }
     if (v === 'ensayo') Object.keys(T.asig).forEach(k => { if (T.asig[k] === id) delete T.asig[k]; });
     T.cambios.unshift({fecha: ahora(), usuario: S.user.id, parcela: '—', variable: `Asignación de ${USERS[id].nombre}`, antes: null, despues: v ? ALC[v] : 'No asignado', estado: 'aprobado'});
     toast(v ? `${USERS[id].nombre}: ${ALC[v].toLowerCase()}` : `${USERS[id].nombre} quitado del trabajo`); RENDER.equipo(T); };
   P().onclick = e => {
     const o = e.target.closest('[data-op]'); if (o) { asigSel = o.dataset.op; RENDER.equipo(T); return; }
-    const bq = e.target.closest('[data-bloque]'); if (bq) { T.parcelas.filter(p => p.bloque == bq.dataset.bloque).forEach(p => asignarParcela(T, p.parcela)); RENDER.equipo(T); return; }
+    if (clicSitios(e, T)) return;
+    const bq = e.target.closest('[data-bloque]'); if (bq) { enSitio(T).filter(p => p.bloque == bq.dataset.bloque).forEach(p => asignarParcela(T, p.parcela)); RENDER.equipo(T); return; }
     const ap = e.target.closest('[data-asp]'); if (ap && asignar) { asignarParcela(T, Number(ap.dataset.asp)); RENDER.equipo(T); return; }
     const a = e.target.closest('[data-aprobar]'); if (a) { T.cambios[+a.dataset.aprobar].estado = 'aprobado'; toast('Cambio aprobado'); RENDER.equipo(T); irPasoNav(); return; }
     const ob = e.target.closest('[data-observar]'); if (ob) { obsIdx = +ob.dataset.observar; $('#obs-box').hidden = false; $('#obs-txt').focus(); return; }
     if (e.target.closest('#obs-ok')) { T.cambios[obsIdx].estado = 'observado'; T.cambios[obsIdx].comentario = $('#obs-txt').value.trim() || 'Revisar'; toast('Observación enviada al operador'); RENDER.equipo(T); irPasoNav(); return; }
     if (e.target.closest('#btn-repartir')) { repartir(T, enTrabajo.map(u => u.id)); toast('Bloques repartidos'); RENDER.equipo(T); return; }
     if (e.target.closest('#btn-invitar')) { const id = $('#invitar').value; if (id) { T.invitados = [...(T.invitados || []), id]; asigSel = id; toast(`${USERS[id].nombre} sumado al trabajo`); RENDER.equipo(T); } return; }
-    if (e.target.closest('#btn-compartir')) { const id = $('#compartir').value; if (id) { T.compartido[id] = 'lector'; toast(`Compartido con ${USERS[id].nombre}`); RENDER.equipo(T); } }
+    if (e.target.closest('#btn-compartir')) { const id = $('#compartir').value; if (id) { T.compartido[id] = 'lector'; T.cambios.unshift({fecha: ahora(), usuario: S.user.id, parcela: '—', variable: 'Observador sumado', antes: null, despues: USERS[id].nombre, estado: 'aprobado'}); toast(`${USERS[id].nombre} ahora observa este ensayo`); RENDER.equipo(T); } }
+    if (e.target.closest('#btn-recibir-e')) return recibirArchivo();
+    if (e.target.closest('#btn-mis-datos')) return enviarPaquete(T, T.owner);
+    if (e.target.closest('#btn-enviar-sel')) { const id = $('#enviar-a').value; if (id) enviarPaquete(T, id); return; }
+    if (e.target.closest('#btn-nuevo-op')) return nuevoPerfilEnEnsayo(T, 'operador');
+    if (e.target.closest('#btn-nuevo-obs')) { const M = modal(`<div class="row" style="justify-content:space-between"><h2>Nuevo observador</h2><button class="btn small" data-cerrar>✕</button></div><p class="note" style="margin:0">Va a poder ver todos los avances de este ensayo, sin modificar nada.</p><form id="f-obs" style="display:grid;gap:10px"><label class="f">Nombre y apellido<input type="text" name="n" required></label><button class="btn primary" type="submit">Crear y sumar</button></form>`, 460);
+      M.querySelector('#f-obs').onsubmit = ev => { ev.preventDefault(); const nombre = new FormData(ev.target).get('n').trim(); if (!nombre) return; const id = 'u' + Date.now();
+        USERS[id] = {id, nombre, perfil: 'observador', equipo: null, color: '#475569', creado: new Date().toISOString()}; T.compartido[id] = 'lector'; M.cerrar(); toast(`${nombre} observa este ensayo. Mandale el ensayo con “Enviar”.`); RENDER.equipo(T); guardarPronto(); }; }
   };
 };
 function irPasoNav() { const T = S.T, pc = T.cambios.filter(c => c.estado === 'pendiente').length; const b = $$('#steps button')[PASOS.findIndex(p => p[0] === 'equipo')]; if (b) b.lastElementChild.outerHTML = pc && puede.revisar(T) ? `<span class="chip warn">${pc}</span>` : '<span></span>'; }
 function asignarParcela(T, pn) { if (asigSel) { T.asig[pn] = asigSel; T.trabajo = T.trabajo || {}; if (!T.trabajo[asigSel]) T.trabajo[asigSel] = 'parcelas'; } else delete T.asig[pn]; }
-function repartir(T, ids) { if (!ids.length) return; T.trabajo = T.trabajo || {}; ids.forEach(id => { if (T.trabajo[id] !== 'ensayo') T.trabajo[id] = 'parcelas'; });
+function repartir(T, ids) { if (!ids.length) return; if (T.sitios) { T.sitios.forEach((st, i) => st.ops = [ids[i % ids.length]]); ids.forEach(id => { T.trabajo = T.trabajo || {}; }); return; } T.trabajo = T.trabajo || {}; ids.forEach(id => { if (T.trabajo[id] !== 'ensayo') T.trabajo[id] = 'parcelas'; });
   const reparto = ids.filter(id => T.trabajo[id] === 'parcelas'); if (!reparto.length) return;
   for (let b = 1; b <= T.bloques; b++) { const id = reparto[(b - 1) % reparto.length]; T.parcelas.filter(p => p.bloque === b).forEach(p => T.asig[p.parcela] = id); } }
 function listaNotas(T, notas) {
   if (!notas.length) return '<p class="note" style="margin:0">Sin notas.</p>';
-  const nivelTxt = n => n.nivel === 'parcela' ? `Parcela ${n.ref}` : n.nivel === 'bloque' ? `Bloque ${n.ref}` : n.nivel === 'tratamiento' ? `Tratamiento ${n.ref} · ${esc(tratNom(T, n.ref))}` : 'Ensayo';
+  const nivelTxt = n => n.nivel === 'parcela' || n.nivel === 'bloque' ? esc(nivelNota(T, n)) : n.nivel === 'tratamiento' ? `Tratamiento ${n.ref} · ${esc(tratNom(T, n.ref))}` : 'Ensayo';
   return notas.map(n => `<div class="nota" style="border-color:${USERS[n.autor]?.color || 'var(--line)'}"><span>${esc(n.texto)}</span><span class="who">${nivelTxt(n)} · ${esc(USERS[n.autor]?.nombre || '')} · ${n.fecha}</span></div>`).join('');
 }
 
@@ -1060,6 +1160,40 @@ function hoverCortes(T) {
   svg.onmouseleave = () => { tip.hidden = true; gx.setAttribute('visibility', 'hidden'); };
 }
 
+/* ----- análisis combinado de la red de lugares ----- */
+function combinar(T, v) {
+  const comp = T.sitios.filter(st => { const ps = T.parcelas.filter(p => p.sitio === st.id); return ps.length && ps.every(p => p.valores[v.id] != null && p.valores[v.id] !== '' && !isNaN(+p.valores[v.id])); });
+  if (comp.length < 2) return {ok: false, comp};
+  const R = anovaCombinado(T.parcelas.filter(p => comp.some(c => c.id === p.sitio)).map(p => ({y: +p.valores[v.id], trat: p.trat, bloque: p.bloque, sitio: p.sitio})));
+  const tk = tukey(R.medias, R.cmLT, R.glLT, R.a * R.r), menor = /sev|incid|descarte|hormig|chinch|defol|ewrc|saliv|ninfa|maleza/.test(v.id + v.nombre.toLowerCase()), dec = v.dec ?? 2;
+  const orden = Object.keys(R.medias).sort((x, y) => menor ? R.medias[x] - R.medias[y] : R.medias[y] - R.medias[x]), top = orden[0];
+  const iguales = orden.filter(k => k !== top && [...tk.letras[k]].some(c => tk.letras[top].includes(c)));
+  let txt = R.pT < 0.05 ? `Considerando los ${comp.length} lugares, hubo diferencias ${R.pT < 0.01 ? 'altamente significativas' : 'significativas'} entre tratamientos (F = ${fmt(R.tabla[2].F, 2)}; p ${R.pT < 0.001 ? '< 0,001' : '= ' + fmt(R.pT, 3)}). ${top} (${tratNom(T, top)}) tuvo el ${menor ? 'menor' : 'mayor'} promedio (${fmt(R.medias[top], dec)} ${v.unidad})${iguales.length ? `, sin diferir de ${iguales.join(', ')}` : ''}.`
+    : `Considerando los ${comp.length} lugares, no hubo diferencias significativas entre tratamientos (F = ${fmt(R.tabla[2].F, 2)}; p = ${fmt(R.pT, 3)}).`;
+  txt += R.pLT < 0.05 ? ` La interacción tratamiento × lugar fue significativa (p ${R.pLT < 0.001 ? '< 0,001' : '= ' + fmt(R.pLT, 3)}): el orden de los tratamientos cambia según el lugar, conviene mirar cada lugar por separado.` : ` La interacción tratamiento × lugar no fue significativa: los tratamientos se comportaron de forma parecida en todos los lugares.`;
+  txt += ` CV ${fmt(R.cv, 1)} %.${R.fmax > 5 ? ` Ojo: la variabilidad entre lugares es muy distinta (Fmax = ${fmt(R.fmax, 1)}, mayor a 5), el análisis combinado debe tomarse con cautela.` : ''}`;
+  return {ok: true, comp, R, tk, orden, txt, dec, menor, falta: T.sitios.filter(x => !comp.includes(x))};
+}
+function analCombinado(T) {
+  const num = vis(T).filter(v => v.tipo !== 'texto'); if (!num.find(v => v.id === varAnal)) varAnal = num[0]?.id;
+  P().innerHTML = `<section class="panel"><h2>Análisis de la red</h2><p class="lead">Análisis combinado de todos los lugares con datos completos. Para el análisis de un solo lugar, elegilo arriba.</p>
+    <div class="card row"><label class="f">Variable<select id="var-anal">${num.map(v => `<option value="${v.id}" ${v.id === varAnal ? 'selected' : ''}>${esc(v.nombre)}</option>`).join('')}</select></label></div><div id="anal-body"></div></section>`;
+  $('#var-anal').onchange = e => { varAnal = e.target.value; analCombinado(T); };
+  const v = num.find(x => x.id === varAnal); if (!v) return; const a = combinar(T, v), C = colTrat(T), sig = p => p < 0.01 ? '**' : p < 0.05 ? '*' : 'ns';
+  if (!a.ok) { $('#anal-body').innerHTML = `<div class="callout warn">Para el análisis combinado hacen falta al menos 2 lugares con todas las parcelas cargadas. ${a.comp.length ? `Completo: ${a.comp.map(x => esc(x.nombre)).join(', ')}.` : 'Ningún lugar está completo todavía.'}</div>${tablaSitios(T)}`; P().onclick = e => clicSitios(e, T); return; }
+  const {R, tk, orden, dec} = a;
+  $('#anal-body').innerHTML = `${a.falta.length ? `<div class="callout warn">Se analizan ${a.comp.length} de ${T.sitios.length} lugares. Sin datos completos: ${a.falta.map(x => esc(x.nombre)).join(', ')}.</div>` : ''}
+    <div class="card"><h3>Análisis de varianza combinado</h3><div class="tw"><table><thead><tr><th>Fuente</th><th class="num">gl</th><th class="num">SC</th><th class="num">CM</th><th class="num">F</th><th class="num">p</th></tr></thead><tbody>
+      ${R.tabla.map(f => `<tr><td>${f.fuente}</td><td class="num">${f.gl}</td><td class="num">${fmt(f.sc, dec + 1)}</td><td class="num">${f.cm != null ? fmt(f.cm, dec + 1) : ''}</td><td class="num">${f.F != null ? fmt(f.F, 2) : ''}</td><td class="num">${f.p != null ? (f.p < 0.0001 ? '< 0,0001' : fmt(f.p, 4)) + ' ' + sig(f.p) : ''}</td></tr>`).join('')}</tbody></table></div>
+      <p class="note" style="margin:0">Tratamientos probados contra la interacción tratamiento × lugar (lugares al azar). Media ${fmt(R.media, dec)} ${esc(v.unidad || '')} · CV ${fmt(R.cv, 1)} % · Fmax entre lugares ${fmt(R.fmax, 2)}</p></div>
+    <div class="card"><h3>Medias por lugar</h3><div class="tw"><table><thead><tr><th>Trat.</th><th>Descripción</th>${a.comp.map(x => `<th class="num">${esc(x.nombre)}</th>`).join('')}<th class="num">Promedio</th><th>Tukey</th></tr></thead><tbody>
+      ${orden.map(k => `<tr><td><span class="swatch" style="background:${C[k]}"></span> ${k}</td><td>${esc(tratNom(T, k))}</td>${a.comp.map(x => `<td class="num">${fmt(R.porSitio[x.id]?.[k], dec)}</td>`).join('')}<td class="num"><b>${fmt(R.medias[k], dec)}</b></td><td><b>${R.pT < 0.05 ? tk.letras[k] : '—'}</b></td></tr>`).join('')}
+      <tr><td></td><td class="note">Media del lugar</td>${a.comp.map(x => `<td class="num">${fmt(R.mediasSitio[x.id], dec)}</td>`).join('')}<td class="num">${fmt(R.media, dec)}</td><td></td></tr></tbody></table></div></div>
+    <div class="callout"><b>Lectura automática.</b> ${a.txt}</div>`;
+  P().onclick = null;
+}
+{ const as = RENDER.anal; RENDER.anal = T0 => { const T = S.T || T0; if (!T.sitios) return as(T); if (S.sitio && S.sitio !== 'todos') { as(vistaS(T)); const h = P().querySelector('h2'); if (h) h.textContent = `Análisis · ${nomSitio(T, S.sitio)}`; return; } analCombinado(T); }; }
+
 /* ---------- 8 exportar ---------- */
 function analizar(T, v) {
   const falta = T.parcelas.filter(p => p.valores[v.id] == null || p.valores[v.id] === '' || isNaN(+p.valores[v.id]));
@@ -1074,23 +1208,46 @@ function analizar(T, v) {
   const vsT = k => k === test ? '—' : menor ? fmt((1 - R.medias[k] / (R.medias[test] || 1)) * 100, 1) + ' %' : (R.medias[k] >= R.medias[test] ? '+' : '') + fmt((R.medias[k] - R.medias[test]) / Math.abs(R.medias[test] || 1) * 100, 1) + ' %';
   return {ok: true, R, tk, ptr, orden, test, menor, txt, vsT, dec};
 }
-const nivelNota = (T, n) => n.nivel === 'parcela' ? 'Parcela ' + n.ref : n.nivel === 'bloque' ? 'Bloque ' + n.ref : n.nivel === 'tratamiento' ? 'Tratamiento ' + n.ref : 'Ensayo';
+const nivelNota = (T, n) => n.nivel === 'parcela' ? 'Parcela ' + (T.sitios ? etiq(T, {parcela: +n.ref, sitio: sitioDe(T, +n.ref)?.id}) : n.ref) : n.nivel === 'bloque' ? (String(n.ref).includes('|') ? `Bloque ${String(n.ref).split('|')[1]} (${nomSitio(T, String(n.ref).split('|')[0])})` : 'Bloque ' + n.ref) : n.nivel === 'tratamiento' ? 'Tratamiento ' + n.ref : 'Ensayo';
 const aQue = a => a.trats === 'todos' ? 'Todo el ensayo' : a.trats.join(', ');
 const condTxt = c => c ? `${c.t ?? '—'} °C · HR ${c.hr ?? '—'} % · ${c.viento ?? '—'} km/h` : '';
 function valorTxt(v, x) { if (x == null || x === '') return ''; if (v.tipo === 'texto') return String(x); if (v.tipo === 'escala' && v.escala?.[x - 1]) return v.escala[x - 1]; return +x; }
+const esRed = T => !!T.sitios && !T.__vista;
+const apsDe = T => T.__vista ? T.aplicaciones.filter(a => !a.sitio || a.sitio === 'todos' || a.sitio === T.__vista) : T.aplicaciones;
+const notasDe = T => !T.__vista ? T.notas : T.notas.filter(n => n.nivel === 'parcela' ? T.parcelas.some(p => p.parcela == n.ref) : n.nivel === 'bloque' ? String(n.ref).startsWith(T.__vista + '|') : true);
+const nomArch = (T, extra = '') => nombreArchivo(`${T.id}_${T.__vista ? nomSitio(T, T.__vista) : T.titulo}${extra}`);
+function bloquesRed(T, v, B, C) {
+  const a = combinar(T, v), sig = p => p < 0.01 ? '**' : p < 0.05 ? '*' : 'ns';
+  if (!a.ok) { B.push({p: `Para el análisis combinado hacen falta al menos 2 lugares con todas las parcelas cargadas${a.comp.length ? ` (completo: ${a.comp.map(x => x.nombre).join(', ')})` : ''}.`}); return null; }
+  const {R, tk, orden, dec} = a;
+  if (a.falta.length) B.push({nota: `Se analizan ${a.comp.length} de ${T.sitios.length} lugares. Sin datos completos: ${a.falta.map(x => x.nombre).join(', ')}.`});
+  B.push({tabla: {cab: ['Fuente', 'gl', 'SC', 'CM', 'F', 'p'], num: [1, 2, 3, 4, 5], anchos: [2600, 600, 1500, 1500, 1000, 1400], filas: R.tabla.map(f => [f.fuente, f.gl, fmt(f.sc, dec + 1), f.cm != null ? fmt(f.cm, dec + 1) : '', f.F != null ? fmt(f.F, 2) : '', f.p != null ? (f.p < 0.0001 ? '< 0,0001' : fmt(f.p, 4)) + ' ' + sig(f.p) : ''])}});
+  B.push({nota: `Análisis combinado (lugares al azar; tratamientos probados contra la interacción tratamiento × lugar). Media ${fmt(R.media, dec)} ${v.unidad || ''} · CV ${fmt(R.cv, 1)} % · Fmax entre lugares ${fmt(R.fmax, 2)} · DMS de Tukey ${fmt(tk.hsd, dec)}`});
+  return a;
+}
 async function bloquesInforme(T) {
   const vars = vis(T).filter(v => v.tipo !== 'texto'), C = colTrat(T), autor = USERS[T.owner]?.nombre || '', pa = T.parcela, B = [];
   B.push({titulo: T.titulo}, {nota: `${T.id} · ${RUBROS[T.rubro].nombre} · ${T.cultivo} · ${T.lugar} · campaña ${T.campana || '—'} · responsable: ${autor} · informe generado el ${new Date().toLocaleDateString('es-PY')}`});
   if (T.ejemplo) B.push({nota: 'Ensayo de ejemplo con datos hipotéticos.'});
   B.push({h1: '1. Objetivo'}, {p: T.objetivo || 'Completar el objetivo en Planificación → Editar datos.'});
-  B.push({h1: '2. Materiales y métodos'}, {p: `Diseño en bloques completos al azar con ${T.tratamientos.length} tratamientos y ${T.bloques} repeticiones (${T.parcelas.length} parcelas). Parcela: ${pa.texto || ''} (${fmt(pa.area_m2, 1)} m², útil ${fmt(pa.area_util_m2, 1)} m²). Tipo de ensayo: ${T.tipo}.${T.cortes?.length ? ` Se realizaron ${T.cortes.length} cortes de evaluación (${T.cortes.map(c => fechaTxt(c.fecha) + ', ' + c.dias + ' días').join('; ')}) después del corte de uniformización del ${fechaTxt(T.uniformizacion)}.` : ''}`});
+  if (T.__vista) B.push({nota: `Informe del lugar ${nomSitio(T, T.__vista)} (${T.sitios.find(x => x.id === T.__vista)?.lugar || ''}), parte de una red de ${T.sitios.length} lugares.`});
+  B.push({h1: '2. Materiales y métodos'}, {p: `${esRed(T) ? `Ensayo en red, repetido en ${T.sitios.length} lugares (${T.sitios.map(x => x.nombre + (x.lugar ? ' – ' + x.lugar : '')).join('; ')}). En cada lugar, diseño` : 'Diseño'} en bloques completos al azar con ${T.tratamientos.length} tratamientos y ${T.bloques} repeticiones (${T.parcelas.length} parcelas${esRed(T) ? ' en total' : ''}). Parcela: ${pa.texto || ''} (${fmt(pa.area_m2, 1)} m², útil ${fmt(pa.area_util_m2, 1)} m²). Tipo de ensayo: ${T.tipo}.${esRed(T) ? ' Los lugares se analizaron en conjunto con un ANAVA combinado (lugares al azar, bloques dentro de lugares) y cada lugar por separado.' : ''}${T.cortes?.length ? ` Se realizaron ${T.cortes.length} cortes de evaluación (${T.cortes.map(c => fechaTxt(c.fecha) + ', ' + c.dias + ' días').join('; ')}) después del corte de uniformización del ${fechaTxt(T.uniformizacion)}.` : ''}`});
   B.push({h2: 'Tratamientos'}, {tabla: {cab: ['Trat.', 'Descripción', 'Producto', 'Reg. SENAVE', 'Dosis'], anchos: [800, 2800, 2600, 1200, 1700], filas: T.tratamientos.flatMap(t => (t.productos.length ? t.productos : [null]).map((p, i) => [i ? '' : t.cod, i ? '' : t.nombre + (t.testigo ? ' (testigo)' : ''), p ? p.prod + (p.momento === 'secuencial' ? ' (secuencial)' : '') : '—', p?.reg || '', p ? `${fmt(p.dosis, 2)} ${p.unidad}` : ''])) }});
   B.push({h2: 'Variables y métodos de medición'}, {tabla: {cab: ['Variable', 'Unidad', 'Cómo se midió', 'Momento'], anchos: [2200, 1100, 4400, 1400], filas: vis(T).filter(v => !v.corte || v.corte === 1).map(v => [v.corte ? v.nombre.replace(/ · corte \d+$/, '') + ' (en cada corte)' : v.nombre, v.unidad || '', v.metodo + (v.sub > 1 ? ` (${v.sub} submuestras por parcela)` : ''), v.corte ? 'Cada corte' : v.momento || ''])}});
-  if (T.aplicaciones.length) B.push({h2: 'Aplicaciones y labores'}, {tabla: {cab: ['Fecha', 'Tipo', 'A qué', 'Producto / dosis', 'Momento', 'Condiciones', 'Estado'], anchos: [1180, 1450, 1150, 1950, 1300, 1300, 1050], filas: [...T.aplicaciones].sort((a, b) => a.fecha.localeCompare(b.fecha)).map(a => [fechaTxt(a.fecha), a.tipo, aQue(a), a.producto ? a.producto + (a.dosis ? ' · ' + a.dosis : '') : a.tipo === 'Aplicación de tratamientos' ? `Según tratamiento · caldo ${a.caldo || T.caldo || '—'} L/ha` : '', a.estadio || '', condTxt(a.cond), estadoApl(a)[1]])}});
+  if (esRed(T)) B.push({h2: 'Lugares'}, {tabla: {cab: ['Lugar', 'Ubicación', 'Operador', 'Parcelas', 'Avance'], num: [3, 4], anchos: [1800, 3000, 2000, 1000, 1000], filas: T.sitios.map(x => { const ps = T.parcelas.filter(p => p.sitio === x.id); return [x.nombre, x.lugar || '', (x.ops || []).map(u => USERS[u]?.nombre || u).join(', '), ps.length, Math.round(avance(T, ps) * 100) + ' %']; })}});
+  if (apsDe(T).length) B.push({h2: 'Aplicaciones y labores'}, {tabla: {cab: ['Fecha', ...(esRed(T) ? ['Lugar'] : []), 'Tipo', 'A qué', 'Producto / dosis', 'Momento', 'Condiciones', 'Estado'], anchos: esRed(T) ? [1050, 1000, 1300, 1000, 1750, 1150, 1150, 950] : [1180, 1450, 1150, 1950, 1300, 1300, 1050], filas: [...apsDe(T)].sort((a, b) => a.fecha.localeCompare(b.fecha)).map(a => [fechaTxt(a.fecha), ...(esRed(T) ? [!a.sitio || a.sitio === 'todos' ? 'Todos' : nomSitio(T, a.sitio)] : []), a.tipo, aQue(a), a.producto ? a.producto + (a.dosis ? ' · ' + a.dosis : '') : a.tipo === 'Aplicación de tratamientos' ? `Según tratamiento · caldo ${a.caldo || T.caldo || '—'} L/ha` : '', a.estadio || '', condTxt(a.cond), estadoApl(a)[1]])}});
   B.push({h1: '3. Resultados'});
   if (T.cortes?.length >= 2) { const D = mediasCorte(T);
     B.push({h2: 'Producción de forraje por corte (kg MS/ha)'}, {tabla: {cab: ['Trat.', ...T.cortes.map(c => `Corte ${c.n}`), 'Total'], num: [...T.cortes.map((_, i) => i + 1), T.cortes.length + 1], filas: D.map(d => [d.t.cod, ...d.m.map(x => fmt(x, 0)), fmt(d.m.every(x => x != null) ? d.m.reduce((a, x) => a + x, 0) : null, 0)])}}); }
   for (const v of vars) {
+    if (esRed(T)) { B.push({h2: v.nombre + (v.unidad ? ` (${v.unidad})` : '')}); const a = bloquesRed(T, v, B, C);
+      if (a) { const {R, tk, orden, dec} = a;
+        try { B.push({img: await graficoBarras({titulo: v.nombre + ' · promedio de la red', unidad: v.unidad, barras: orden.map(k => ({etiqueta: k, valor: R.medias[k], color: C[k], letra: R.pT < 0.05 ? tk.letras[k] : ''}))}), ancho: 15, alto: 7}); } catch (e) { console.warn(e); }
+        B.push({tabla: {cab: ['Trat.', 'Descripción', ...a.comp.map(x => x.nombre), 'Promedio', 'Tukey'], num: [...a.comp.map((_, i) => i + 2), a.comp.length + 2], filas: [...orden.map(k => [k, tratNom(T, k), ...a.comp.map(x => fmt(R.porSitio[x.id]?.[k], dec)), fmt(R.medias[k], dec), R.pT < 0.05 ? tk.letras[k] : '—']), ['', 'Media del lugar', ...a.comp.map(x => fmt(R.mediasSitio[x.id], dec)), fmt(R.media, dec), '']]}});
+        B.push({p: [{t: 'Lectura: ', b: true}, a.txt]}); }
+      const fil = T.sitios.map(x => { const r = analizar(vistaS(T, x.id), v); return r.ok ? [x.nombre, fmt(r.R.media, r.dec), fmt(r.R.cv, 1), fmt(r.R.tabla[1].F, 2), (r.ptr < 0.0001 ? '< 0,0001' : fmt(r.ptr, 4)) + (r.ptr < 0.01 ? ' **' : r.ptr < 0.05 ? ' *' : ' ns'), r.orden.map(k => k + (r.ptr < 0.05 ? ' ' + r.tk.letras[k] : '')).join(' · ')] : [x.nombre, r.sinVar ? 'Sin variación' : `Faltan ${r.falta.length} parcelas`, '', '', '', '']; });
+      B.push({h3: 'Cada lugar por separado'}, {tabla: {cab: ['Lugar', 'Media', 'CV (%)', 'F trat.', 'p', 'Tratamientos (de mejor a peor, Tukey)'], num: [1, 2, 3], anchos: [1500, 1000, 800, 900, 1200, 3700], filas: fil}});
+      continue; }
     const a = analizar(T, v); B.push({h2: v.nombre + (v.unidad ? ` (${v.unidad})` : '')});
     if (!a.ok) { B.push({p: a.sinVar ? 'Sin variación entre parcelas: no se puede calcular el ANAVA.' : `Faltan datos en ${a.falta.length} de ${T.parcelas.length} parcelas; el análisis se hace cuando están todas cargadas.`}); continue; }
     const {R, tk, orden, ptr, dec} = a, sig = p => p < 0.01 ? '**' : p < 0.05 ? '*' : 'ns';
@@ -1100,12 +1257,12 @@ async function bloquesInforme(T) {
     B.push({tabla: {cab: ['Trat.', 'Descripción', 'Media', 'Tukey', a.menor ? 'Control (Abbott)' : 'vs testigo'], num: [2, 4], anchos: [800, 3600, 1500, 1000, 1700], filas: orden.map(k => [k, tratNom(T, k), fmt(R.medias[k], dec), ptr < 0.05 ? tk.letras[k] : '—', a.vsT(k)])}});
     B.push({p: [{t: 'Lectura: ', b: true}, a.txt]});
   }
-  if (T.notas.length) B.push({h1: 'Anexo 1 · Notas de campo'}, {tabla: {cab: ['Nivel', 'Nota', 'Autor', 'Fecha'], anchos: [1500, 5200, 1400, 1000], filas: T.notas.map(n => [nivelNota(T, n), n.texto, USERS[n.autor]?.nombre || '', n.fecha])}});
+  if (notasDe(T).length) B.push({h1: 'Anexo 1 · Notas de campo'}, {tabla: {cab: ['Nivel', 'Nota', 'Autor', 'Fecha'], anchos: [1500, 5200, 1400, 1000], filas: notasDe(T).map(n => [nivelNota(T, n), n.texto, USERS[n.autor]?.nombre || '', n.fecha])}});
   const grupos = []; for (let i = 0; i < vars.length; i += 6) grupos.push(vars.slice(i, i + 6));
-  grupos.forEach((g, gi) => B.push(gi ? {p: ''} : {h1: 'Anexo 2 · Datos por parcela'}, {tabla: {cab: ['Parcela', 'Bloque', 'Trat.', ...g.map(v => v.nombre + (v.unidad ? ` (${v.unidad})` : ''))], num: [0, 1, ...g.map((_, i) => i + 3)], filas: T.parcelas.map(p => [p.parcela, p.bloque, p.trat, ...g.map(v => p.valores[v.id] == null || p.valores[v.id] === '' ? '' : fmt(p.valores[v.id], v.dec ?? 2))])}}));
+  grupos.forEach((g, gi) => B.push(gi ? {p: ''} : {h1: 'Anexo 2 · Datos por parcela'}, {tabla: {cab: [...(T.sitios ? ['Lugar'] : []), 'Parcela', 'Bloque', 'Trat.', ...g.map(v => v.nombre + (v.unidad ? ` (${v.unidad})` : ''))], num: T.sitios ? [1, 2, ...g.map((_, i) => i + 4)] : [0, 1, ...g.map((_, i) => i + 3)], filas: T.parcelas.map(p => [...(T.sitios ? [nomSitio(T, p.sitio)] : []), T.sitios ? p.parcela % 1000 : p.parcela, p.bloque, p.trat, ...g.map(v => p.valores[v.id] == null || p.valores[v.id] === '' ? '' : fmt(p.valores[v.id], v.dec ?? 2))])}}));
   return B;
 }
-async function exportarWord(T) { const B = await bloquesInforme(T); descargar(nombreArchivo(`${T.id}_${T.titulo}`) + '.docx', await crearDocx(B, {titulo: T.titulo, autor: USERS[T.owner]?.nombre || ''})); }
+async function exportarWord(T) { const B = await bloquesInforme(T); descargar(nomArch(T) + '.docx', await crearDocx(B, {titulo: T.titulo, autor: USERS[T.owner]?.nombre || ''})); }
 async function imprimirInforme(T) {
   const w = window.open('', '_blank'); if (!w) return toast('El navegador bloqueó la ventana: permití ventanas emergentes para imprimir');
   w.document.write('<p style="font-family:sans-serif;padding:20px">Preparando el informe…</p>');
@@ -1126,48 +1283,56 @@ async function imprimirInforme(T) {
 async function exportarExcel(T) {
   const vars = vis(T), C = v => v.nombre + (v.unidad ? ` (${v.unidad})` : '');
   const hojas = [
-    {nombre: 'Ensayo', filas: [['Campo', 'Valor'], ['Código', T.id], ['Título', T.titulo], ['Rubro', RUBROS[T.rubro].nombre], ['Tipo', T.tipo], ['Cultivo', T.cultivo], ['Lugar', T.lugar], ['Campaña', T.campana || ''], ['Responsable', USERS[T.owner]?.nombre || ''], ['Objetivo', T.objetivo || ''], ['Diseño', `DBCA · ${T.tratamientos.length} tratamientos × ${T.bloques} bloques`], ['Parcela', T.parcela.texto || ''], ['Área parcela (m²)', T.parcela.area_m2], ['Área útil (m²)', T.parcela.area_util_m2], ['Exportado', new Date().toLocaleString('es-PY')]]},
+    {nombre: 'Ensayo', filas: [['Campo', 'Valor'], ['Código', T.id], ['Título', T.titulo], ['Rubro', RUBROS[T.rubro].nombre], ['Tipo', T.tipo], ['Cultivo', T.cultivo], ['Lugar', T.__vista ? `${nomSitio(T, T.__vista)} (${T.sitios.find(x => x.id === T.__vista)?.lugar || ''}) · red de ${T.sitios.length} lugares` : T.lugar], ['Campaña', T.campana || ''], ['Responsable', USERS[T.owner]?.nombre || ''], ['Objetivo', T.objetivo || ''], ['Diseño', `DBCA · ${T.tratamientos.length} tratamientos × ${T.bloques} bloques`], ['Parcela', T.parcela.texto || ''], ['Área parcela (m²)', T.parcela.area_m2], ['Área útil (m²)', T.parcela.area_util_m2], ['Exportado', new Date().toLocaleString('es-PY')]]},
     {nombre: 'Tratamientos', filas: [['Trat.', 'Descripción', 'Testigo', 'Producto', 'Reg. SENAVE', 'Principio activo', 'Dosis', 'Unidad', 'Momento'], ...T.tratamientos.flatMap(t => (t.productos.length ? t.productos : [{}]).map(p => [t.cod, t.nombre, t.testigo ? 'sí' : '', p.prod || '', p.reg || '', p.pa || '', p.dosis ?? '', p.unidad || '', p.momento || '']))]},
-    {nombre: 'Datos', filas: [['Parcela', 'Bloque', 'Trat.', 'Tratamiento', 'Asignada a', ...vars.map(C)], ...T.parcelas.map(p => [p.parcela, p.bloque, p.trat, tratNom(T, p.trat), USERS[T.asig[p.parcela]]?.nombre || '', ...vars.map(v => valorTxt(v, p.valores[v.id]))])]},
+    ...(esRed(T) ? [{nombre: 'Lugares', filas: [['Código', 'Lugar', 'Ubicación', 'Operador', 'Parcelas', 'Avance (%)', 'Latitud', 'Longitud'], ...T.sitios.map(x => { const ps = T.parcelas.filter(p => p.sitio === x.id); return [x.id, x.nombre, x.lugar || '', (x.ops || []).map(u => USERS[u]?.nombre || u).join(', '), ps.length, Math.round(avance(T, ps) * 100), x.geo?.lat ?? '', x.geo?.lon ?? '']; })]}] : []),
+    {nombre: 'Datos', filas: [[...(T.sitios ? ['Lugar'] : []), 'Parcela', 'Bloque', 'Trat.', 'Tratamiento', 'Asignada a', ...vars.map(C)], ...T.parcelas.map(p => [...(T.sitios ? [nomSitio(T, p.sitio)] : []), p.parcela, p.bloque, p.trat, tratNom(T, p.trat), USERS[T.asig[p.parcela]]?.nombre || USERS[sitioDe(T, p.parcela)?.ops?.[0]]?.nombre || '', ...vars.map(v => valorTxt(v, p.valores[v.id]))])]},
     {nombre: 'Submuestras', filas: [['Parcela', 'Variable', 'Lectura', 'Valor'], ...T.parcelas.flatMap(p => Object.entries(p.sub || {}).flatMap(([vid, sb]) => { const v = T.variables.find(x => x.id === vid); const n = v ? v.nombre : vid;
       if (Array.isArray(sb)) return sb.map((y, i) => [p.parcela, n, i + 1, y ?? '']);
       return Object.entries(sb || {}).flatMap(([k, y]) => Array.isArray(y) ? y.map((z, i) => [p.parcela, n, `${k} ${i + 1}`, z ?? '']) : [[p.parcela, n, k, y ?? '']]); }))]},
     {nombre: 'Métodos', filas: [['Variable', 'Código', 'Unidad', 'Tipo', 'Submuestras', 'Momento', 'Método', 'Fuente'], ...vars.map(v => [v.nombre, v.id, v.unidad || '', v.tipo, v.sub || 1, v.momento || '', v.metodo || '', refTxt(v.ref)])]},
-    {nombre: 'Aplicaciones', filas: [['Fecha', 'Estado', 'Tipo', 'A qué', 'Producto', 'Dosis', 'Momento', 'Caldo (L/ha)', 'T (°C)', 'HR (%)', 'Viento (km/h)', 'Responsable', 'Observaciones'], ...[...T.aplicaciones].sort((a, b) => a.fecha.localeCompare(b.fecha)).map(a => [fechaTxt(a.fecha), estadoApl(a)[1], a.tipo, aQue(a), a.producto || '', a.dosis || '', a.estadio || '', a.caldo ?? '', a.cond?.t ?? '', a.cond?.hr ?? '', a.cond?.viento ?? '', USERS[a.resp]?.nombre || '', a.obs || ''])]},
-    {nombre: 'Notas', filas: [['Nivel', 'Referencia', 'Nota', 'Autor', 'Fecha'], ...T.notas.map(n => [nivelNota(T, n), n.ref, n.texto, USERS[n.autor]?.nombre || '', n.fecha])]},
-    {nombre: 'Historial', filas: [['Fecha', 'Usuario', 'Parcela', 'Qué', 'Antes', 'Después', 'Estado', 'Comentario'], ...T.cambios.map(c => [c.fecha, USERS[c.usuario]?.nombre || c.usuario, c.parcela, T.variables.find(v => v.id === c.variable)?.nombre || c.variable, c.antes ?? '', c.despues ?? '', c.estado, c.comentario || ''])]}];
+    {nombre: 'Aplicaciones', filas: [['Fecha', ...(T.sitios ? ['Lugar'] : []), 'Estado', 'Tipo', 'A qué', 'Producto', 'Dosis', 'Momento', 'Caldo (L/ha)', 'T (°C)', 'HR (%)', 'Viento (km/h)', 'Responsable', 'Observaciones'], ...[...apsDe(T)].sort((a, b) => a.fecha.localeCompare(b.fecha)).map(a => [fechaTxt(a.fecha), ...(T.sitios ? [!a.sitio || a.sitio === 'todos' ? 'Todos' : nomSitio(T, a.sitio)] : []), estadoApl(a)[1], a.tipo, aQue(a), a.producto || '', a.dosis || '', a.estadio || '', a.caldo ?? '', a.cond?.t ?? '', a.cond?.hr ?? '', a.cond?.viento ?? '', USERS[a.resp]?.nombre || '', a.obs || ''])]},
+    {nombre: 'Notas', filas: [['Nivel', 'Referencia', 'Nota', 'Autor', 'Fecha'], ...notasDe(T).map(n => [nivelNota(T, n), n.ref, n.texto, USERS[n.autor]?.nombre || '', n.fecha])]},
+    {nombre: 'Historial', filas: [['Fecha', 'Usuario', 'Parcela', 'Qué', 'Antes', 'Después', 'Estado', 'Comentario'], ...T.cambios.filter(c => !T.__vista || c.parcela === '—' || T.parcelas.some(p => p.parcela == c.parcela)).map(c => [c.fecha, USERS[c.usuario]?.nombre || c.usuario, T.sitios && +c.parcela ? etiq(T, {parcela: +c.parcela, sitio: sitioDe(T, +c.parcela)?.id}) : c.parcela, T.variables.find(v => v.id === c.variable)?.nombre || c.variable, c.antes ?? '', c.despues ?? '', c.estado, c.comentario || ''])]}];
   const res = [['Variable', 'Trat.', 'Descripción', 'Media', 'Tukey', 'vs testigo / control', 'F', 'p', 'CV (%)', 'Media general']];
-  vars.filter(v => v.tipo !== 'texto').forEach(v => { const a = analizar(T, v); if (!a.ok) return res.push([v.nombre, '', a.sinVar ? 'Sin variación' : `Faltan ${a.falta.length} parcelas`]);
+  if (esRed(T)) { res[0] = ['Variable', 'Trat.', 'Descripción', ...T.sitios.map(x => x.nombre), 'Promedio', 'Tukey', 'F trat.', 'p trat.', 'p trat × lugar', 'CV (%)', 'Media general'];
+    vars.filter(v => v.tipo !== 'texto').forEach(v => { const a = combinar(T, v); if (!a.ok) return res.push([v.nombre, '', 'Faltan lugares completos']);
+      a.orden.forEach((k, i) => res.push([v.nombre, k, tratNom(T, k), ...T.sitios.map(x => a.R.porSitio[x.id]?.[k] != null ? +a.R.porSitio[x.id][k].toFixed(4) : ''), +a.R.medias[k].toFixed(4), a.R.pT < 0.05 ? a.tk.letras[k] : '', i ? '' : +a.R.tabla[2].F.toFixed(3), i ? '' : +a.R.pT.toFixed(5), i ? '' : +a.R.pLT.toFixed(5), i ? '' : +a.R.cv.toFixed(2), i ? '' : +a.R.media.toFixed(4)])); });
+  } else vars.filter(v => v.tipo !== 'texto').forEach(v => { const a = analizar(T, v); if (!a.ok) return res.push([v.nombre, '', a.sinVar ? 'Sin variación' : `Faltan ${a.falta.length} parcelas`]);
     a.orden.forEach((k, i) => res.push([v.nombre, k, tratNom(T, k), +a.R.medias[k].toFixed(4), a.ptr < 0.05 ? a.tk.letras[k] : '', a.vsT(k), i ? '' : +a.R.tabla[1].F.toFixed(3), i ? '' : +a.ptr.toFixed(5), i ? '' : +a.R.cv.toFixed(2), i ? '' : +a.R.media.toFixed(4)])); });
   hojas.push({nombre: 'Resultados', filas: res});
   if (T.cortes?.length) hojas.push({nombre: 'Cortes', filas: [['Corte', 'Fecha', 'Días de rebrote'], ['Uniformización', fechaTxt(T.uniformizacion), ''], ...T.cortes.map(c => [c.n, fechaTxt(c.fecha), c.dias])]});
-  descargar(nombreArchivo(`${T.id}_${T.titulo}`) + '.xlsx', await crearXlsx(hojas));
+  descargar(nomArch(T) + '.xlsx', await crearXlsx(hojas));
 }
 function exportarCsv(T, coma) {
   const vars = vis(T);
-  descargar(nombreArchivo(`${T.id}_datos`) + (coma ? '_excel' : '') + '.csv', crearCsv([['parcela', 'bloque', 'trat', ...vars.map(v => v.id)], ...T.parcelas.map(p => [p.parcela, p.bloque, p.trat, ...vars.map(v => { const x = p.valores[v.id]; return x == null || x === '' ? '' : v.tipo === 'texto' ? x : +x; })])], {coma}), 'text/csv;charset=utf-8');
+  descargar(nombreArchivo(`${T.id}${T.__vista ? '_' + nomSitio(T, T.__vista) : ''}_datos`) + (coma ? '_excel' : '') + '.csv', crearCsv([[...(T.sitios ? ['lugar'] : []), 'parcela', 'bloque', 'trat', ...vars.map(v => v.id)], ...T.parcelas.map(p => [...(T.sitios ? [nomSitio(T, p.sitio)] : []), p.parcela, p.bloque, p.trat, ...vars.map(v => { const x = p.valores[v.id]; return x == null || x === '' ? '' : v.tipo === 'texto' ? x : +x; })])], {coma}), 'text/csv;charset=utf-8');
 }
 function geometriaParcelas(T) {
+  if (T.sitios) { const G = {}; T.parcelas.forEach(p => { if (p.geo) G[p.parcela] = p.geo; });
+    T.sitios.forEach(x => { if (x.geo?.lat != null && x.geo?.lon != null) Object.assign(G, poligonosCroquis(T.parcelas.filter(p => p.sitio === x.id && !p.geo), x.geo)); });
+    return Object.keys(G).length ? G : null; }
   if (T.parcelas.every(p => p.geo)) return Object.fromEntries(T.parcelas.map(p => [p.parcela, p.geo]));
   if (T.geo?.lat != null && T.geo?.lon != null) return poligonosCroquis(T.parcelas, T.geo); return null;
 }
 async function exportarQgis(T) {
   const G = geometriaParcelas(T); if (!G) return toast('Primero cargá la ubicación del ensayo (esquina de la parcela 101)');
-  const vars = vis(T), Cc = colTrat(T), base = nombreArchivo(T.id);
-  const feats = T.parcelas.map(p => { const props = {parcela: p.parcela, bloque: p.bloque, trat: p.trat, tratamiento: tratNom(T, p.trat), asignado: USERS[T.asig[p.parcela]]?.nombre || '', ensayo: T.id};
+  const vars = vis(T), Cc = colTrat(T), base = nombreArchivo(T.id + (T.__vista ? '_' + nomSitio(T, T.__vista) : ''));
+  const sinUb = T.sitios ? T.sitios.filter(x => !T.parcelas.some(p => p.sitio === x.id && G[p.parcela])) : [];
+  const feats = T.parcelas.filter(p => G[p.parcela]).map(p => { const props = {...(T.sitios ? {lugar: nomSitio(T, p.sitio)} : {}), parcela: p.parcela, bloque: p.bloque, trat: p.trat, tratamiento: tratNom(T, p.trat), asignado: USERS[T.asig[p.parcela]]?.nombre || USERS[sitioDe(T, p.parcela)?.ops?.[0]]?.nombre || '', ensayo: T.id};
     vars.forEach(v => { const x = p.valores[v.id]; props[v.id] = x == null || x === '' ? null : v.tipo === 'texto' ? String(x) : +x; });
-    const ns = T.notas.filter(n => (n.nivel === 'parcela' && n.ref == p.parcela) || (n.nivel === 'bloque' && n.ref == p.bloque) || (n.nivel === 'tratamiento' && n.ref === p.trat));
+    const ns = T.notas.filter(n => (n.nivel === 'parcela' && n.ref == p.parcela) || (n.nivel === 'bloque' && n.ref == refBloque(T, p)) || (n.nivel === 'tratamiento' && n.ref === p.trat));
     props.n_notas = ns.length; props.notas = ns.map(n => `${nivelNota(T, n)}: ${n.texto}`).join(' | ');
     return {type: 'Feature', properties: props, geometry: {type: 'Polygon', coordinates: [G[p.parcela]]}}; });
-  const leeme = `Ensayo ${T.id} · ${T.titulo}\r\nExportado ${new Date().toLocaleString('es-PY')} desde Ensayos de Campo.\r\n\r\nCómo abrirlo en QGIS: arrastrá ${base}_parcelas.geojson a QGIS. El estilo (colores por tratamiento y etiquetas) se carga solo porque el archivo .qml tiene el mismo nombre.\r\nCRS: WGS 84 (EPSG:4326).\r\n\r\nCampos: parcela, bloque, trat, tratamiento, asignado, ${vars.map(v => `${v.id} = ${v.nombre}${v.unidad ? ' (' + v.unidad + ')' : ''}`).join('; ')}; n_notas y notas.\r\n\r\nPara sumar valores del dron: con el ortomosaico abierto, usá Procesos → Estadísticas de zona sobre esta capa, exportá la tabla a CSV (columnas parcela y el índice) e importala en la app (Carga de datos → Importar).\r\n${T.geo && !T.parcelas.every(p => p.geo) ? `\r\nUbicación calculada desde la esquina ${T.geo.lat}, ${T.geo.lon}, rumbo ${T.geo.rumbo}°, parcelas de ${T.geo.ancho} × ${T.geo.largo} m.` : ''}`;
+  const leeme = `Ensayo ${T.id} · ${T.titulo}\r\nExportado ${new Date().toLocaleString('es-PY')} desde Ensayos de Campo.\r\n\r\nCómo abrirlo en QGIS: arrastrá ${base}_parcelas.geojson a QGIS. El estilo (colores por tratamiento y etiquetas) se carga solo porque el archivo .qml tiene el mismo nombre.\r\nCRS: WGS 84 (EPSG:4326).\r\n\r\n${T.sitios ? `Ensayo en red: ${T.sitios.map(x => x.nombre).join(', ')}. ${sinUb.length ? `Sin ubicación cargada (no figuran en el mapa): ${sinUb.map(x => x.nombre).join(', ')}.` : 'Todos los lugares tienen ubicación.'}\r\n\r\n` : ''}Campos: ${T.sitios ? 'lugar, ' : ''}parcela, bloque, trat, tratamiento, asignado, ${vars.map(v => `${v.id} = ${v.nombre}${v.unidad ? ' (' + v.unidad + ')' : ''}`).join('; ')}; n_notas y notas.\r\n\r\nPara sumar valores del dron: con el ortomosaico abierto, usá Procesos → Estadísticas de zona sobre esta capa, exportá la tabla a CSV (columnas parcela y el índice) e importala en la app (Carga de datos → Importar).\r\n${T.geo && !T.parcelas.every(p => p.geo) ? `\r\nUbicación calculada desde la esquina ${T.geo.lat}, ${T.geo.lon}, rumbo ${T.geo.rumbo}°, parcelas de ${T.geo.ancho} × ${T.geo.largo} m.` : ''}`;
   const zip = await crearZip([{nombre: `${base}_parcelas.geojson`, datos: crearGeojson(`${T.id}_parcelas`, feats)}, {nombre: `${base}_parcelas.qml`, datos: crearQml('trat', T.tratamientos.map(t => ({valor: t.cod, etiqueta: `${t.cod} · ${t.nombre}`, color: Cc[t.cod]})))},
-    {nombre: `${base}_aplicaciones.csv`, datos: crearCsv([['fecha', 'estado', 'tipo', 'a_que', 'producto', 'dosis', 'momento', 't', 'hr', 'viento', 'obs'], ...T.aplicaciones.map(a => [a.fecha, a.estado, a.tipo, aQue(a), a.producto || '', a.dosis || '', a.estadio || '', a.cond?.t ?? '', a.cond?.hr ?? '', a.cond?.viento ?? '', a.obs || ''])])},
-    {nombre: `${base}_notas.csv`, datos: crearCsv([['nivel', 'referencia', 'nota', 'autor', 'fecha'], ...T.notas.map(n => [n.nivel, n.ref, n.texto, USERS[n.autor]?.nombre || '', n.fecha])])}, {nombre: 'LEEME.txt', datos: leeme}]);
+    {nombre: `${base}_aplicaciones.csv`, datos: crearCsv([['fecha', 'estado', 'tipo', 'a_que', 'producto', 'dosis', 'momento', 't', 'hr', 'viento', 'obs'], ...apsDe(T).map(a => [a.fecha, a.estado, a.tipo, aQue(a), a.producto || '', a.dosis || '', a.estadio || '', a.cond?.t ?? '', a.cond?.hr ?? '', a.cond?.viento ?? '', a.obs || ''])])},
+    {nombre: `${base}_notas.csv`, datos: crearCsv([['nivel', 'referencia', 'nota', 'autor', 'fecha'], ...notasDe(T).map(n => [n.nivel, n.ref, n.texto, USERS[n.autor]?.nombre || '', n.fecha])])}, {nombre: 'LEEME.txt', datos: leeme}]);
   descargar(`${base}_QGIS.zip`, zip);
 }
 function exportarKml(T) {
   const G = geometriaParcelas(T); if (!G) return toast('Primero cargá la ubicación del ensayo'); const Cc = colTrat(T), vars = vis(T).filter(v => v.tipo !== 'texto');
-  descargar(nombreArchivo(T.id) + '.kml', crearKml(T.titulo, T.parcelas.map(p => ({nombre: `${p.parcela} · ${p.trat}`, color: Cc[p.trat], anillo: G[p.parcela],
+  descargar(nombreArchivo(T.id + (T.__vista ? '_' + nomSitio(T, T.__vista) : '')) + '.kml', crearKml(T.titulo, T.parcelas.filter(p => G[p.parcela]).map(p => ({nombre: `${etiq(T, p)} · ${p.trat}`, color: Cc[p.trat], anillo: G[p.parcela],
     desc: `<b>${esc(tratNom(T, p.trat))}</b><br>Bloque ${p.bloque}<br>${vars.map(v => `${esc(v.nombre)}: ${p.valores[v.id] == null || p.valores[v.id] === '' ? '—' : fmt(p.valores[v.id], v.dec ?? 2)} ${esc(v.unidad || '')}`).join('<br>')}`}))), 'application/vnd.google-earth.kml+xml');
 }
 async function exportarEnsayo(T) {
@@ -1176,37 +1341,41 @@ async function exportarEnsayo(T) {
   const perfiles = Object.fromEntries([...ids].filter(id => USERS[id]).map(id => [id, USERS[id]])), equipos = T.equipo && EQUIPOS[T.equipo] ? {[T.equipo]: EQUIPOS[T.equipo]} : {};
   descargar(nombreArchivo(`${T.id}_${T.titulo}`) + '.json', JSON.stringify({app: 'Ensayos de Campo', version: 2, fecha: new Date().toISOString(), ensayos: [T], config: {perfiles, equipos, custom: []}, imagenes}), 'application/json');
 }
-RENDER.exp = T => {
-  const conGeo = T.parcelas.every(p => p.geo), g = T.geo || {}, pa = T.parcela, ed = puede.diseno(T);
+RENDER.exp = T0 => {
+  const T = vistaS(T0), red = !!T0.sitios, sg = red ? (T0.sitios.find(x => x.id === (T.__vista || S.geoSitio)) || T0.sitios[0]) : null; if (red) S.geoSitio = sg.id;
+  const conGeo = red ? T0.sitios.every(x => x.geo?.lat != null) : T.parcelas.every(p => p.geo), g = (red ? sg.geo : T.geo) || {}, pa = T.parcela, ed = puede.diseno(T0), hayGeo = red ? T0.sitios.some(x => x.geo?.lat != null) : conGeo || g.lat != null;
   const anchoDef = g.ancho ?? (pa.hileras ? +(pa.hileras * pa.dist).toFixed(2) : pa.ancho || (pa.columnas ? pa.columnas * pa.e2 : '')), largoDef = g.largo ?? (pa.largo || (pa.filas ? pa.filas * pa.e1 : ''));
-  const listo = vis(T).filter(v => v.tipo !== 'texto').filter(v => analizar(T, v).ok).length;
+  const listo = vis(T).filter(v => v.tipo !== 'texto').filter(v => (esRed(T) ? combinar(T, v) : analizar(T, v)).ok).length;
   const card = (id, t, d, btns) => `<div class="card" id="${id}"><h3>${t}</h3><p class="note" style="margin:0">${d}</p><div class="row">${btns}</div></div>`;
-  P().innerHTML = `<section class="panel"><h2>Informe y exportar</h2><p class="lead">Los archivos se generan en este equipo, sin internet, y se guardan en la carpeta de descargas. ${listo} medición${listo === 1 ? '' : 'es'} con todos los datos para analizar.</p>
+  P().innerHTML = `<section class="panel"><h2>Informe y exportar${T.__vista ? ' · ' + esc(nomSitio(T0, T.__vista)) : ''}</h2><p class="lead">Los archivos se generan en este equipo, sin internet, y se guardan en la carpeta de descargas. ${listo} ${listo === 1 ? 'medición' : 'mediciones'} con todos los datos para analizar${esRed(T) ? ' en al menos 2 lugares' : ''}.</p>
+    ${red ? `<div class="callout">${T.__vista ? `Estás exportando solo <b>${esc(nomSitio(T0, T.__vista))}</b>. Para el informe de toda la red (análisis combinado y cada lugar), elegí <b>Todos</b> arriba.` : `Estás exportando <b>toda la red</b> (${T0.sitios.length} lugares): el Word trae el análisis combinado y cada lugar por separado; Excel, CSV y QGIS llevan la columna <b>Lugar</b>. Para un solo lugar, elegilo arriba.`}</div>` : ''}
     <div class="grid2">
     ${card('ex-word', 'Informe en Word', 'Objetivo, materiales y métodos, tratamientos con productos y dosis, cómo se midió cada variable, aplicaciones con condiciones, y por cada variable: ANAVA, gráfico, medias con Tukey y la lectura. Al final, notas y datos por parcela.', '<button class="btn primary" data-x="word">Descargar Word (.docx)</button><button class="btn" data-x="print">Imprimir o guardar PDF</button>')}
     ${card('ex-excel', 'Planilla Excel', 'Hojas: Ensayo, Tratamientos, Datos (una fila por parcela), Submuestras, Métodos, Aplicaciones, Notas, Historial y Resultados.', '<button class="btn primary" data-x="excel">Descargar Excel (.xlsx)</button>')}
     ${card('ex-csv', 'CSV para InfoStat o R', 'Una fila por parcela con parcela, bloque, tratamiento y cada medición (códigos cortos de columna).', '<button class="btn" data-x="csv">CSV (punto decimal)</button><button class="btn" data-x="csv-coma">CSV para Excel (coma decimal)</button>')}
     <div class="card" id="ex-qgis"><h3>QGIS y Google Earth</h3><p class="note" style="margin:0">Parcelas como polígonos con todos sus datos y notas; en QGIS se abre con colores por tratamiento y etiquetas.</p>
-      ${conGeo ? '<p class="note" style="margin:0">Este ensayo ya tiene las parcelas ubicadas.</p>' : `<form id="f-geo" style="display:grid;gap:8px"><b style="font-size:.9rem">Ubicación del ensayo</b>
-        <div class="grid3"><label class="f">Latitud esquina parcela 101<input type="number" step="any" name="lat" value="${g.lat ?? ''}" placeholder="-27.1234"></label><label class="f">Longitud<input type="number" step="any" name="lon" value="${g.lon ?? ''}" placeholder="-55.5678"></label>
+      ${conGeo && !red ? '<p class="note" style="margin:0">Este ensayo ya tiene las parcelas ubicadas.</p>' : !(ed || (red && sg.ops?.includes(S.user.id))) ? `<p class="note" style="margin:0">${red ? T0.sitios.map(x => `${esc(x.nombre)}: ${x.geo?.lat != null ? 'ubicado' : 'sin ubicar'}`).join(' · ') : g.lat != null ? 'Ubicación cargada.' : 'Todavía no se cargó la ubicación del ensayo (la carga el responsable).'}</p>` : `<form id="f-geo" style="display:grid;gap:8px"><b style="font-size:.9rem">Ubicación ${red ? 'de cada lugar' : 'del ensayo'}</b>
+        ${red ? `<label class="f">Lugar<select name="sitio" ${T.__vista ? 'disabled' : ''}>${T0.sitios.map(x => `<option value="${x.id}" ${x.id === sg.id ? 'selected' : ''}>${esc(x.nombre)}${x.geo?.lat != null ? ' ✓' : ' (sin ubicar)'}</option>`).join('')}</select></label>` : ''}
+        <div class="grid3"><label class="f">Latitud esquina parcela 101${red ? ' del lugar' : ''}<input type="number" step="any" name="lat" value="${g.lat ?? ''}" placeholder="-27.1234"></label><label class="f">Longitud<input type="number" step="any" name="lon" value="${g.lon ?? ''}" placeholder="-55.5678"></label>
         <label class="f">Rumbo de los bloques (°)<input type="number" step="any" name="rumbo" value="${g.rumbo ?? 90}" title="Dirección en la que avanza el bloque 1 (de la 101 a la 102), en grados desde el norte"></label>
         <label class="f">Ancho de parcela (m)<input type="number" step="any" name="ancho" value="${anchoDef}"></label><label class="f">Largo de parcela (m)<input type="number" step="any" name="largo" value="${largoDef}"></label>
         <label class="f">Calle entre bloques (m)<input type="number" step="any" name="calle" value="${g.calle ?? 1}"></label></div>
-        <div class="row">${ed ? '<button class="btn small" type="button" id="btn-gps">📍 Usar mi ubicación</button><button class="btn small primary" type="submit">Guardar ubicación</button>' : ''}<span class="note" id="geo-msg">${g.lat != null ? 'Ubicación guardada.' : 'Parado en la esquina de la parcela 101, tocá “Usar mi ubicación”. El rumbo es hacia dónde avanza el bloque 1 (90° = hacia el este).'}</span></div></form>`}
-      <div class="row"><button class="btn primary" data-x="qgis" ${conGeo || g.lat != null ? '' : 'disabled'}>Descargar para QGIS (.zip)</button><button class="btn" data-x="kml" ${conGeo || g.lat != null ? '' : 'disabled'}>Google Earth (.kml)</button></div></div>
+        <div class="row">${ed || (red && sg.ops?.includes(S.user.id)) ? '<button class="btn small" type="button" id="btn-gps">📍 Usar mi ubicación</button><button class="btn small primary" type="submit">Guardar ubicación</button>' : ''}<span class="note" id="geo-msg">${g.lat != null ? 'Ubicación guardada.' : 'Parado en la esquina de la parcela 101, tocá “Usar mi ubicación”. El rumbo es hacia dónde avanza el bloque 1 (90° = hacia el este).'}</span></div></form>`}
+      <div class="row"><button class="btn primary" data-x="qgis" ${hayGeo ? '' : 'disabled'}>Descargar para QGIS (.zip)</button><button class="btn" data-x="kml" ${hayGeo ? '' : 'disabled'}>Google Earth (.kml)</button></div></div>
     ${card('ex-json', 'Pasar el ensayo a otro equipo', 'Archivo con el ensayo completo (datos, notas, fotos y perfiles que participan). En el otro equipo se abre desde el indicador “Guardado” → Restaurar un respaldo.', '<button class="btn" data-x="json">Descargar ensayo (.json)</button>')}
     </div></section>`;
   P().onclick = async e => { const b = e.target.closest('[data-x]'); if (b) { const k = b.dataset.x, t0 = b.textContent; b.disabled = true; b.textContent = 'Generando…';
       try { if (k === 'word') await exportarWord(T); if (k === 'print') await imprimirInforme(T); if (k === 'excel') await exportarExcel(T); if (k === 'csv') exportarCsv(T, false); if (k === 'csv-coma') exportarCsv(T, true);
-        if (k === 'qgis') await exportarQgis(T); if (k === 'kml') exportarKml(T); if (k === 'json') await exportarEnsayo(T); if (k !== 'print') toast('Archivo descargado'); }
+        if (k === 'qgis') await exportarQgis(T); if (k === 'kml') exportarKml(T); if (k === 'json') await exportarEnsayo(T0); if (k !== 'print') toast('Archivo descargado'); }
       catch (x) { console.error(x); toast('No se pudo generar el archivo: ' + x.message); } b.disabled = false; b.textContent = t0; return; }
     if (e.target.closest('#btn-gps')) { if (!navigator.geolocation) return toast('Este equipo no tiene GPS disponible'); $('#geo-msg').textContent = 'Buscando ubicación…';
       navigator.geolocation.getCurrentPosition(pos => { const f = $('#f-geo'); f.lat.value = pos.coords.latitude.toFixed(7); f.lon.value = pos.coords.longitude.toFixed(7); $('#geo-msg').textContent = `Precisión ±${Math.round(pos.coords.accuracy)} m. Tocá “Guardar ubicación”.`; },
         er => { $('#geo-msg').textContent = er.code === 1 ? 'Permiso de ubicación denegado.' : 'No se pudo obtener la ubicación (probá al aire libre).'; }, {enableHighAccuracy: true, timeout: 20000}); } };
-  const fg = $('#f-geo'); if (fg) fg.onsubmit = e => { e.preventDefault(); const n = k => fg[k].value === '' ? null : +fg[k].value;
+  const fg = $('#f-geo'); if (fg?.sitio) fg.sitio.onchange = () => { S.geoSitio = fg.sitio.value; RENDER.exp(T0); };
+  if (fg) fg.onsubmit = e => { e.preventDefault(); const n = k => fg[k].value === '' ? null : +fg[k].value;
     if (n('lat') == null || n('lon') == null || !n('ancho') || !n('largo')) { $('#geo-msg').textContent = 'Completá latitud, longitud, ancho y largo.'; return; }
-    T.geo = {lat: n('lat'), lon: n('lon'), rumbo: n('rumbo') ?? 90, ancho: n('ancho'), largo: n('largo'), calle: n('calle') ?? 0, sepP: 0};
-    T.cambios.unshift({fecha: ahora(), usuario: S.user.id, parcela: '—', variable: 'Ubicación del ensayo', antes: null, despues: `${T.geo.lat}, ${T.geo.lon}`, estado: 'aprobado'}); toast('Ubicación guardada'); RENDER.exp(T); };
+    const geo = {lat: n('lat'), lon: n('lon'), rumbo: n('rumbo') ?? 90, ancho: n('ancho'), largo: n('largo'), calle: n('calle') ?? 0, sepP: 0}; if (red) sg.geo = geo; else T0.geo = geo;
+    T0.cambios.unshift({fecha: ahora(), usuario: S.user.id, parcela: '—', variable: red ? `Ubicación de ${sg.nombre}` : 'Ubicación del ensayo', antes: null, despues: `${geo.lat}, ${geo.lon}`, estado: 'aprobado'}); toast('Ubicación guardada'); RENDER.exp(T0); };
 };
 
 /* ================= importar: datos (Excel, CSV o foto) y productos de tratamientos ================= */
@@ -1302,6 +1471,86 @@ async function importarTratamientos(T) {
     M.cerrar(); toast('Productos agregados: revisá las dosis'); RENDER.trat(T); guardarPronto(); });
 }
 
+/* ================= enviar y recibir entre equipos (por archivo) ================= */
+const nuevoIdAp = () => 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+function cardIntercambio(T) {
+  const r = rolEn(T), gestion = puede.asignar(T), dueno = USERS[T.owner];
+  const destinos = [...new Set([...(T.sitios || []).flatMap(x => x.ops || []), ...Object.keys(T.trabajo || {}), ...Object.values(T.asig), ...Object.keys(T.compartido || {})])].filter(id => USERS[id] && id !== S.user.id);
+  return `<div class="card" id="card-intercambio"><h3>Enviar y recibir</h3><p class="note" style="margin:0">Cada persona usa la app en su celular, aunque esté en otro punto del país. ${gestion ? 'Mandale el ensayo a cada operador u observador (por WhatsApp o correo); el operador te devuelve sus datos de la misma forma y la app los suma sin pisar lo tuyo.' : r === 'operador' ? `Cuando termines de cargar, mandale tus datos a ${esc(dueno?.nombre || 'el responsable')}. Si te mandan una versión nueva del ensayo, recibila acá.` : 'Cuando te manden una versión nueva del ensayo, recibila acá para ver los últimos avances.'}</p>
+    <div class="row">${gestion && destinos.length ? `<label class="f" style="grid-auto-flow:column;align-items:center">Enviar a <select id="enviar-a">${destinos.map(id => `<option value="${id}">${esc(USERS[id].nombre)} · ${ROLNOM[rolEn(T, USERS[id])] || PERFILES[USERS[id].perfil]}</option>`).join('')}</select></label><button class="btn primary small" id="btn-enviar-sel">📤 Enviar ensayo</button>` : ''}
+      ${r === 'operador' ? `<button class="btn primary" id="btn-mis-datos">📤 Enviar mis datos a ${esc(dueno?.nombre.split(' ')[0] || 'el responsable')}</button>` : ''}
+      <button class="btn" id="btn-recibir-e">📥 Recibir archivo</button>
+      ${gestion ? `<button class="btn small" id="btn-nuevo-op">+ Operador nuevo</button>` : ''}</div></div>`;
+}
+function nuevoPerfilEnEnsayo(T, perfil) {
+  const M = modal(`<div class="row" style="justify-content:space-between"><h2>Nuevo ${perfil}</h2><button class="btn small" data-cerrar>✕</button></div><p class="note" style="margin:0">Para alguien que trabaja en otro lugar con su propio celular. Después le mandás el ensayo con “Enviar” y entra directo con este perfil.</p>
+    <form id="f-np" style="display:grid;gap:10px"><label class="f">Nombre y apellido<input type="text" name="n" required></label>${T.sitios ? `<label class="f">Lugar a cargo<select name="s"><option value="">Ninguno por ahora</option>${T.sitios.map(x => `<option value="${x.id}">${esc(x.nombre)}</option>`).join('')}</select></label>` : ''}<button class="btn primary" type="submit">Crear</button></form>`, 460);
+  M.querySelector('#f-np').onsubmit = ev => { ev.preventDefault(); const f = new FormData(ev.target), nombre = String(f.get('n')).trim(); if (!nombre) return; const id = 'u' + Date.now();
+    USERS[id] = {id, nombre, perfil, equipo: T.equipo || null, color: PALETA[(Object.keys(USERS).length + 3) % PALETA.length], creado: new Date().toISOString()};
+    if (!T.equipo) T.invitados = [...new Set([...(T.invitados || []), id])];
+    const sid = f.get('s'); if (sid) { const st = T.sitios.find(x => x.id === sid); st.ops = [id]; } else { T.trabajo = T.trabajo || {}; T.trabajo[id] = 'parcelas'; }
+    M.cerrar(); toast(`${nombre} sumado. Ahora mandale el ensayo con “Enviar”.`); RENDER.equipo(T); guardarPronto(); };
+}
+async function enviarPaquete(T, uid) {
+  await guardarAhora(); const u = USERS[uid], yo = S.user, deOp = rolEn(T) === 'operador';
+  const ids = new Set([T.owner, uid, yo.id, ...Object.values(T.asig), ...Object.keys(T.trabajo || {}), ...Object.keys(T.compartido || {}), ...(T.sitios || []).flatMap(x => x.ops || [])]);
+  const perfiles = Object.fromEntries([...ids].filter(id => USERS[id]).map(id => [id, USERS[id]])), equipos = T.equipo && EQUIPOS[T.equipo] ? {[T.equipo]: EQUIPOS[T.equipo]} : {};
+  let imagenes = [];
+  if (deOp) { const mias = (await DB.imagenesDe(T.id).catch(() => [])).filter(i => i.autor === yo.id); imagenes = await Promise.all(mias.map(async i => ({...i, blob: undefined, data: await blobAData(i.blob)}))); }
+  const js = {app: 'Ensayos de Campo', version: 2, tipo: 'paquete', de: yo.id, para: uid, fecha: new Date().toISOString(), ensayos: [T], config: {perfiles, equipos, custom: []}, imagenes};
+  const nombre = `${nombreArchivo(T.id)}_${deOp ? 'datos_de_' + nombreArchivo(yo.nombre.split(' ')[0]) : 'para_' + nombreArchivo(u?.nombre.split(' ')[0] || 'equipo')}.json`;
+  const archivo = new File([JSON.stringify(js)], nombre, {type: 'application/json'});
+  const texto = deOp ? `Datos de ${yo.nombre} del ensayo "${T.titulo}". Abrí Ensayos de Campo → 📥 Recibir archivo y elegí este archivo.` : `${u?.nombre.split(' ')[0] || ''}, te paso el ensayo "${T.titulo}". Abrí la app Ensayos de Campo (${LINK_APP}) → 📥 Recibir archivo y elegí este archivo.`;
+  T.cambios.unshift({fecha: ahora(), usuario: yo.id, parcela: '—', variable: deOp ? 'Datos enviados' : 'Ensayo enviado', antes: null, despues: u?.nombre || '', estado: 'aprobado'});
+  if (navigator.canShare?.({files: [archivo]})) { try { await navigator.share({files: [archivo], title: T.titulo, text: texto}); toast('Listo: archivo compartido'); return; } catch (e) { if (e.name === 'AbortError') return; } }
+  descargar(nombre, archivo); toast('Archivo descargado: mandalo por WhatsApp o correo (está en Descargas)');
+  const M = modal(`<div class="row" style="justify-content:space-between"><h2>Mandar el archivo</h2><button class="btn small" data-cerrar>✕</button></div>
+    <p style="margin:0">Se descargó <b>${esc(nombre)}</b>. Mandáselo a ${esc(u?.nombre || 'la persona')} por WhatsApp (clip → Documento) o por correo, con este mensaje:</p><div class="link-app">${esc(texto)}</div>
+    <div class="row"><button class="btn primary" id="cp-msg">Copiar el mensaje</button></div>`, 520);
+  M.querySelector('#cp-msg').onclick = async () => { try { await navigator.clipboard.writeText(texto); toast('Mensaje copiado'); } catch (e) {} };
+}
+function fusionar(L, R, de) {
+  const autor = USERS[de], autoridad = autor && ['dueño', 'gerente'].includes(rolEn(L, autor)), res = {valores: 0, notas: 0, aplic: 0, cambios: 0};
+  if (autoridad) { ['titulo', 'cultivo', 'tipo', 'lugar', 'campana', 'objetivo', 'tratamientos', 'variables', 'asig', 'trabajo', 'compartido', 'invitados', 'porCorte', 'cortes', 'uniformizacion', 'dron', 'caldo', 'parcela', 'equipo'].forEach(k => { if (R[k] !== undefined) L[k] = structuredClone(R[k]); }); }
+  if (R.sitios) { L.sitios = L.sitios || []; R.sitios.forEach(rs => { const ls = L.sitios.find(x => x.id === rs.id); if (!ls) L.sitios.push(structuredClone(rs)); else if (autoridad) Object.assign(ls, structuredClone(rs)); }); }
+  R.parcelas.forEach(rp => { let lp = L.parcelas.find(x => x.parcela === rp.parcela); if (!lp) { L.parcelas.push(structuredClone(rp)); return; }
+    lp.ts = lp.ts || {}; lp.sub = lp.sub || {};
+    Object.keys(rp.valores || {}).forEach(vid => { const tr = rp.ts?.[vid] || '', tl = lp.ts[vid] || ''; const vacio = lp.valores[vid] == null || lp.valores[vid] === '';
+      if ((tr > tl || (vacio && !tl)) && JSON.stringify(lp.valores[vid]) !== JSON.stringify(rp.valores[vid])) { lp.valores[vid] = rp.valores[vid]; if (rp.sub?.[vid] !== undefined) lp.sub[vid] = structuredClone(rp.sub[vid]); if (tr) lp.ts[vid] = tr; res.valores++; } }); });
+  const kN = n => [n.nivel, n.ref, n.texto, n.autor].join('¦'); const hayN = new Set(L.notas.map(kN)); R.notas.forEach(n => { if (!hayN.has(kN(n))) { L.notas.push(structuredClone(n)); res.notas++; } });
+  R.aplicaciones.forEach(ra => { const la = L.aplicaciones.find(x => String(x.id) === String(ra.id)); if (!la) { L.aplicaciones.push(structuredClone(ra)); res.aplic++; } else if (la.estado !== 'realizada' && ra.estado === 'realizada') { Object.assign(la, structuredClone(ra)); res.aplic++; } });
+  const kC = c => [c.fecha, c.usuario, c.parcela, c.variable, JSON.stringify(c.despues)].join('¦'), mapaC = new Map(L.cambios.map(c => [kC(c), c]));
+  R.cambios.forEach(c => { const l = mapaC.get(kC(c)); if (!l) { L.cambios.push(structuredClone(c)); res.cambios++; } else if (l.estado === 'pendiente' && c.estado !== 'pendiente') { l.estado = c.estado; l.comentario = c.comentario; } });
+  L.cambios.sort((a, b) => { const f = x => { const m = String(x.fecha).match(/(\d+)\/(\d+) (\d+):(\d+)/); return m ? +m[2] * 1e6 + +m[1] * 1e4 + +m[3] * 100 + +m[4] : 0; }; return f(b) - f(a); });
+  if (L.cortes || L.porCorte) armarCortes(L); else recalc(L);
+  return res;
+}
+function recibirArchivo() {
+  const M = modal(`<div class="row" style="justify-content:space-between"><h2>Recibir archivo</h2><button class="btn small" data-cerrar>✕</button></div>
+    <p class="note" style="margin:0">Elegí el archivo que te mandaron (ensayo, datos de un operador o respaldo). Si ya tenés ese ensayo, la app suma lo nuevo sin borrar lo tuyo.</p>
+    <label class="btn primary" style="position:relative;justify-self:start">📥 Elegir archivo<input type="file" accept=".json,application/json,text/plain,*/*" id="rec-file" style="position:absolute;inset:0;opacity:0;cursor:pointer"></label><div id="rec-msg"></div>`, 560);
+  M.querySelector('#rec-file').onchange = async e => {
+    const f = e.target.files[0]; if (!f) return; let js; try { js = JSON.parse(await f.text()); } catch (x) { M.querySelector('#rec-msg').innerHTML = '<div class="callout warn">El archivo no se pudo leer. ¿Es un archivo de Ensayos de Campo (.json)?</div>'; return; }
+    if (js?.app !== 'Ensayos de Campo' || !Array.isArray(js.ensayos)) { M.querySelector('#rec-msg').innerHTML = '<div class="callout warn">No es un archivo de Ensayos de Campo.</div>'; return; }
+    const res = await recibirPaquete(js); M.cerrar();
+    const para = js.para && USERS[js.para];
+    if (para && S.user?.id !== para.id && (js.tipo === 'paquete') && (!S.user || await confirmar('Entrar con tu perfil', `Este ensayo se lo mandaron a <b>${esc(para.nombre)}</b> (${PERFILES[para.perfil]}). ¿Sos vos? Si decís que sí, entrás con ese perfil para trabajar en lo que te asignaron.`, {ok: `Sí, soy ${para.nombre.split(' ')[0]}`, cancelar: 'No'}))) { S.user = para; }
+    const T = byId(js.ensayos[0].id); listaCuentas();
+    toast(res.nuevo ? `Ensayo “${T.titulo}” recibido` : `Se sumaron ${res.valores} valores, ${res.notas} notas y ${res.aplic} aplicaciones`);
+    if (S.user && T && rolEn(T)) { S.rubro = T.rubro; abrir(T, rolEn(T) === 'operador' ? 'datos' : rolEn(T) === 'lector' ? 'campo' : 'equipo'); } else if (S.user) irInicio(); else pantalla('bienvenida');
+  };
+}
+async function recibirPaquete(js) {
+  Object.entries(js.config?.perfiles || {}).forEach(([id, u]) => { if (!USERS[id]) USERS[id] = u; });
+  Object.entries(js.config?.equipos || {}).forEach(([id, q]) => { if (!EQUIPOS[id]) EQUIPOS[id] = q; });
+  (js.config?.custom || []).forEach(c => { if (!CUSTOM.some(x => x.id === c.id)) CUSTOM.push(c); });
+  let total = {valores: 0, notas: 0, aplic: 0, nuevo: false};
+  for (const R of js.ensayos) { const L = byId(R.id); if (!L) { TRIALS.push(structuredClone(R)); total.nuevo = true; } else { const r = fusionar(L, R, js.de); total.valores += r.valores; total.notas += r.notas; total.aplic += r.aplic; } }
+  const ya = new Set((await DB.todasLasImagenes().catch(() => [])).map(i => i.id));
+  for (const im of js.imagenes || []) if (!ya.has(im.id)) await DB.guardarImagen({...im, data: undefined, blob: await dataABlob(im.data)});
+  await guardarAhora(); return total;
+}
+
 /* ================= control de parcela (panel lateral) ================= */
 let notaNivel = 'parcela';
 function abrirDrawer(pn) {
@@ -1323,12 +1572,12 @@ function abrirDrawer(pn) {
     else campo = `<div class="row"><input type="number" step="any" data-m="${v.id}" value="${val ?? ''}" ${dis} style="width:140px;text-align:right;font-family:var(--f-data)"><span class="note">${esc(v.unidad)}</span></div>`;
     return `<div class="medida" data-med="${v.id}"><div class="row" style="justify-content:space-between"><b>${esc(v.nombre)}</b>${v.origen === 'dron' ? '<span class="chip dron">dron</span>' : v.origen === 'calc' ? '<span class="chip neu">calculada</span>' : val == null || val === '' ? '<span class="chip warn">pendiente</span>' : '<span class="chip ok">cargado</span>'}</div>
       ${campo}<details><summary>Cómo se mide${v.momento ? ' · ' + esc(v.momento) : ''}</summary><p>${esc(v.metodo)}${v.min != null && v.tipo !== 'texto' ? ` Rango válido: ${v.min} a ${v.max}.` : ''}</p></details></div>`; };
-  const notasDe = () => T.notas.filter(n => n.nivel === notaNivel && String(n.ref) === String(notaNivel === 'parcela' ? pn : notaNivel === 'bloque' ? p.bloque : p.trat));
-  const refN = () => notaNivel === 'parcela' ? pn : notaNivel === 'bloque' ? p.bloque : p.trat;
+  const refN = () => notaNivel === 'parcela' ? pn : notaNivel === 'bloque' ? refBloque(T, p) : p.trat;
+  const notasDe = () => T.notas.filter(n => n.nivel === notaNivel && String(n.ref) === String(refN()));
   const d = $('#drawer');
-  d.innerHTML = `<header><div class="row" style="justify-content:space-between"><h2>Parcela ${pn}</h2><button class="btn small" id="dr-cerrar" aria-label="Cerrar">✕ Cerrar</button></div>
+  d.innerHTML = `<header><div class="row" style="justify-content:space-between"><h2>Parcela ${T.sitios ? pn % 1000 : pn}${T.sitios ? ` <span class="chip acc">${esc(nomSitio(T, p.sitio))}</span>` : ''}</h2><button class="btn small" id="dr-cerrar" aria-label="Cerrar">✕ Cerrar</button></div>
     <div class="row note"><span><span class="swatch" style="background:${C[p.trat]}"></span> <b style="color:var(--ink)">${p.trat}</b> · ${esc(tratNom(T, p.trat))}</span><span>Bloque ${p.bloque}</span>${a ? `<span class="row" style="gap:5px">${avatar(a)}${esc(a.nombre)}</span>` : '<span>Sin asignar</span>'}</div>
-    ${(() => { const hechas = (T.aplicaciones || []).filter(a => a.estado === 'realizada' && aplicaA(a, p.trat) && a.fecha <= HOY).sort((x, y) => y.fecha.localeCompare(x.fecha));
+    ${(() => { const hechas = (T.aplicaciones || []).filter(a => a.estado === 'realizada' && aplicaA(a, p.trat) && a.fecha <= HOY && (!p.sitio || !a.sitio || a.sitio === 'todos' || a.sitio === p.sitio)).sort((x, y) => y.fecha.localeCompare(x.fecha));
       const tr = hechas.find(a => a.tipo === 'Aplicación de tratamientos'), lab = hechas.find(a => a.tipo !== 'Aplicación de tratamientos');
       const t = T.tratamientos.find(x => x.cod === p.trat);
       const l1 = tr ? `Última aplicación del tratamiento: <b>${fechaTxt(tr.fecha)}</b>${tr.estadio ? ' (' + esc(tr.estadio.split(' (')[0]) + ')' : ''}${dias(tr.fecha) <= 120 ? ` · hoy <b>${dias(tr.fecha)} DDA</b>` : ''}` : t?.testigo ? 'Testigo: no recibe la aplicación de tratamientos.' : '';
@@ -1340,7 +1589,7 @@ function abrirDrawer(pn) {
       <div style="display:grid;gap:8px"><h3>Notas</h3><div class="seg" id="seg-nota"></div><div id="notas-list"></div>
         ${puede.nota(T, notaNivel, refN()) ? `<textarea id="nota-txt" data-voz placeholder="Escribí una nota para ${notaNivel === 'parcela' ? 'esta parcela' : notaNivel === 'bloque' ? 'todo el bloque ' + p.bloque : 'el tratamiento ' + p.trat + ' (todas sus parcelas)'}"></textarea><button class="btn small" id="nota-add" style="justify-self:start">Agregar nota</button>` : '<p class="note" style="margin:0">No podés agregar notas en este nivel.</p>'}</div></div>
     <footer><span class="note" id="dr-msg">${ed ? 'Los cambios quedan en el historial.' : ''}</span>${ed ? '<button class="btn primary" id="dr-guardar">Guardar resultados</button>' : ''}</footer>`;
-  seg('#seg-nota', [['parcela', `Parcela ${pn}`], ['tratamiento', `Tratamiento ${p.trat}`], ['bloque', `Bloque ${p.bloque}`]], notaNivel, v => { notaNivel = v; abrirDrawer(pn); });
+  seg('#seg-nota', [['parcela', `Parcela ${T.sitios ? pn % 1000 : pn}`], ['tratamiento', `Tratamiento ${p.trat}`], ['bloque', `Bloque ${p.bloque}`]], notaNivel, v => { notaNivel = v; abrirDrawer(pn); });
   $('#notas-list').innerHTML = listaNotas(T, notasDe());
   segCorte('#seg-corte-dr', T, () => abrirDrawer(pn)); pintarFotos(T, pn); vozEn(d);
   d.onchange = e => { if (e.target.dataset.fotoIn != null) subirFotos(e.target, T, pn); };
@@ -1626,6 +1875,16 @@ const TOUR = [
     go: () => { varAnal = null; enEjemplo('anal', PA_()); }, el: () => $('#g-cortes')},
   {g: 'Otros rubros y roles', t: 'Lo que ve un operador', d: 'Ana es operadora: al entrar ve “Mis tareas”, solo con sus parcelas y lo que le falta medir, y las abre directo con “Controlar”.',
     go: () => { cerrarDrawer(); comoUsuario('ana', 'agricola'); irInicio(); }, el: () => cardDe($('#s-inicio [data-abrir="DEMO-AG-02"]'))},
+  {g: 'Varios lugares', t: 'Un ensayo en varios lugares', d: 'El mismo ensayo se puede repetir en distintos puntos del país: cada lugar tiene su croquis sorteado, su operador y su avance. Este ejemplo, una red de cultivares de soja, está en Hohenau, Naranjal y San Pedro, con un operador en cada lugar. Se suman lugares desde Equipo o al crear el ensayo.',
+    go: () => { if (!RED_()) return; S.sitio = 'todos'; enEjemplo('equipo', RED_()); }, el: () => cardDe(conTexto('#panel h3', 'Lugares del ensayo')) || $('#panel .sitios'), si: () => !!RED_()},
+  {g: 'Varios lugares', t: 'Elegir el lugar', d: 'Arriba se elige qué lugar mirar: “Todos” muestra la red completa y cada lugar muestra su croquis, sus datos y sus aplicaciones. El operador entra directo a su lugar (marcado con ★).',
+    go: () => { if (!RED_()) return; enEjemplo('campo', RED_()); }, el: () => $('#seg-sitio'), si: () => !!RED_()},
+  {g: 'Varios lugares', t: 'Análisis de la red', d: 'Con “Todos”, el análisis combina los lugares: ANAVA combinado (lugares, bloques dentro de lugares, tratamientos e interacción tratamiento × lugar), medias de cada lugar y Tukey. Si se elige un lugar, se analiza solo. El Word trae las dos cosas.',
+    go: () => { if (!RED_()) return; S.sitio = 'todos'; varAnal = 'rend_kg'; enEjemplo('anal', RED_()); RENDER.anal(RED_()); }, el: () => $('#anal-body .card'), si: () => !!RED_()},
+  {g: 'Varios lugares', t: 'Enviar y recibir trabajo', d: 'Como cada uno usa la app en su celular, el gerente le manda el ensayo al operador por WhatsApp o correo; el operador carga sus datos sin internet y devuelve el archivo. Al recibirlo, la app suma lo nuevo sin borrar nada y lo deja para revisar.',
+    go: () => { if (!RED_()) return; S.sitio = 'todos'; enEjemplo('equipo', RED_()); }, el: () => $('#card-intercambio'), si: () => !!RED_()},
+  {g: 'Varios lugares', t: 'Entrar como observador', d: 'Un observador (por ejemplo un cliente o un técnico de la empresa) ve todos los avances, datos, análisis e informes, pero no puede modificar nada. Se suma desde Equipo → “Sumar un observador”. Lucía es la observadora del ejemplo.',
+    go: () => { cerrarDrawer(); comoUsuario('lucia', 'agricola'); irInicio(); }, el: () => cardDe($('#s-inicio [data-abrir="DEMO-AG-01"]')) || $('#s-inicio'), si: () => !!USERS.lucia && !!RED_()},
   {g: 'Otros rubros y roles', t: 'Ayuda siempre a mano', d: 'Desde este botón se vuelve al recorrido o se va directo a cualquier función. ¡Listo! Ya podés explorar la app por tu cuenta con cualquiera de las cuentas de ejemplo.',
     go: () => { comoUsuario('marta', 'agricola'); irInicio(); }, el: () => $('#btn-ayuda')}
 ];
@@ -1656,6 +1915,7 @@ async function tourEmpezar(i = 0) {
   tourIr(i);
 }
 function tourIr(i) {
+  const d = i < TR.i ? -1 : 1; while (i > 0 && i < TOUR.length - 1 && TOUR[i].si && !TOUR[i].si()) i += d;
   TR.i = Math.max(0, Math.min(TOUR.length - 1, i)); const st = TOUR[TR.i];
   $('#ayuda').hidden = true; $('#tour').hidden = false;
   try { st.go(); } catch (e) { console.warn('recorrido', e); }
@@ -1687,7 +1947,7 @@ function abrirAyuda() {
   $('#ayuda-lista').innerHTML = grupos.map(g => `<section><h3>${g}</h3>${TOUR.map((x, i) => x.g === g ? `<button data-ti="${i}"><span class="n">${i + 1}</span><span>${esc(x.t)}</span></button>` : '').join('')}</section>`).join('');
   $('#ayuda').hidden = false; $('#ayuda-empezar').focus();
 }
-$('#btn-ayuda').onclick = abrirAyuda; $('#ayuda-inst').onclick = () => { $('#ayuda').hidden = true; abrirInstalar(); }; $('#btn-compartir-ini').onclick = () => abrirInstalar(); $('#btn-tour-inicio').onclick = () => tourEmpezar(0);
+$('#btn-ayuda').onclick = abrirAyuda; $('#ayuda-inst').onclick = () => { $('#ayuda').hidden = true; abrirInstalar(); }; $('#btn-compartir-ini').onclick = () => abrirInstalar(); $('#btn-recibir-ini').onclick = () => recibirArchivo(); $('#btn-tour-inicio').onclick = () => tourEmpezar(0);
 $('#ayuda-x').onclick = () => { $('#ayuda').hidden = true; if (TR.i >= 0) tourSalir(); };
 $('#ayuda').onclick = e => { if (e.target.id === 'ayuda') { $('#ayuda').hidden = true; if (TR.i >= 0) tourSalir(); } const b = e.target.closest('[data-ti]'); if (b) { $('#ayuda').hidden = true; TR.i < 0 ? tourEmpezar(+b.dataset.ti) : tourIr(+b.dataset.ti); } };
 $('#ayuda-empezar').onclick = () => { $('#ayuda').hidden = true; tourEmpezar(0); };
