@@ -859,6 +859,7 @@ async function pintarFotoAerea(T0, T) {
   const W = Math.min(1400, img.naturalWidth), H = Math.round(W * img.naturalHeight / img.naturalWidth); cv.width = W; cv.height = H;
   const g = cv.getContext('2d'); g.drawImage(img, 0, 0, W, H); dibujarCroquisSobre(g, T, fa.esq.map(([u, v]) => [u * W, v * H]), W / 1400);
   const host = $('#fa-rec'); if (!host) return; const L = layoutM(T), recs = await recortesAereos(T0, T, img, fa, L.grupos);
+  host.classList.toggle('estrecho', L.unidad === 'franja');
   host.innerHTML = recs.map(r => `<figure data-fa-ver="${r.id}"><img src="${r.url}" alt="${esc(r.txt)}"><figcaption>${esc(r.txt)}</figcaption></figure>`).join('');
 }
 function dibujarCroquisSobre(g, T, q, esc0 = 1) {

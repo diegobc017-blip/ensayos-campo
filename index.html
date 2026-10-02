@@ -248,6 +248,7 @@ pre.code{margin:0;max-height:260px;overflow:auto;background:var(--soft);border-r
 .modo input{position:absolute;opacity:0;pointer-events:none} .modo b{font-size:.98rem} .modo span{font-size:.86rem;color:var(--muted)}
 .fa-rec{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;align-items:end}
 .fa-rec figure{margin:0;display:grid;gap:4px;cursor:pointer} .fa-rec img{width:100%;height:auto;max-height:240px;object-fit:contain;background:#1d241f;border-radius:8px}
+.fa-rec.estrecho{grid-template-columns:repeat(auto-fill,minmax(70px,1fr))} .fa-rec.estrecho img{max-height:320px}
 .fa-rec figcaption{font-size:.78rem;color:var(--muted);text-align:center}
 .sitios{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px} .sitio .bar{display:block}
 .sitio h3{font-size:1.05rem}
@@ -403,7 +404,7 @@ pre.code{margin:0;max-height:260px;overflow:auto;background:var(--soft);border-r
 
 <div class="carga" id="carga"><div class="spin"></div><span>Abriendo Ensayos de Campo…</span></div>
 <noscript><p style="padding:20px">Esta aplicación necesita JavaScript activado.</p></noscript>
-<script type="module" src="./js/app.js?v=3343d5634f"></script>
+<script type="module" src="./js/app.js?v=55a4ce4799"></script>
 <script>window.addEventListener('unhandledrejection', e => { const c = document.getElementById('carga'); if (c) c.innerHTML = '<span>No se pudo abrir la app: ' + (e.reason && e.reason.message || 'error') + '. Abrila con iniciar-app.cmd.</span>'; });
 window.addEventListener('error', e => { try { if (document.getElementById('carga') && !sessionStorage.getItem('ec-recarga')) { sessionStorage.setItem('ec-recarga', '1'); setTimeout(() => location.reload(), 600); return; } } catch (x) {} const c = document.getElementById('carga'); if (c) c.innerHTML = '<span>No se pudo abrir la app: ' + (e.message || 'error') + '. Probá abrirla con iniciar-app.cmd (no con doble clic en index.html).</span>'; });</script>
 </body>
