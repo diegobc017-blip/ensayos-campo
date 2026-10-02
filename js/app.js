@@ -168,7 +168,10 @@ function cargarEstado(ensayos, cfg) {
   Object.keys(META).forEach(k => delete META[k]); Object.assign(META, cfg.meta || {});
   SESION = cfg.sesion || null;
 }
-if (GUARD?.config) cargarEstado(GUARD.ensayos, GUARD.config);
+if (GUARD?.config) { cargarEstado(GUARD.ensayos, GUARD.config);
+  // las tarjetas de ejemplo guardadas antes de tener imagen toman la imagen (y la lectura nueva) del ejemplo actual
+  try { const sem = new Map(JSON.parse(SEMILLA).trials.flatMap(T => (T.papeles || []).filter(x => x.imgUrl).map(x => [x.id, x])));
+    TRIALS.forEach(T => (T.papeles || []).forEach(x => { const n = sem.get(x.id); if (n && !x.imgUrl && !x.img) Object.assign(x, {imgUrl: n.imgUrl, st: n.st, calidad: n.calidad}); })); } catch (e) { console.warn(e); } }
 else META.creado = new Date().toISOString();
 const EJ_ = () => byId('DEMO-AG-02'), PA_ = () => byId('DEMO-PA-01'), RED_ = () => byId('DEMO-AG-01'), LAL_ = () => byId('DEMO-LAL-01');
 
@@ -1453,6 +1456,7 @@ RENDER.aplic = T => {
     const pp = e.target.closest('[data-papel]'); if (pp) return leerPapel(T, pp.dataset.papel);
     const vp = e.target.closest('[data-ver-papel]'); if (vp) return verPapel(T, vp.dataset.verPapel);
     const pd = e.target.closest('[data-papel-datos]'); if (pd) return papelADatos(T, pd.dataset.papelDatos);
+    const gp = e.target.closest('[data-galeria-papel]'); if (gp) return galeriaPapel(T, gp.dataset.galeriaPapel);
     if (e.target.closest('#apl-nueva')) { aplForm = true; RENDER.aplic(T); $('#apl-form').scrollIntoView({block: 'nearest'}); return; }
     if (e.target.closest('#af-no')) { aplForm = false; RENDER.aplic(T); return; }
     if (e.target.closest('[data-realizar]')) { aplReal = +e.target.closest('[data-realizar]').dataset.realizar; RENDER.aplic(T); return; }
@@ -1625,11 +1629,11 @@ function calidadAplic(T, a) {
   if (!L.length) return lee ? `<div class="row"><button class="btn small" data-papel="${a.id}">🔍 Leer papel hidrosensible</button><span class="note">Medí la cobertura y las gotas con la cámara del celular.</span></div>` : '';
   const G = gruposMetro(L), C = colTrat(T), tot = combinarTarjetas(L.map(stDe));
   const filasR = resumenCalidad(T, L).map(r => `<tr><td>${C[r.tr] ? `<span class="swatch" style="background:${C[r.tr]}"></span> ` : ''}<b>${esc(r.tr)}</b> · ${esc(r.pos)}<br><span class="note">${r.n} metro${r.n > 1 ? 's' : ''}</span></td><td class="num">${fmt(r.cob, 1)} %</td><td class="num">${fmt(r.dens, 0)}</td><td class="num">${fmt(r.dmv, 0)}</td><td class="num">${[0, 1, 2].map(k => `<span style="color:${COL_GOTA[k]}">${fmt(r.pct[k], 0)}</span>`).join(' / ')}</td><td><span class="chip ${r.ev[0]}">${r.ev[1]}</span></td></tr>`).join('');
-  const filasM = G.map(g => `<tr><td>${g.parcela ? 'Parcela ' + esc(T.sitios ? etiq(T, {parcela: +g.parcela, sitio: sitioDe(T, +g.parcela)?.id}) : g.parcela) + ' · ' + esc(tratDeParcela(T, g.parcela) || '') : 'General'}<br><span class="note">${esc(g.posicion)} · ${esc(g.metro)}</span><div class="row" style="gap:4px;margin-top:4px">${g.tarjetas.map(x => `<button class="btn small" data-ver-papel="${x.id}" title="${esc([x.calidad ? 'Lectura ' + x.calidad.etiqueta.toLowerCase() + (x.calidad.avisos?.length ? ': ' + x.calidad.avisos.join(' ') : '') : '', x.obs || 'Ver la tarjeta'].filter(Boolean).join(' · '))}">${x.img ? '🖼️' : '📄'} ${x.tarjeta || ''}${x.calidad?.nivel ? (x.calidad.nivel > 1 ? ' ⛔' : ' ⚠️') : ''}</button>`).join('')}</div></td><td class="num">${fmt(g.st.cob, 1)} %</td><td class="num">${fmt(g.st.dens, 0)}</td><td class="num">${fmt(g.st.dmv, 0)}</td></tr>`).join('');
+  const filasM = G.map(g => `<tr><td>${g.parcela ? 'Parcela ' + esc(T.sitios ? etiq(T, {parcela: +g.parcela, sitio: sitioDe(T, +g.parcela)?.id}) : g.parcela) + ' · ' + esc(tratDeParcela(T, g.parcela) || '') : 'General'}<br><span class="note">${esc(g.posicion)} · ${esc(g.metro)}</span><div class="row" style="gap:4px;margin-top:4px">${g.tarjetas.map(x => `<button class="btn small" data-ver-papel="${x.id}" title="${esc([x.calidad ? 'Lectura ' + x.calidad.etiqueta.toLowerCase() + (x.calidad.avisos?.length ? ': ' + x.calidad.avisos.join(' ') : '') : '', x.obs || 'Ver la tarjeta'].filter(Boolean).join(' · '))}">${x.img || x.imgUrl ? '🖼️' : '📄'} ${x.tarjeta || ''}${x.calidad?.nivel ? (x.calidad.nivel > 1 ? ' ⛔' : ' ⚠️') : ''}</button>`).join('')}</div></td><td class="num">${fmt(g.st.cob, 1)} %</td><td class="num">${fmt(g.st.dens, 0)}</td><td class="num">${fmt(g.st.dmv, 0)}</td></tr>`).join('');
   return `<details class="calidad"><summary style="cursor:pointer"><b>Papel hidrosensible</b> · ${L.length} tarjeta${L.length > 1 ? 's' : ''} en ${G.length} metro${G.length > 1 ? 's' : ''} · cobertura ${fmt(tot.cob, 1)} % · ${fmt(tot.dens, 0)} gotas/cm² · DMV ${fmt(tot.dmv, 0)} µm (${esc(claseASABE(tot.dmv)).toLowerCase()})</summary>
     <div style="display:grid;gap:8px;margin-top:8px"><div class="tw"><table><thead><tr><th>Tratamiento y posición</th><th class="num">Cobertura</th><th class="num">Gotas/cm²</th><th class="num">DMV <span style="text-transform:none">µm</span></th><th class="num">% chicas / medianas / grandes</th><th>Densidad</th></tr></thead><tbody>${filasR}</tbody></table></div>
     <details><summary class="note" style="cursor:pointer">Ver cada metro lineal y sus tarjetas</summary><div class="tw"><table><thead><tr><th>Metro lineal y tarjetas</th><th class="num">Cobertura</th><th class="num">Gotas/cm²</th><th class="num">DMV <span style="text-transform:none">µm</span></th></tr></thead><tbody>${filasM}</tbody></table></div></details>
-    <div class="row">${lee ? `<button class="btn small" data-papel="${a.id}">🔍 Leer otra tarjeta</button>` : ''}${puede.diseno(T) || rolEn(T) === 'operador' ? `<button class="btn small" data-papel-datos="${a.id}">Pasar a Carga de datos</button>` : ''}<span class="note">Chicas &lt; ${CLASES.chica} µm · grandes ≥ ${CLASES.grande} µm (diámetro de gota).${L.some(x => x.calidad?.nivel) ? ` ⚠️ ${L.filter(x => x.calidad?.nivel).length} tarjeta(s) con lectura regular o mala: tocalas para ver el motivo.` : ''}</span></div></div></details>`;
+    <div class="row"><button class="btn small" data-galeria-papel="${a.id}">🖼️ Ver las imágenes de las tarjetas (${L.length})</button>${lee ? `<button class="btn small" data-papel="${a.id}">🔍 Leer otra tarjeta</button>` : ''}${puede.diseno(T) || rolEn(T) === 'operador' ? `<button class="btn small" data-papel-datos="${a.id}">Pasar a Carga de datos</button>` : ''}<span class="note">Chicas &lt; ${CLASES.chica} µm · grandes ≥ ${CLASES.grande} µm (diámetro de gota).${L.some(x => x.calidad?.nivel) ? ` ⚠️ ${L.filter(x => x.calidad?.nivel).length} tarjeta(s) con lectura regular o mala: tocalas para ver el motivo.` : ''}</span></div></div></details>`;
 }
 function leerPapel(T, apId, parSel) {
   const aps = T.aplicaciones.filter(a => a.estado === 'realizada' && PULVERIZA.includes(a.tipo)).sort((x, y) => y.fecha.localeCompare(x.fecha));
@@ -1652,7 +1656,8 @@ function leerPapel(T, apId, parSel) {
 }
 async function verPapel(T, id) {
   const x = (T.papeles || []).find(p => p.id === id); if (!x) return;
-  const im = x.img ? (await DB.imagenesDe(T.id).catch(() => [])).find(i => i.id === x.img) : null;
+  let im = x.img ? (await DB.imagenesDe(T.id).catch(() => [])).find(i => i.id === x.img) : null;
+  if (!im && x.imgUrl) try { const r = await fetch(x.imgUrl); if (r.ok) im = {blob: await r.blob()}; } catch (e) {}
   if (!im) { const s = stDe(x);
     const M = modal(`<div class="row" style="justify-content:space-between"><h2>Tarjeta ${x.tarjeta || ''} · ${esc(x.metro)}</h2><button class="btn small" data-cerrar>✕</button></div>
       <p class="note" style="margin:0">${x.parcela ? 'Parcela ' + esc(x.parcela) + ' · ' : ''}${esc(x.posicion)} · ${fechaTxt(x.fecha)} · ${esc(USERS[x.autor]?.nombre || '')}. ${T.ejemplo ? 'Lectura de ejemplo (sin imagen guardada).' : 'La imagen no está en este equipo.'}</p>
@@ -1660,6 +1665,23 @@ async function verPapel(T, id) {
       ${puede.diseno(T) ? '<div class="row"><button class="btn small" id="pp-borrar">Eliminar esta tarjeta</button></div>' : ''}`, 620);
     M.querySelector('#pp-borrar')?.addEventListener('click', () => borrarPapel(T, x, M)); return; }
   abrirLector({ver: {blob: im.blob, pxmm: x.pxmm, papel: x.papel, sens: x.sens, clases: x.clases, objetivo: x.objetivo}, titulo: `Tarjeta ${x.tarjeta || ''} · ${x.metro}`});
+}
+// Galería con las imágenes de todas las tarjetas de una aplicación (o de todo el ensayo si apId es null)
+async function galeriaPapel(T, apId) {
+  const L = (T.papeles || []).filter(x => apId == null || String(x.aplicacion) === String(apId)).filter(x => !T.sitios || S.sitio === 'todos' || !x.parcela || sitioDe(T, +x.parcela)?.id === S.sitio)
+    .sort((a, b) => (a.parcela ?? 0) - (b.parcela ?? 0) || a.posicion.localeCompare(b.posicion) || a.metro.localeCompare(b.metro) || (a.tarjeta || 0) - (b.tarjeta || 0));
+  const imgs = await DB.imagenesDe(T.id).catch(() => []), urls = [];
+  const src = x => { const im = x.img && imgs.find(i => i.id === x.img); if (im) { const u = URL.createObjectURL(im.blob); urls.push(u); return u; } return x.imgUrl || ''; };
+  const C = colTrat(T);
+  const M = modal(`<div class="row" style="justify-content:space-between"><h2>Tarjetas de papel hidrosensible</h2><button class="btn small" data-cerrar>✕</button></div>
+    <p class="note" style="margin:0">${L.length} tarjeta${L.length > 1 ? 's' : ''}. Tocá una para verla grande, con el filtro y las gotas contadas.${T.ejemplo ? ' Las del ejemplo son imágenes simuladas.' : ''}</p>
+    <div class="galpap">${L.map(x => { const u = src(x), tr = tratDeParcela(T, x.parcela);
+      return `<button class="gp" data-ver-papel="${x.id}">${u ? `<img src="${u}" alt="" loading="lazy">` : '<span class="sinimg">Sin imagen en este equipo</span>'}
+        <span><b>${x.parcela ? (C[tr] ? `<i class="swatch" style="background:${C[tr]}"></i>` : '') + 'Parcela ' + esc(T.sitios ? etiq(T, {parcela: +x.parcela, sitio: sitioDe(T, +x.parcela)?.id}) : x.parcela) + (tr ? ' · ' + esc(tr) : '') : 'General'}</b>
+        <small>${esc(x.posicion)} · ${esc(x.metro)} · tarjeta ${x.tarjeta || 1}</small>
+        <small>${fmt(x.st.cob, 1)} % · ${fmt(x.st.dens, 0)} gotas/cm² · DMV ${fmt(x.st.dmv, 0)} µm${x.calidad ? ` · <span class="chip ${['ok', 'warn', 'bad'][x.calidad.nivel]}">${esc(x.calidad.etiqueta)}</span>` : ''}</small></span></button>`; }).join('')}</div>`, 1000);
+  M.addEventListener('click', e => { const v = e.target.closest('[data-ver-papel]'); if (v) verPapel(T, v.dataset.verPapel); });
+  const obs = new MutationObserver(() => { if (!M.isConnected) { urls.forEach(u => URL.revokeObjectURL(u)); obs.disconnect(); } }); obs.observe(document.body, {childList: true, subtree: true});
 }
 async function borrarPapel(T, x, M) {
   if (!await confirmar('Eliminar tarjeta', 'Se elimina esta lectura de papel hidrosensible y su imagen.', {ok: 'Eliminar', peligro: true})) return;
