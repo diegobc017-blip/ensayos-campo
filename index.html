@@ -184,18 +184,18 @@ pre.code{margin:0;max-height:260px;overflow:auto;background:var(--soft);border-r
 .subs input{width:100%;text-align:right;font-family:var(--f-data);font-size:.8rem;padding:4px 5px}
 .nota{border-left:3px solid var(--line);padding:4px 10px;font-size:.88rem;display:grid;gap:2px}
 .nota .who{font-size:.76rem;color:var(--muted)}
-.apl{display:grid;grid-template-columns:74px 1fr;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.apl{display:grid;grid-template-columns:74px minmax(0,1fr);gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
 .apl:last-child{border-bottom:0}
 .apl .fe{display:grid;justify-items:center;align-content:start;gap:2px;padding:6px 4px;border-radius:8px;background:var(--soft);text-align:center}
 .apl .fe b{font-family:var(--f-head);font-size:1.35rem;line-height:1} .apl .fe span{font-size:.72rem;color:var(--muted)}
 .apl.plan .fe{background:var(--accent-soft)} .apl.atr .fe{background:var(--warn-soft)}
-.apl .cuerpo{display:grid;gap:6px;min-width:0}
+.apl .cuerpo{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;min-width:0}
 .apl .cuerpo table{font-size:.82rem}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
 .kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:10px 14px;display:grid;gap:2px}
 .kpi b{font-family:var(--f-head);font-size:1.5rem} .kpi span{font-size:.8rem;color:var(--muted)}
 .apl .fe{min-width:0}
-@media (max-width:560px){.apl{grid-template-columns:1fr;gap:8px}.apl .fe{grid-auto-flow:column;justify-self:start;align-items:baseline;gap:6px;padding:4px 10px}.apl .fe b{font-size:1.1rem}.apl .cuerpo th,.apl .cuerpo td{padding:5px 6px}.apl .cuerpo th{white-space:normal}}
+@media (max-width:560px){.apl{grid-template-columns:minmax(0,1fr);gap:8px}.apl .fe{grid-auto-flow:column;justify-self:start;align-items:baseline;gap:6px;padding:4px 10px}.apl .fe b{font-size:1.1rem}.apl .cuerpo th,.apl .cuerpo td{padding:5px 6px}.apl .cuerpo th{white-space:normal}}
 .ayuda-btn .q,#btn-tour-inicio .q{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:.8rem}
 #btn-tour-inicio .q{background:var(--accent-ink);color:var(--accent)}
 #bar-sync .dot{width:8px;height:8px;border-radius:50%;background:var(--ok)} #bar-sync.pend .dot{background:var(--warn)} #bar-sync.off .dot{background:var(--muted)}
@@ -396,7 +396,7 @@ pre.code{margin:0;max-height:260px;overflow:auto;background:var(--soft);border-r
 
 <div class="carga" id="carga"><div class="spin"></div><span>Abriendo Ensayos de Campo…</span></div>
 <noscript><p style="padding:20px">Esta aplicación necesita JavaScript activado.</p></noscript>
-<script type="module" src="./js/app.js?v=a76e1c9264"></script>
+<script type="module" src="./js/app.js?v=a1b3b7de15"></script>
 <script>window.addEventListener('unhandledrejection', e => { const c = document.getElementById('carga'); if (c) c.innerHTML = '<span>No se pudo abrir la app: ' + (e.reason && e.reason.message || 'error') + '. Abrila con iniciar-app.cmd.</span>'; });
 window.addEventListener('error', e => { try { if (document.getElementById('carga') && !sessionStorage.getItem('ec-recarga')) { sessionStorage.setItem('ec-recarga', '1'); setTimeout(() => location.reload(), 600); return; } } catch (x) {} const c = document.getElementById('carga'); if (c) c.innerHTML = '<span>No se pudo abrir la app: ' + (e.message || 'error') + '. Probá abrirla con iniciar-app.cmd (no con doble clic en index.html).</span>'; });</script>
 </body>

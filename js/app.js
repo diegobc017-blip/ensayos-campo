@@ -2,6 +2,8 @@
 // Todo se guarda en este equipo (IndexedDB, ver db.js) y funciona sin internet.
 import {anovaDBCA, tukey, interpretarCV, anovaCombinado} from './estadistica.js';
 import * as DB from './db.js';
+import {abrirLector, COL as COL_GOTA, NOMCL} from './papel.js';
+import {combinarTarjetas, histDe, OBJETIVOS, claseASABE, CLASES} from './lib/hidro.js';
 import {crearZip, crearDocx, crearXlsx, crearCsv, crearGeojson, crearQml, crearKml, poligonosCroquis, graficoBarras} from './exportar.js';
 
 /* ================= utilidades ================= */
@@ -73,6 +75,7 @@ const USERS = {
 const ini = n => n.split(' ').map(x => x[0]).slice(0, 2).join('').toUpperCase();
 const avatar = u => `<span class="av" style="background:${u.color}">${ini(u.nombre)}</span>`;
 const CUSTOM = []; // indicadores propios creados por el usuario
+const PULV = []; // pulverizadoras (equipos de aplicación) con su calibración
 
 const REFN = {'01': 'Guía de planificación', '04': 'Guía agrícola', '05': 'Guía hortícola', '06': 'Guía forestal', '12': 'Guía de dron', '14': 'Guía de pasturas'};
 const refTxt = r => String(r || '').split(';').map(x => x.trim().replace(/^(\d\d)(_[a-z_]+)?/, (m, n) => REFN[n] || m)).join('; ');
@@ -145,7 +148,12 @@ byId('DEMO-FO-01').aplicaciones = [
 TRIALS.forEach(T => T.aplicaciones = T.aplicaciones || []);
 TRIALS.forEach(T => T.ejemplo = true);
 /* ================= datos guardados en este equipo ================= */
-const SEMILLA = JSON.stringify({trials: TRIALS, users: USERS, equipos: EQUIPOS});
+PULV.push(
+  {id: 'pv-ej1', ejemplo: true, nombre: 'Barra de parcelas CO₂ (4 picos)', tipo: 'Mochila de presión constante (CO₂ o batería)', marca: 'Barra experimental', tanque: 2, picos: 4, sep: 50, altura: 50, faja: 2,
+    boqTipo: 'Cono hueco', boqISO: '01', boqAng: 80, boqModelo: 'TXA 8001', presion: 2.8, vel: 3, caudales: [0.38, 0.37, 0.39, 0.4], fechaCal: '2026-01-05', obs: 'Presión regulada con manómetro a la salida del cilindro. Paso de 0,83 m/s (12 s cada 10 m).'},
+  {id: 'pv-ej2', ejemplo: true, nombre: 'Pulverizador de arrastre 600 L', tipo: 'Pulverizador de arrastre o montado', marca: 'Barra de 12 m', tanque: 600, picos: 24, sep: 50, altura: 50, faja: 12,
+    boqTipo: 'Abanico plano de baja deriva (preorificio)', boqISO: '02', boqAng: 110, boqModelo: 'AD 11002', presion: 3, vel: 12, caudales: [], fechaCal: '2025-10-15', obs: 'Para el manejo general del lote.'});
+const SEMILLA = JSON.stringify({trials: TRIALS, users: USERS, equipos: EQUIPOS, pulv: PULV});
 const META = {};
 let ESTADO_DB = 'ok', SESION = null;
 const GUARD = await DB.cargarTodo().catch(e => { console.error(e); ESTADO_DB = 'error'; return null; });
@@ -154,6 +162,7 @@ function cargarEstado(ensayos, cfg) {
   Object.keys(USERS).forEach(k => delete USERS[k]); Object.assign(USERS, cfg.perfiles || {});
   Object.keys(EQUIPOS).forEach(k => delete EQUIPOS[k]); Object.assign(EQUIPOS, cfg.equipos || {});
   CUSTOM.length = 0; CUSTOM.push(...(cfg.custom || []));
+  PULV.length = 0; PULV.push(...(cfg.pulv || []));
   Object.keys(META).forEach(k => delete META[k]); Object.assign(META, cfg.meta || {});
   SESION = cfg.sesion || null;
 }
@@ -536,7 +545,7 @@ async function subirFotos(input, T, pn) {
 }
 async function pintarFotos(T, pn) {
   const host = document.querySelector(`[data-fotos="${pn ?? 'ensayo'}"]`); if (!host) return;
-  const todas = await DB.imagenesDe(T.id).catch(() => []), mias = todas.filter(i => (i.parcela ?? null) === (pn ?? null)).sort((a, b) => a.fecha.localeCompare(b.fecha));
+  const todas = await DB.imagenesDe(T.id).catch(() => []), mias = todas.filter(i => i.tipo !== 'papel' && (i.parcela ?? null) === (pn ?? null)).sort((a, b) => a.fecha.localeCompare(b.fecha));
   host.querySelectorAll('img').forEach(i => URL.revokeObjectURL(i.src));
   const borra = rolEn(T) !== 'lector';
   host.innerHTML = mias.length ? mias.map(i => `<figure><img src="${URL.createObjectURL(i.blob)}" alt="${esc(i.nombre)}" data-ver="${i.id}" title="${esc(USERS[i.autor]?.nombre || '')} · ${new Date(i.fecha).toLocaleString('es-PY')}">${borra ? `<button class="btn small" data-borra-foto="${i.id}" aria-label="Borrar foto">✕</button>` : ''}</figure>`).join('') : '<p class="note" style="margin:0">Sin fotos.</p>';
@@ -731,10 +740,12 @@ RENDER.aplic = T => {
     return `<div class="apl ${cls}"><div class="fe"><b>${d.getDate()}</b><span>${MES[d.getMonth()]} ${d.getFullYear()}</span></div><div class="cuerpo">
       <div class="row" style="justify-content:space-between"><b>${esc(a.tipo)}${T.sitios ? ` <span class="chip neu">${a.sitio && a.sitio !== 'todos' ? esc(nomSitio(T, a.sitio)) : 'Todos los lugares'}</span>` : ''}</b><span class="row" style="gap:6px"><span class="chip ${k}">${l}</span><span class="note">${cuando(a.fecha)}</span></span></div>
       ${a.estadio ? `<span class="note">Momento: ${esc(a.estadio)}</span>` : ''}${detalle(a)}
-      ${a.cond ? `<div class="row" style="gap:6px"><span class="note">Condiciones: ${a.cond.t ?? '—'} °C · HR ${a.cond.hr ?? '—'} % · viento ${a.cond.viento ?? '—'} km/h</span>${PULVERIZA.includes(a.tipo) ? (fl.length ? `<span class="chip warn">Fuera de lo permitido: ${esc(fl.join(', '))}</span>` : '<span class="chip ok">Dentro de la Ley 3742/09</span>') : ''}</div>` : ''}
+      ${a.cond ? `<div class="row" style="gap:6px"><span class="note">Condiciones${a.hora ? ' (' + esc(a.hora) + ' h)' : ''}: ${a.cond.t ?? '—'} °C · HR ${a.cond.hr ?? '—'} % · viento ${a.cond.viento ?? '—'} km/h${a.vientoDir ? ' del ' + esc(a.vientoDir) : ''}</span>${PULVERIZA.includes(a.tipo) ? (fl.length ? `<span class="chip warn" style="white-space:normal">Fuera de lo permitido: ${esc(fl.join(', '))}</span>` : '<span class="chip ok">Dentro de la Ley 3742/09</span>') + dtTxt(a.cond.t, a.cond.hr) : ''}</div>` : ''}
+      ${a.equipo || a.adyuvante || a.ph != null ? `<span class="note">${a.equipo ? `Equipo: ${chipBoq(a.equipo.iso)} ${eqTxt(a.equipo)}` : ''}${a.caldo && a.tipo !== 'Aplicación de tratamientos' ? ` · ${fmt(a.caldo, 0)} L/ha` : ''}${a.adyuvante ? ` · Adyuvante: ${esc(a.adyuvante)}` : ''}${a.ph != null ? ` · pH del agua ${fmt(a.ph, 1)}` : ''}</span>` : ''}
+      ${PULVERIZA.includes(a.tipo) ? calidadAplic(T, a) : ''}
       ${a.obs ? `<span class="note">${esc(a.obs)}</span>` : ''}
       <span class="note">${a.estado === 'realizada' ? 'Registró' : 'Responsable'}: ${esc(USERS[a.resp]?.nombre || '—')}</span>
-      ${a.estado !== 'realizada' && reg ? (aplReal === a.id ? `<div class="card" style="gap:8px"><b>Registrar como realizada</b><div class="grid3"><label class="f">Fecha<input type="date" id="rr-fecha" value="${HOY}"></label><label class="f">Temperatura (°C)<input type="number" id="rr-t" step="0.5"></label><label class="f">Humedad relativa (%)<input type="number" id="rr-hr" step="1"></label><label class="f">Viento (km/h)<input type="number" id="rr-v" step="0.5"></label></div><label class="f">Observaciones<input type="text" id="rr-obs" data-voz placeholder="Opcional"></label><div class="row"><button class="btn primary small" data-confirmar="${a.id}">Confirmar</button><button class="btn small" data-cancelar>Cancelar</button><span class="note" id="rr-aviso"></span></div></div>`
+      ${a.estado !== 'realizada' && reg ? (aplReal === a.id ? `<div class="card" style="gap:8px"><b>Registrar como realizada</b><div class="grid3"><label class="f">Fecha<input type="date" id="rr-fecha" value="${HOY}"></label><label class="f">Temperatura (°C)<input type="number" id="rr-t" step="0.5"></label><label class="f">Humedad relativa (%)<input type="number" id="rr-hr" step="1"></label><label class="f">Viento (km/h)<input type="number" id="rr-v" step="0.5"></label><span id="rr-dt" style="align-self:end"></span></div>${PULVERIZA.includes(a.tipo) ? camposEquipo(T, 'rr', a) : ''}<label class="f">Observaciones<input type="text" id="rr-obs" data-voz placeholder="Opcional"></label><div class="row"><button class="btn primary small" data-confirmar="${a.id}">Confirmar</button><button class="btn small" data-cancelar>Cancelar</button><span class="note" id="rr-aviso"></span></div></div>`
         : `<button class="btn small" data-realizar="${a.id}" style="justify-self:start">Registrar como realizada</button>`) : ''}</div></div>`; };
   const resp = [T.owner, ...Object.keys(T.trabajo || {}), ...(T.sitios || []).flatMap(x => x.ops || [])].filter((x, i, arr) => USERS[x] && arr.indexOf(x) === i);
   const form = ed && aplForm ? `<div class="card" id="apl-form"><h3>Nueva aplicación o tarea</h3><div class="grid3">
@@ -745,9 +756,10 @@ RENDER.aplic = T => {
       <label class="f">Responsable<select id="af-resp">${resp.map(u => `<option value="${u}">${esc(USERS[u].nombre)}</option>`).join('')}</select></label></div>
     <div style="display:grid;gap:6px"><span class="note">Se aplica a</span><div class="row"><label class="pill"><input type="checkbox" id="af-todos">Todo el ensayo (manejo general)</label>${T.tratamientos.map(t => `<label class="pill"><input type="checkbox" data-aft="${t.cod}" ${t.productos?.length ? 'checked' : ''}><span class="swatch" style="background:${C[t.cod]}"></span>${t.cod}</label>`).join('')}</div></div>
     <div class="grid3" id="af-prod"><label class="f">Producto o insumo<input type="text" id="af-producto" placeholder="Ej.: urea, glifosato, riego"></label><label class="f">Dosis<input type="text" id="af-dosis" placeholder="Ej.: 100 kg/ha"></label></div>
-    <div class="grid3" id="af-caldo-box"><label class="f">Caldo (L/ha)<input type="number" id="af-caldo" value="${T.caldo || 200}" step="10" min="0"></label><span class="note" style="align-self:end">Productos y dosis se toman de “Tratamientos y dosis”.</span></div>
+    <span class="note" id="af-caldo-box">Productos y dosis se toman de “Tratamientos y dosis”.</span>
+    ${camposEquipo(T, 'af', {caldo: T.caldo || 200})}
     <label class="pill" style="justify-self:start"><input type="checkbox" id="af-hecha">Ya se realizó (cargar condiciones)</label>
-    <div class="grid3" id="af-cond" hidden><label class="f">Temperatura (°C)<input type="number" id="af-t" step="0.5"></label><label class="f">Humedad relativa (%)<input type="number" id="af-hr"></label><label class="f">Viento (km/h)<input type="number" id="af-v" step="0.5"></label></div>
+    <div class="grid3" id="af-cond" hidden><label class="f">Temperatura (°C)<input type="number" id="af-t" step="0.5"></label><label class="f">Humedad relativa (%)<input type="number" id="af-hr"></label><label class="f">Viento (km/h)<input type="number" id="af-v" step="0.5"></label><span id="af-dt" style="align-self:end"></span></div>
     <label class="f">Observaciones<input type="text" id="af-obs" data-voz placeholder="Equipo, pastilla, clima, etc."></label>
     <div class="row"><button class="btn primary" id="af-ok">Guardar</button><button class="btn" id="af-no">Cancelar</button><span class="note" id="af-msg"></span></div></div>` : '';
   P().innerHTML = `<section class="panel"><h2>Aplicaciones y manejo</h2>${aviso(T, 'Podés registrar como realizadas las aplicaciones planificadas del ensayo; el gerente las revisa.')}
@@ -755,18 +767,27 @@ RENDER.aplic = T => {
     <div class="kpis"><div class="kpi"><span>Realizadas</span><b>${hechas.length}</b></div><div class="kpi"><span>Planificadas</span><b>${L.length - hechas.length}</b></div>
       <div class="kpi"><span>Última</span><b style="font-size:1.05rem">${ult ? esc(ult.tipo) : '—'}</b><span>${ult ? `${fechaTxt(ult.fecha)} · ${cuando(ult.fecha)}` : 'Sin registros'}</span></div>
       <div class="kpi"><span>Próxima</span><b style="font-size:1.05rem">${prox ? esc(prox.tipo) : '—'}</b><span>${prox ? `${fechaTxt(prox.fecha)} · ${cuando(prox.fecha)}` : 'Nada planificado'}</span></div></div>
+    ${PULVERIZA.some(t => L.some(a => a.tipo === t)) || pulvVisibles(T).length || ed ? cardEquipos(T) : ''}
     ${ed && !aplForm ? '<button class="btn primary" id="apl-nueva" style="justify-self:start">+ Nueva aplicación o tarea</button>' : ''}${form}
     ${!conProd.length && ed && /fungic|herbic|insectic|fertiliz|dosis|eficacia|producto|bioestim|fitotox/i.test(T.tipo) ? '<div class="callout">Para registrar la aplicación de los tratamientos con sus dosis, primero cargá los productos en “Tratamientos y dosis”. Las labores de manejo general se pueden registrar igual.</div>' : ''}
     <div class="card">${L.length ? L.map(item).join('') : '<p class="note" style="margin:0">Todavía no hay aplicaciones ni labores registradas.</p>'}</div>
     <p class="note">Condiciones para pulverizar según Ley 3742/09, art. 63: no aplicar con temperatura mayor a 32 °C, humedad relativa menor a 60 % o viento mayor a 10 km/h.</p></section>`;
-  const tipoSync = () => { if (!$('#af-tipo')) return; const tr = $('#af-tipo').value === 'Aplicación de tratamientos'; $('#af-prod').hidden = tr; $('#af-caldo-box').hidden = !tr; };
+  const tipoSync = () => { if (!$('#af-tipo')) return; const tr = $('#af-tipo').value === 'Aplicación de tratamientos'; $('#af-prod').hidden = tr; $('#af-caldo-box').hidden = !tr; $('#af-eqbox').hidden = !PULVERIZA.includes($('#af-tipo').value); };
   tipoSync();
   P().onchange = e => { if (e.target.id === 'af-tipo') { tipoSync(); if ($('#af-tipo').value !== 'Aplicación de tratamientos') { $('#af-todos').checked = true; $$('[data-aft]').forEach(c => c.checked = false); } }
     if (e.target.id === 'af-hecha') $('#af-cond').hidden = !e.target.checked;
     if (e.target.id === 'af-todos' && e.target.checked) $$('[data-aft]').forEach(c => c.checked = false);
-    if (e.target.dataset.aft && e.target.checked) $('#af-todos').checked = false; };
-  P().oninput = null;
+    if (e.target.dataset.aft && e.target.checked) $('#af-todos').checked = false;
+    const m = e.target.id?.match(/^(af|rr)-pulv$/); if (m) syncEquipo(m[1], true); };
+  P().oninput = e => { const m = e.target.id?.match(/^(af|rr)-(t|hr|pres|vel|caldo)$/); if (!m) return; const pre = m[1];
+    if (m[2] === 't' || m[2] === 'hr') { const n = id => $(id)?.value === '' ? null : +$(id)?.value; $(`#${pre}-dt`).innerHTML = dtTxt(n(`#${pre}-t`), n(`#${pre}-hr`)); }
+    if (m[2] === 'pres' || m[2] === 'vel') syncEquipo(pre); if (m[2] === 'caldo') e.target.dataset.auto = '0'; };
+  if ($('#af-pulv')) syncEquipo('af', true); if ($('#rr-pulv')) syncEquipo('rr', !aplReal || !T.aplicaciones.find(x => x.id === aplReal)?.equipo);
   P().onclick = e => {
+    const pv = e.target.closest('[data-pulv]'); if (pv) return editarPulv(T, pv.dataset.pulv);
+    const pp = e.target.closest('[data-papel]'); if (pp) return leerPapel(T, pp.dataset.papel);
+    const vp = e.target.closest('[data-ver-papel]'); if (vp) return verPapel(T, vp.dataset.verPapel);
+    const pd = e.target.closest('[data-papel-datos]'); if (pd) return papelADatos(T, pd.dataset.papelDatos);
     if (e.target.closest('#apl-nueva')) { aplForm = true; RENDER.aplic(T); $('#apl-form').scrollIntoView({block: 'nearest'}); return; }
     if (e.target.closest('#af-no')) { aplForm = false; RENDER.aplic(T); return; }
     if (e.target.closest('[data-realizar]')) { aplReal = +e.target.closest('[data-realizar]').dataset.realizar; RENDER.aplic(T); return; }
@@ -778,7 +799,8 @@ RENDER.aplic = T => {
       const a = {id: nuevoIdAp(), tipo, fecha: $('#af-fecha').value || HOY, estado: hecha ? 'realizada' : 'planificada', trats: todos ? 'todos' : trs,
         estadio: $('#af-estadio').value.trim(), resp: $('#af-resp').value, obs: $('#af-obs').value.trim()};
       if (T.sitios) a.sitio = $('#af-sitio').value;
-      if (tipo === 'Aplicación de tratamientos') a.caldo = num('#af-caldo'); else { a.producto = $('#af-producto').value.trim(); a.dosis = $('#af-dosis').value.trim(); }
+      if (tipo !== 'Aplicación de tratamientos') { a.producto = $('#af-producto').value.trim(); a.dosis = $('#af-dosis').value.trim(); }
+      if (PULVERIZA.includes(tipo)) leerEquipo(T, 'af', a);
       if (hecha) a.cond = {t: num('#af-t'), hr: num('#af-hr'), viento: num('#af-v')};
       T.aplicaciones.push(a); aplForm = false;
       T.cambios.unshift({fecha: ahora(), usuario: S.user.id, parcela: '—', variable: `${hecha ? 'Aplicación registrada' : 'Aplicación planificada'}: ${tipo}`, antes: null, despues: fechaTxt(a.fecha), estado: 'aprobado'});
@@ -787,6 +809,7 @@ RENDER.aplic = T => {
     const cf = e.target.closest('[data-confirmar]');
     if (cf) { const a = T.aplicaciones.find(x => x.id === +cf.dataset.confirmar), num = id => $(id).value === '' ? null : +$(id).value;
       a.estado = 'realizada'; a.fecha = $('#rr-fecha').value || HOY; a.cond = {t: num('#rr-t'), hr: num('#rr-hr'), viento: num('#rr-v')}; a.resp = S.user.id;
+      if (PULVERIZA.includes(a.tipo)) leerEquipo(T, 'rr', a);
       const o = $('#rr-obs').value.trim(); if (o) a.obs = a.obs ? a.obs + ' ' + o : o;
       const op = rolEn(T) === 'operador';
       T.cambios.unshift({fecha: ahora(), usuario: S.user.id, parcela: '—', variable: `Aplicación realizada: ${a.tipo}`, antes: 'planificada', despues: fechaTxt(a.fecha), estado: op ? 'pendiente' : 'aprobado'});
@@ -796,6 +819,197 @@ RENDER.aplic = T => {
 };
 
 { const ra = RENDER.aplic; RENDER.aplic = T => { ra(T); vozEn(P()); }; }
+/* ---------- pulverizadoras, calibración y calidad de aplicación ---------- */
+// Boquillas por tamaño ISO 10625: código, color, caudal nominal en gal/min a 40 psi (2,76 bar)
+const BOQ = [['01', 'naranja', '#f97316', 0.1], ['015', 'verde', '#22c55e', 0.15], ['02', 'amarilla', '#eab308', 0.2], ['025', 'lila', '#a78bfa', 0.25], ['03', 'azul', '#2563eb', 0.3], ['04', 'roja', '#dc2626', 0.4], ['05', 'marrón', '#92400e', 0.5], ['06', 'gris', '#6b7280', 0.6], ['08', 'blanca', '#e5e7eb', 0.8], ['10', 'celeste', '#7dd3fc', 1]];
+const TIPOS_BOQ = ['Abanico plano estándar', 'Abanico plano de baja deriva (preorificio)', 'Inducción de aire', 'Doble abanico', 'Cono hueco', 'Cono lleno', 'Otra'];
+const TIPOS_PULV = ['Mochila manual (palanca)', 'Mochila de presión constante (CO₂ o batería)', 'Barra experimental de parcelas', 'Pulverizador de arrastre o montado', 'Autopropulsado', 'Dron pulverizador', 'Otro'];
+const VIENTO_DIR = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'];
+const POSICIONES = ['Tercio superior', 'Tercio medio', 'Tercio inferior', 'Haz de la hoja', 'Envés de la hoja', 'Suelo o entresurco', 'Otra'];
+const qNominal = (iso, bar) => { const b = BOQ.find(x => x[0] === iso); return b && bar ? b[3] * 3.785 * Math.sqrt(bar / 2.758) : null; }; // L/min por pico
+const media = a => a.length ? a.reduce((s, x) => s + x, 0) / a.length : null;
+function calcPulv(q, o = {}) {
+  const P = o.presion ?? q.presion, v = o.vel ?? q.vel, picos = Math.max(1, +q.picos || 1);
+  const ancho = picos > 1 && q.sep ? picos * q.sep / 100 : (+q.faja || (q.sep ? q.sep / 100 : null));
+  const cs = (q.caudales || []).filter(x => x > 0), qm = media(cs), qn = qNominal(q.boqISO, P);
+  const qMed = qm != null ? qm * (q.presion && P ? Math.sqrt(P / q.presion) : 1) : null, qq = qMed ?? qn; // si cambia la presión, el caudal cambia con la raíz
+  const Q = qq != null ? qq * picos : null, vol = Q && v && ancho ? 600 * Q / (v * ancho) : null;
+  const cv = cs.length > 1 ? Math.sqrt(cs.reduce((s, x) => s + (x - qm) ** 2, 0) / (cs.length - 1)) / qm * 100 : null;
+  const qn0 = qNominal(q.boqISO, q.presion), fuera = cs.map((x, i) => [i + 1, x]).filter(([, x]) => Math.abs(x - qm) / qm > 0.1 || (qn0 && Math.abs(x - qn0) / qn0 > 0.15));
+  return {P, v, picos, ancho, qn, qm, q: qq, Q, vol, cv, fuera, desvNom: qm && qn0 ? (qm / qn0 - 1) * 100 : null, haTanque: vol && q.tanque ? q.tanque / vol : null, seg10: v ? 36 / v : null};
+}
+const boqTxt = q => [q.boqModelo, q.boqTipo, q.boqISO ? `${q.boqAng || ''}${q.boqISO} (${BOQ.find(x => x[0] === q.boqISO)?.[1] || ''})` : ''].filter(Boolean).join(' · ');
+const chipBoq = iso => { const b = BOQ.find(x => x[0] === iso); return b ? `<span class="swatch" style="background:${b[2]};outline:1px solid #0003" title="Boquilla ISO ${b[0]} (${b[1]})"></span>` : ''; };
+// ΔT: temperatura menos temperatura de bulbo húmedo (bulbo húmedo por Stull, 2011)
+function deltaT(t, hr) { if (t == null || hr == null || hr <= 0 || hr > 100) return null; const tw = t * Math.atan(0.151977 * Math.sqrt(hr + 8.313659)) + Math.atan(t + hr) - Math.atan(hr - 1.676331) + 0.00391838 * hr ** 1.5 * Math.atan(0.023101 * hr) - 4.686035; return t - tw; }
+const evDeltaT = d => d == null ? null : d < 2 ? ['warn', 'ΔT bajo (menos de 2): gotas finas que quedan suspendidas y escurrimiento'] : d <= 8 ? ['ok', 'ΔT adecuado (2 a 8)'] : d <= 10 ? ['warn', 'ΔT al límite (8 a 10): usar gotas más gruesas'] : ['bad', 'ΔT alto (más de 10): mucha evaporación, conviene no aplicar'];
+const dtTxt = (t, hr) => { const d = deltaT(t, hr), e = evDeltaT(d); return e ? `<span class="chip ${e[0]}" title="${esc(e[1])}">ΔT ${fmt(d, 1)} °C</span>` : ''; };
+function snapEq(q, o = {}) { const c = calcPulv(q, o); return {id: q.id, nombre: q.nombre, tipo: q.tipo, boq: boqTxt(q), iso: q.boqISO, picos: c.picos, sep: q.sep, altura: q.altura, presion: c.P, vel: c.v, q: c.q != null ? +c.q.toFixed(3) : null, vol: c.vol != null ? Math.round(c.vol) : null}; }
+const eqTxt = e => e ? `${esc(e.nombre)}${e.boq ? ' · ' + esc(e.boq) : ''}${e.presion != null ? ` · ${fmt(e.presion, 1)} bar` : ''}${e.vel != null ? ` · ${fmt(e.vel, 1)} km/h` : ''}${e.altura ? ` · barra a ${e.altura} cm` : ''}` : '';
+const pulvVisibles = T => PULV.filter(q => !q.ejemplo || T?.ejemplo || S.user?.ejemplo);
+
+function editarPulv(T, id) {
+  const q0 = PULV.find(x => x.id === id), q = q0 ? structuredClone(q0) : {id: 'pv' + Date.now().toString(36), nombre: '', tipo: TIPOS_PULV[1], tanque: 16, picos: 1, sep: 50, altura: 50, faja: 1, boqTipo: TIPOS_BOQ[0], boqISO: '02', boqAng: 110, presion: 3, vel: 4, caudales: [], fechaCal: HOY};
+  const M = modal(`<div class="row" style="justify-content:space-between"><h2>${q0 ? 'Pulverizadora y calibración' : 'Nueva pulverizadora'}</h2><button class="btn small" data-cerrar>✕</button></div>
+    <form id="f-pv" style="display:grid;gap:12px">
+      <div class="grid3"><label class="f">Nombre<input type="text" name="nombre" required value="${esc(q.nombre)}" placeholder="Ej.: Mochila CO₂ de 4 picos"></label>
+        <label class="f">Tipo<select name="tipo">${TIPOS_PULV.map(t => `<option ${t === q.tipo ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
+        <label class="f">Marca o modelo<input type="text" name="marca" value="${esc(q.marca || '')}"></label>
+        <label class="f">Tanque (L)<input type="number" step="any" name="tanque" value="${q.tanque ?? ''}"></label>
+        <label class="f">Picos (boquillas)<input type="number" min="1" step="1" name="picos" value="${q.picos ?? 1}"></label>
+        <label class="f">Separación entre picos (cm)<input type="number" step="any" name="sep" value="${q.sep ?? ''}"></label>
+        <label class="f">Altura de la barra al objetivo (cm)<input type="number" step="any" name="altura" value="${q.altura ?? ''}"></label>
+        <label class="f">Ancho de faja (m) <span class="note">con 1 pico o dron</span><input type="number" step="any" name="faja" value="${q.faja ?? ''}"></label></div>
+      <b style="font-size:.95rem">Boquilla</b>
+      <div class="grid3"><label class="f">Tipo de boquilla<select name="boqTipo">${TIPOS_BOQ.map(t => `<option ${t === q.boqTipo ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
+        <label class="f">Tamaño (color ISO)<select name="boqISO"><option value="">Sin dato</option>${BOQ.map(b => `<option value="${b[0]}" ${b[0] === q.boqISO ? 'selected' : ''}>${b[0]} · ${b[1]}</option>`).join('')}</select></label>
+        <label class="f">Ángulo (°)<input type="number" step="1" name="boqAng" value="${q.boqAng ?? ''}"></label>
+        <label class="f">Modelo de la boquilla<input type="text" name="boqModelo" value="${esc(q.boqModelo || '')}" placeholder="Ej.: XR 11002, TXA 8001, AI 11003"></label></div>
+      <b style="font-size:.95rem">Operación y calibración</b>
+      <div class="grid3"><label class="f">Presión de trabajo (bar)<input type="number" step="any" name="presion" value="${q.presion ?? ''}"><span class="note">1 bar = 14,5 lb/pulg²</span></label>
+        <label class="f">Velocidad de avance (km/h)<input type="number" step="any" name="vel" value="${q.vel ?? ''}"></label>
+        <label class="f">Medir la velocidad: segundos en 50 m<input type="number" step="any" name="t50" placeholder="Ej.: 60"><span class="note">km/h = 180 ÷ segundos</span></label>
+        <label class="f">Fecha de calibración<input type="date" name="fechaCal" value="${q.fechaCal || HOY}"></label></div>
+      <div style="display:grid;gap:6px"><span class="note">Caudal medido de cada pico (L/min): juntá el agua de cada boquilla durante 1 minuto con una jarra graduada (o 30 s y multiplicá por 2).</span>
+        <div class="row" id="pv-caudales"></div></div>
+      <div class="callout" id="pv-res"></div>
+      <label class="f">Observaciones<input type="text" name="obs" value="${esc(q.obs || '')}"></label>
+      <div class="row"><button class="btn primary" type="submit">Guardar</button>${q0 && !q0.ejemplo ? '<button class="btn" type="button" id="pv-borrar">Eliminar</button>' : ''}<span class="note" id="pv-msg"></span></div>
+    </form>`, 860);
+  const F = M.querySelector('#f-pv'), num = k => F[k].value === '' ? null : +F[k].value;
+  const leer = () => { ['nombre', 'tipo', 'marca', 'boqTipo', 'boqISO', 'boqModelo', 'fechaCal', 'obs'].forEach(k => q[k] = F[k].value.trim()); ['tanque', 'picos', 'sep', 'altura', 'faja', 'boqAng', 'presion', 'vel'].forEach(k => q[k] = num(k));
+    q.caudales = [...M.querySelectorAll('[data-qp]')].map(i => i.value === '' ? null : +i.value).filter(x => x != null && x > 0); };
+  const pintarCaudales = () => { const n = Math.min(60, Math.max(1, num('picos') || 1)), cs = q.caudales || [];
+    M.querySelector('#pv-caudales').innerHTML = Array.from({length: n}, (_, i) => `<label class="f" style="width:84px">Pico ${i + 1}<input type="number" step="0.01" min="0" data-qp="${i}" value="${cs[i] ?? ''}"></label>`).join(''); };
+  const res = () => { leer(); const c = calcPulv(q);
+    M.querySelector('#pv-res').innerHTML = `<div class="grid3" style="gap:6px 14px">
+      <span>Caudal por pico: <b>${c.q != null ? fmt(c.q, 2) + ' L/min' : '—'}</b>${c.qm != null ? ' (medido)' : c.qn != null ? ' (nominal del tamaño ISO)' : ''}</span>
+      <span>Caudal nominal a ${fmt(c.P, 1)} bar: <b>${c.qn != null ? fmt(c.qn, 2) + ' L/min' : '—'}</b></span>
+      <span>Ancho de trabajo: <b>${c.ancho ? fmt(c.ancho, 2) + ' m' : '—'}</b></span>
+      <span>Volumen de aplicación: <b style="font-size:1.1rem">${c.vol ? fmt(c.vol, 0) + ' L/ha' : '—'}</b></span>
+      <span>Caudal total: <b>${c.Q != null ? fmt(c.Q, 2) + ' L/min' : '—'}</b></span>
+      <span>${c.seg10 ? `Ritmo: <b>${fmt(c.seg10, 1)} s cada 10 m</b>` : ''}</span>
+      ${c.haTanque ? `<span>Un tanque alcanza para <b>${c.haTanque < 1 ? fmt(c.haTanque * 10000, 0) + ' m²' : fmt(c.haTanque, 2) + ' ha'}</b></span>` : ''}
+      ${T?.parcela?.area_m2 && c.vol ? `<span>Por parcela (${fmt(T.parcela.area_m2, 1)} m²): <b>${fmt(c.vol * T.parcela.area_m2 / 10000, 2)} L</b></span>` : ''}
+      ${c.cv != null ? `<span>Uniformidad entre picos: <b>CV ${fmt(c.cv, 1)} %</b> ${c.cv <= 10 ? '<span class="chip ok">buena</span>' : '<span class="chip warn">revisar</span>'}</span>` : ''}
+      ${c.desvNom != null ? `<span>Desgaste: el promedio medido es <b>${c.desvNom >= 0 ? '+' : ''}${fmt(c.desvNom, 1)} %</b> del nominal ${Math.abs(c.desvNom) > 10 ? '<span class="chip warn">cambiar boquillas</span>' : '<span class="chip ok">bien</span>'}</span>` : ''}</div>
+      ${c.fuera.length ? `<p style="margin:6px 0 0"><b>Picos a revisar o cambiar:</b> ${c.fuera.map(([i, x]) => `pico ${i} (${fmt(x, 2)} L/min)`).join(', ')}. Se recomienda que ningún pico difiera más de 10 % del promedio.</p>` : ''}
+      <div class="row" style="margin-top:8px;gap:6px;align-items:end"><label class="f" style="width:150px">Volumen buscado (L/ha)<input type="number" step="any" id="pv-obj" value="${esc(M._obj ?? '')}"></label><span class="note" id="pv-obj-res"></span></div>`;
+    objetivo(); };
+  const objetivo = () => { const V = +M.querySelector('#pv-obj')?.value, c = calcPulv(q), o = M.querySelector('#pv-obj-res'); M._obj = V || ''; if (!o) return; if (!V || !c.Q || !c.ancho) { o.textContent = ''; return; }
+    const vNec = 600 * c.Q / (V * c.ancho), qNec = V * (c.v || 0) * c.ancho / (600 * c.picos), pNec = c.q && c.P ? c.P * (qNec / c.q) ** 2 : null;
+    o.innerHTML = `Con esta presión hay que avanzar a <b>${fmt(vNec, 1)} km/h</b> (${fmt(36 / vNec, 1)} s cada 10 m)${c.v && pNec ? `, o a ${fmt(c.v, 1)} km/h subir/bajar la presión a <b>${fmt(pNec, 1)} bar</b>${pNec < 1 || pNec > 6 ? ' (fuera del rango útil: cambiar de boquilla)' : ''}` : ''}.`; };
+  pintarCaudales(); res();
+  F.oninput = e => { if (e.target.name === 't50' && +e.target.value > 0) F.vel.value = +(180 / +e.target.value).toFixed(2); if (e.target.name === 'picos') { leer(); pintarCaudales(); } if (e.target.id === 'pv-obj') return objetivo(); res(); };
+  F.onchange = F.oninput;
+  M.querySelector('#pv-borrar')?.addEventListener('click', async () => { if (!await confirmar('Eliminar pulverizadora', `Se elimina “${esc(q.nombre)}” de la lista. Las aplicaciones ya registradas conservan sus datos.`, {ok: 'Eliminar', peligro: true})) return; PULV.splice(PULV.findIndex(x => x.id === q.id), 1); M.cerrar(); guardarPronto(); if (S.T) RENDER.aplic(S.T); });
+  F.onsubmit = e => { e.preventDefault(); leer(); if (!q.nombre) { M.querySelector('#pv-msg').textContent = 'Poné un nombre.'; return; } q.mod = new Date().toISOString();
+    const i = PULV.findIndex(x => x.id === q.id); if (i >= 0) PULV[i] = q; else PULV.push(q); M.cerrar(); toast('Pulverizadora guardada'); guardarPronto(); if (S.T && PASOS[S.paso][0] === 'aplic') RENDER.aplic(S.T); };
+}
+function cardEquipos(T) {
+  const L = pulvVisibles(T), ed = puedeAplic(T);
+  return `<details class="card" id="card-pulv" ${L.length ? '' : 'open'}><summary style="cursor:pointer"><b>Equipos de aplicación</b> <span class="note">(${L.length} pulverizadora${L.length === 1 ? '' : 's'} · calibración, boquillas y volumen)</span></summary>
+    ${L.length ? `<div style="display:grid;gap:8px;margin-top:8px">${L.map(q => { const c = calcPulv(q); return `<div class="row" style="justify-content:space-between;border-top:1px solid var(--line);padding-top:8px;gap:6px 12px"><div style="display:grid;gap:2px;min-width:0;flex:1 1 260px"><b>${esc(q.nombre)}</b><span class="note">${esc(q.tipo)} · ${chipBoq(q.boqISO)} ${esc(boqTxt(q))} · ${c.picos} pico${c.picos > 1 ? 's' : ''}${q.sep && c.picos > 1 ? ` a ${q.sep} cm` : ''} · ${fmt(q.presion, 1)} bar · ${fmt(q.vel, 1)} km/h</span><span class="note">Calibrada ${q.fechaCal ? fechaTxt(q.fechaCal) : '—'}${c.cv != null ? ` · CV entre picos ${fmt(c.cv, 1)} %` : ''}${c.fuera.length ? ' · <span class="chip warn">picos a revisar</span>' : ''}</span></div>
+      <span class="row" style="gap:8px"><b style="font-size:1.05rem">${c.vol ? fmt(c.vol, 0) + ' L/ha' : '—'}</b>${ed ? `<button class="btn small" data-pulv="${q.id}">Calibrar</button>` : ''}</span></div>`; }).join('')}</div>` : '<p class="note" style="margin:0">Cargá la pulverizadora que se usa en el ensayo: la app calcula el volumen (L/ha) con el caudal de las boquillas, la velocidad y el ancho, y lo usa al registrar cada aplicación.</p>'}
+    ${ed ? '<button class="btn small" data-pulv="" style="justify-self:start">+ Pulverizadora</button>' : ''}</details>`;
+}
+// Bloque "equipo y condiciones" del formulario de aplicación
+function camposEquipo(T, pre, a = {}) {
+  const L = pulvVisibles(T), sel = a.equipo?.id ?? L[0]?.id ?? '';
+  return `<div style="display:grid;gap:8px" id="${pre}-eqbox"><b style="font-size:.92rem">Equipo de aplicación</b><div class="grid3">
+    <label class="f">Pulverizadora<select id="${pre}-pulv"><option value="">Sin especificar</option>${L.map(q => `<option value="${q.id}" ${q.id === sel ? 'selected' : ''}>${esc(q.nombre)}</option>`).join('')}</select></label>
+    <label class="f">Presión (bar)<input type="number" step="any" id="${pre}-pres" value="${a.equipo?.presion ?? ''}"></label>
+    <label class="f">Velocidad (km/h)<input type="number" step="any" id="${pre}-vel" value="${a.equipo?.vel ?? ''}"></label>
+    <label class="f">Volumen de caldo (L/ha)<input type="number" step="any" id="${pre}-caldo" value="${a.caldo ?? T.caldo ?? ''}"></label>
+    <label class="f">Hora de inicio<input type="time" id="${pre}-hora" value="${a.hora || ''}"></label>
+    <label class="f">Dirección del viento<select id="${pre}-vdir"><option value="">—</option>${VIENTO_DIR.map(d => `<option ${d === a.vientoDir ? 'selected' : ''}>${d}</option>`).join('')}</select></label>
+    <label class="f">Adyuvante<input type="text" id="${pre}-ady" value="${esc(a.adyuvante || '')}" placeholder="Ej.: aceite metilado 0,5 %"></label>
+    <label class="f">pH del agua<input type="number" step="0.1" id="${pre}-ph" value="${a.ph ?? ''}"></label></div>
+    <span class="note" id="${pre}-eqmsg"></span></div>`;
+}
+function syncEquipo(pre, forzar) {
+  const q = PULV.find(x => x.id === $(`#${pre}-pulv`)?.value), msg = $(`#${pre}-eqmsg`); if (!msg) return;
+  if (q && forzar) { $(`#${pre}-pres`).value = q.presion ?? ''; $(`#${pre}-vel`).value = q.vel ?? ''; }
+  if (!q) { msg.textContent = ''; return; }
+  const num = id => $(id).value === '' ? null : +$(id).value, c = calcPulv(q, {presion: num(`#${pre}-pres`), vel: num(`#${pre}-vel`)});
+  if (c.vol && (forzar || $(`#${pre}-caldo`).dataset.auto !== '0')) { $(`#${pre}-caldo`).value = Math.round(c.vol); $(`#${pre}-caldo`).dataset.auto = '1'; }
+  msg.innerHTML = `${chipBoq(q.boqISO)} ${esc(boqTxt(q))} · ${c.picos} pico${c.picos > 1 ? 's' : ''} · ${c.q != null ? fmt(c.q, 2) + ' L/min por pico' : 'sin caudal'} → <b>${c.vol ? fmt(c.vol, 0) + ' L/ha' : 'volumen sin calcular'}</b>`;
+}
+function leerEquipo(T, pre, a) {
+  const q = PULV.find(x => x.id === $(`#${pre}-pulv`)?.value), num = id => $(id).value === '' ? null : +$(id).value;
+  if (q) a.equipo = snapEq(q, {presion: num(`#${pre}-pres`), vel: num(`#${pre}-vel`)}); else delete a.equipo;
+  a.caldo = num(`#${pre}-caldo`); a.hora = $(`#${pre}-hora`).value || undefined; a.vientoDir = $(`#${pre}-vdir`).value || undefined;
+  a.adyuvante = $(`#${pre}-ady`).value.trim() || undefined; a.ph = num(`#${pre}-ph`) ?? undefined;
+}
+
+/* ----- papel hidrosensible: lecturas guardadas ----- */
+const stDe = x => ({...x.st, hist: histDe(x.st.hist)});
+function gruposMetro(lista) {
+  const m = new Map(); lista.forEach(x => { const k = `${x.parcela ?? ''}|${x.posicion}|${x.metro}`; if (!m.has(k)) m.set(k, []); m.get(k).push(x); });
+  return [...m.values()].map(ts => ({parcela: ts[0].parcela, posicion: ts[0].posicion, metro: ts[0].metro, objetivo: ts[0].objetivo, tarjetas: ts.sort((a, b) => (a.tarjeta || 0) - (b.tarjeta || 0)), st: combinarTarjetas(ts.map(stDe))}));
+}
+const evDens = (d, obj) => { const o = OBJETIVOS[obj] || OBJETIVOS['ins-con']; return d >= o.min ? ['ok', 'Adecuada'] : d >= o.min * 0.7 ? ['warn', 'Algo baja'] : ['bad', 'Baja']; };
+const tratDeParcela = (T, pn) => T.parcelas.find(p => p.parcela == pn)?.trat;
+function resumenCalidad(T, L) {
+  const R = new Map(); gruposMetro(L).forEach(g => { const k = `${tratDeParcela(T, g.parcela) || 'General'}|${g.posicion}`; if (!R.has(k)) R.set(k, []); R.get(k).push(g); });
+  return [...R.entries()].sort().map(([k, gs]) => { const [tr, pos] = k.split('|'), m = f => media(gs.map(g => g.st[f]).filter(x => x != null)), dens = m('dens');
+    return {tr, pos, n: gs.length, cob: m('cob'), dens, dmv: m('dmv'), pct: [0, 1, 2].map(i => media(gs.map(g => g.st.pct[i]))), ev: evDens(dens, gs[0].objetivo)}; });
+}
+function calidadAplic(T, a) {
+  const L = (T.papeles || []).filter(x => String(x.aplicacion) === String(a.id) && (!T.sitios || S.sitio === 'todos' || !x.parcela || sitioDe(T, +x.parcela)?.id === S.sitio)), lee = puedeAplic(T) && a.estado === 'realizada';
+  if (!L.length) return lee ? `<div class="row"><button class="btn small" data-papel="${a.id}">🔍 Leer papel hidrosensible</button><span class="note">Medí la cobertura y las gotas con la cámara del celular.</span></div>` : '';
+  const G = gruposMetro(L), C = colTrat(T), tot = combinarTarjetas(L.map(stDe));
+  const filasR = resumenCalidad(T, L).map(r => `<tr><td>${C[r.tr] ? `<span class="swatch" style="background:${C[r.tr]}"></span> ` : ''}<b>${esc(r.tr)}</b> · ${esc(r.pos)}<br><span class="note">${r.n} metro${r.n > 1 ? 's' : ''}</span></td><td class="num">${fmt(r.cob, 1)} %</td><td class="num">${fmt(r.dens, 0)}</td><td class="num">${fmt(r.dmv, 0)}</td><td class="num">${[0, 1, 2].map(k => `<span style="color:${COL_GOTA[k]}">${fmt(r.pct[k], 0)}</span>`).join(' / ')}</td><td><span class="chip ${r.ev[0]}">${r.ev[1]}</span></td></tr>`).join('');
+  const filasM = G.map(g => `<tr><td>${g.parcela ? 'Parcela ' + esc(T.sitios ? etiq(T, {parcela: +g.parcela, sitio: sitioDe(T, +g.parcela)?.id}) : g.parcela) + ' · ' + esc(tratDeParcela(T, g.parcela) || '') : 'General'}<br><span class="note">${esc(g.posicion)} · ${esc(g.metro)}</span><div class="row" style="gap:4px;margin-top:4px">${g.tarjetas.map(x => `<button class="btn small" data-ver-papel="${x.id}" title="${esc(x.obs || 'Ver la tarjeta')}">${x.img ? '🖼️' : '📄'} ${x.tarjeta || ''}</button>`).join('')}</div></td><td class="num">${fmt(g.st.cob, 1)} %</td><td class="num">${fmt(g.st.dens, 0)}</td><td class="num">${fmt(g.st.dmv, 0)}</td></tr>`).join('');
+  return `<details class="calidad"><summary style="cursor:pointer"><b>Papel hidrosensible</b> · ${L.length} tarjeta${L.length > 1 ? 's' : ''} en ${G.length} metro${G.length > 1 ? 's' : ''} · cobertura ${fmt(tot.cob, 1)} % · ${fmt(tot.dens, 0)} gotas/cm² · DMV ${fmt(tot.dmv, 0)} µm (${esc(claseASABE(tot.dmv)).toLowerCase()})</summary>
+    <div style="display:grid;gap:8px;margin-top:8px"><div class="tw"><table><thead><tr><th>Tratamiento y posición</th><th class="num">Cobertura</th><th class="num">Gotas/cm²</th><th class="num">DMV <span style="text-transform:none">µm</span></th><th class="num">% chicas / medianas / grandes</th><th>Densidad</th></tr></thead><tbody>${filasR}</tbody></table></div>
+    <details><summary class="note" style="cursor:pointer">Ver cada metro lineal y sus tarjetas</summary><div class="tw"><table><thead><tr><th>Metro lineal y tarjetas</th><th class="num">Cobertura</th><th class="num">Gotas/cm²</th><th class="num">DMV <span style="text-transform:none">µm</span></th></tr></thead><tbody>${filasM}</tbody></table></div></details>
+    <div class="row">${lee ? `<button class="btn small" data-papel="${a.id}">🔍 Leer otra tarjeta</button>` : ''}${puede.diseno(T) || rolEn(T) === 'operador' ? `<button class="btn small" data-papel-datos="${a.id}">Pasar a Carga de datos</button>` : ''}<span class="note">Chicas &lt; ${CLASES.chica} µm · grandes ≥ ${CLASES.grande} µm (diámetro de gota).</span></div></div></details>`;
+}
+function leerPapel(T, apId, parSel) {
+  const aps = T.aplicaciones.filter(a => a.estado === 'realizada' && PULVERIZA.includes(a.tipo)).sort((x, y) => y.fecha.localeCompare(x.fecha));
+  if (!aps.length) return toast('Primero registrá una pulverización realizada en “Aplicaciones y manejo”');
+  const ap = aps.find(a => String(a.id) === String(apId)) || aps[0], ps = [...enSitio(T)].sort((a, b) => a.parcela - b.parcela);
+  const prev = (T.papeles || []).filter(x => String(x.aplicacion) === String(ap.id)), ult = prev[prev.length - 1];
+  const obj = /herbic|malezas/i.test(ap.tipo + (ap.producto || '')) ? 'her-sis' : /fungic|insectic|plagas|tratamientos/i.test(ap.tipo) ? 'ins-con' : 'ins-sis';
+  abrirLector({titulo: 'Papel hidrosensible', ejemplo: 'img/papel_ejemplo.jpg', objetivo: ult?.objetivo || obj, clases: ult?.clases,
+    aviso: t => toast(t), alCerrar: n => { if (n && S.T === T) { refrescar(); } },
+    guardar: {campos: {aplicaciones: aps.map(a => ({v: a.id, t: `${fechaTxt(a.fecha)} · ${a.tipo}${a.estadio ? ' · ' + a.estadio : ''}`})), aplSel: ap.id,
+      parcelas: ps.map(p => ({v: p.parcela, t: `${etiq(T, p)} · ${p.trat} · bloque ${p.bloque}`})), parSel: parSel ?? ult?.parcela ?? ps[0]?.parcela ?? '', posiciones: POSICIONES, posSel: ult?.posicion || POSICIONES[0], metro: ult?.metro || 'Metro 1'},
+      onGuardar: async d => {
+        const id = 'pp' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), imgId = 'img-' + id;
+        await DB.guardarImagen({id: imgId, ensayo: T.id, tipo: 'papel', ref: d.parcela || null, nombre: `papel_${d.parcela || 'general'}_${d.metro}.jpg`, fecha: ahora(), autor: S.user.id, blob: d.blob});
+        T.papeles = T.papeles || []; const misma = T.papeles.filter(x => String(x.aplicacion) === String(d.aplicacion) && String(x.parcela ?? '') === String(d.parcela) && x.posicion === d.posicion && x.metro === d.metro);
+        T.papeles.push({id, aplicacion: isNaN(+d.aplicacion) ? d.aplicacion : +d.aplicacion, parcela: d.parcela === '' ? null : +d.parcela, posicion: d.posicion, metro: d.metro, tarjeta: misma.length + 1, obs: d.obs, objetivo: d.objetivo,
+          fecha: HOY, autor: S.user.id, pxmm: d.pxmm, papel: d.papel, sens: d.sens, clases: d.clases, img: imgId, st: d.st});
+        T.cambios.unshift({fecha: ahora(), usuario: S.user.id, parcela: d.parcela || '—', variable: `Papel hidrosensible (${d.posicion}, ${d.metro})`, antes: null, despues: `${fmt(d.st.cob, 1)} % · ${fmt(d.st.dens, 0)} gotas/cm²`, estado: ['dueño', 'gerente'].includes(rolEn(T)) ? 'aprobado' : 'pendiente'});
+        await guardarAhora(); return `Tarjeta ${misma.length + 1} de ${d.metro} guardada`; }}});
+}
+async function verPapel(T, id) {
+  const x = (T.papeles || []).find(p => p.id === id); if (!x) return;
+  const im = x.img ? (await DB.imagenesDe(T.id).catch(() => [])).find(i => i.id === x.img) : null;
+  if (!im) { const s = stDe(x);
+    const M = modal(`<div class="row" style="justify-content:space-between"><h2>Tarjeta ${x.tarjeta || ''} · ${esc(x.metro)}</h2><button class="btn small" data-cerrar>✕</button></div>
+      <p class="note" style="margin:0">${x.parcela ? 'Parcela ' + esc(x.parcela) + ' · ' : ''}${esc(x.posicion)} · ${fechaTxt(x.fecha)} · ${esc(USERS[x.autor]?.nombre || '')}. ${T.ejemplo ? 'Lectura de ejemplo (sin imagen guardada).' : 'La imagen no está en este equipo.'}</p>
+      <div class="kpis"><div class="kpi"><span>Cobertura</span><b>${fmt(s.cob, 1)} %</b></div><div class="kpi"><span>Gotas/cm²</span><b>${fmt(s.dens, 0)}</b></div><div class="kpi"><span>DMV</span><b>${fmt(s.dmv, 0)} µm</b><span>${esc(claseASABE(s.dmv))}</span></div><div class="kpi"><span>Chicas / medianas / grandes</span><b style="font-size:1rem">${s.clases.join(' / ')}</b></div></div>
+      ${puede.diseno(T) ? '<div class="row"><button class="btn small" id="pp-borrar">Eliminar esta tarjeta</button></div>' : ''}`, 620);
+    M.querySelector('#pp-borrar')?.addEventListener('click', () => borrarPapel(T, x, M)); return; }
+  abrirLector({ver: {blob: im.blob, pxmm: x.pxmm, papel: x.papel, sens: x.sens, clases: x.clases, objetivo: x.objetivo}, titulo: `Tarjeta ${x.tarjeta || ''} · ${x.metro}`});
+}
+async function borrarPapel(T, x, M) {
+  if (!await confirmar('Eliminar tarjeta', 'Se elimina esta lectura de papel hidrosensible y su imagen.', {ok: 'Eliminar', peligro: true})) return;
+  T.papeles = T.papeles.filter(p => p.id !== x.id); if (x.img) await DB.borrarImagen(x.img).catch(() => {}); M?.cerrar(); guardarPronto(); refrescar();
+}
+// Lleva cobertura, densidad y DMV por parcela (promedio de sus tarjetas) a las mediciones del ensayo
+function papelADatos(T, apId) {
+  const L = (T.papeles || []).filter(x => String(x.aplicacion) === String(apId) && x.parcela != null); if (!L.length) return toast('No hay tarjetas asignadas a parcelas');
+  const ids = ['pulv_cob', 'pulv_dens', 'pulv_dmv']; ids.forEach(id => { if (!T.variables.some(v => v.id === id)) { const v = varDef(T.rubro, id); if (v) T.variables.push(v); } });
+  const porP = new Map(); L.forEach(x => { if (!porP.has(x.parcela)) porP.set(x.parcela, []); porP.get(x.parcela).push(x); });
+  let n = 0; for (const [pn, ts] of porP) { if (!T.parcelas.some(p => p.parcela === pn) || !puede.datos(T, pn)) continue; const s = combinarTarjetas(ts.map(stDe));
+    if (guardarValor(T, pn, 'pulv_cob', +s.cob.toFixed(2))) n++; if (guardarValor(T, pn, 'pulv_dens', +s.dens.toFixed(1))) n++; if (s.dmv != null && guardarValor(T, pn, 'pulv_dmv', Math.round(s.dmv))) n++; }
+  toast(n ? `${n} valores pasados a Carga de datos (${porP.size} parcelas)` : 'Los valores ya estaban cargados'); refrescar(); guardarPronto();
+}
+
 /* ---------- 4 campo y parcelas (mapa) ---------- */
 const mapa = (() => {
   const W0 = E0.imagen.ancho_px, H0 = E0.imagen.alto_px; let listo = false, IDX, THD, IM = {};
@@ -1236,7 +1450,13 @@ async function bloquesInforme(T) {
   B.push({h2: 'Variables y métodos de medición'}, {tabla: {cab: ['Variable', 'Unidad', 'Cómo se midió', 'Momento'], anchos: [2200, 1100, 4400, 1400], filas: vis(T).filter(v => !v.corte || v.corte === 1).map(v => [v.corte ? v.nombre.replace(/ · corte \d+$/, '') + ' (en cada corte)' : v.nombre, v.unidad || '', v.metodo + (v.sub > 1 ? ` (${v.sub} submuestras por parcela)` : ''), v.corte ? 'Cada corte' : v.momento || ''])}});
   if (esRed(T)) B.push({h2: 'Lugares'}, {tabla: {cab: ['Lugar', 'Ubicación', 'Operador', 'Parcelas', 'Avance'], num: [3, 4], anchos: [1800, 3000, 2000, 1000, 1000], filas: T.sitios.map(x => { const ps = T.parcelas.filter(p => p.sitio === x.id); return [x.nombre, x.lugar || '', (x.ops || []).map(u => USERS[u]?.nombre || u).join(', '), ps.length, Math.round(avance(T, ps) * 100) + ' %']; })}});
   if (apsDe(T).length) B.push({h2: 'Aplicaciones y labores'}, {tabla: {cab: ['Fecha', ...(esRed(T) ? ['Lugar'] : []), 'Tipo', 'A qué', 'Producto / dosis', 'Momento', 'Condiciones', 'Estado'], anchos: esRed(T) ? [1050, 1000, 1300, 1000, 1750, 1150, 1150, 950] : [1180, 1450, 1150, 1950, 1300, 1300, 1050], filas: [...apsDe(T)].sort((a, b) => a.fecha.localeCompare(b.fecha)).map(a => [fechaTxt(a.fecha), ...(esRed(T) ? [!a.sitio || a.sitio === 'todos' ? 'Todos' : nomSitio(T, a.sitio)] : []), a.tipo, aQue(a), a.producto ? a.producto + (a.dosis ? ' · ' + a.dosis : '') : a.tipo === 'Aplicación de tratamientos' ? `Según tratamiento · caldo ${a.caldo || T.caldo || '—'} L/ha` : '', a.estadio || '', condTxt(a.cond), estadoApl(a)[1]])}});
+  const conEq = apsDe(T).filter(a => a.equipo || a.hora || a.adyuvante).sort((a, b) => a.fecha.localeCompare(b.fecha));
+  if (conEq.length) B.push({h2: 'Equipo de aplicación'}, {tabla: {cab: ['Fecha', 'Pulverizadora y boquilla', 'Presión', 'Velocidad', 'Volumen', 'Hora · viento', 'ΔT'], anchos: [1100, 3300, 900, 1000, 1000, 1400, 700], filas: conEq.map(a => [fechaTxt(a.fecha), a.equipo ? `${a.equipo.nombre}${a.equipo.boq ? ' · ' + a.equipo.boq : ''}${a.equipo.picos > 1 ? ` · ${a.equipo.picos} picos a ${a.equipo.sep} cm` : ''}${a.adyuvante ? ' · adyuvante: ' + a.adyuvante : ''}` : (a.adyuvante ? 'Adyuvante: ' + a.adyuvante : '—'), a.equipo?.presion != null ? fmt(a.equipo.presion, 1) + ' bar' : '', a.equipo?.vel != null ? fmt(a.equipo.vel, 1) + ' km/h' : '', a.caldo ? fmt(a.caldo, 0) + ' L/ha' : '', [a.hora, a.vientoDir ? 'del ' + a.vientoDir : ''].filter(Boolean).join(' · '), deltaT(a.cond?.t, a.cond?.hr) != null ? fmt(deltaT(a.cond.t, a.cond.hr), 1) + ' °C' : ''])}});
   B.push({h1: '3. Resultados'});
+  const PPw = (T.papeles || []).filter(x => !T.__vista || !x.parcela || T.parcelas.some(p => p.parcela == x.parcela));
+  if (PPw.length) { B.push({h2: 'Calidad de aplicación (papel hidrosensible)'}, {p: `Se colocaron tarjetas de papel hidrosensible antes de aplicar y se leyeron con la cámara del celular en la app: la cobertura de cada metro lineal es la superficie manchada sobre el total de papel de ese metro; las manchas de gotas pegadas se cuentan como varias gotas; el diámetro de gota se estima desde la mancha con el factor de expansión del papel (d = 0,95·s^0,91, DepositScan). Gotas chicas: menos de ${CLASES.chica} µm; grandes: ${CLASES.grande} µm o más. ${PPw.length} tarjetas en total.`});
+    [...new Set(PPw.map(x => String(x.aplicacion)))].forEach(id => { const a = T.aplicaciones.find(x => String(x.id) === id), R = resumenCalidad(T, PPw.filter(x => String(x.aplicacion) === id));
+      B.push({h3: a ? `${fechaTxt(a.fecha)} · ${a.tipo}${a.estadio ? ' · ' + a.estadio : ''}` : 'Aplicación'}, {tabla: {cab: ['Trat.', 'Posición', 'Metros', 'Cobertura (%)', 'Gotas/cm²', 'DMV (µm)', 'Chicas / medianas / grandes (%)', 'Densidad'], num: [2, 3, 4, 5], anchos: [700, 1500, 800, 1100, 1000, 1000, 1900, 1100], filas: R.map(r => [r.tr, r.pos, r.n, fmt(r.cob, 1), fmt(r.dens, 0), fmt(r.dmv, 0), r.pct.map(v => fmt(v, 0)).join(' / '), r.ev[1]])}}); }); }
   if (T.cortes?.length >= 2) { const D = mediasCorte(T);
     B.push({h2: 'Producción de forraje por corte (kg MS/ha)'}, {tabla: {cab: ['Trat.', ...T.cortes.map(c => `Corte ${c.n}`), 'Total'], num: [...T.cortes.map((_, i) => i + 1), T.cortes.length + 1], filas: D.map(d => [d.t.cod, ...d.m.map(x => fmt(x, 0)), fmt(d.m.every(x => x != null) ? d.m.reduce((a, x) => a + x, 0) : null, 0)])}}); }
   for (const v of vars) {
@@ -1291,7 +1511,7 @@ async function exportarExcel(T) {
       if (Array.isArray(sb)) return sb.map((y, i) => [p.parcela, n, i + 1, y ?? '']);
       return Object.entries(sb || {}).flatMap(([k, y]) => Array.isArray(y) ? y.map((z, i) => [p.parcela, n, `${k} ${i + 1}`, z ?? '']) : [[p.parcela, n, k, y ?? '']]); }))]},
     {nombre: 'Métodos', filas: [['Variable', 'Código', 'Unidad', 'Tipo', 'Submuestras', 'Momento', 'Método', 'Fuente'], ...vars.map(v => [v.nombre, v.id, v.unidad || '', v.tipo, v.sub || 1, v.momento || '', v.metodo || '', refTxt(v.ref)])]},
-    {nombre: 'Aplicaciones', filas: [['Fecha', ...(T.sitios ? ['Lugar'] : []), 'Estado', 'Tipo', 'A qué', 'Producto', 'Dosis', 'Momento', 'Caldo (L/ha)', 'T (°C)', 'HR (%)', 'Viento (km/h)', 'Responsable', 'Observaciones'], ...[...apsDe(T)].sort((a, b) => a.fecha.localeCompare(b.fecha)).map(a => [fechaTxt(a.fecha), ...(T.sitios ? [!a.sitio || a.sitio === 'todos' ? 'Todos' : nomSitio(T, a.sitio)] : []), estadoApl(a)[1], a.tipo, aQue(a), a.producto || '', a.dosis || '', a.estadio || '', a.caldo ?? '', a.cond?.t ?? '', a.cond?.hr ?? '', a.cond?.viento ?? '', USERS[a.resp]?.nombre || '', a.obs || ''])]},
+    {nombre: 'Aplicaciones', filas: [['Fecha', ...(T.sitios ? ['Lugar'] : []), 'Estado', 'Tipo', 'A qué', 'Producto', 'Dosis', 'Momento', 'Caldo (L/ha)', 'T (°C)', 'HR (%)', 'Viento (km/h)', 'Responsable', 'Observaciones', 'Hora', 'Dirección del viento', 'ΔT (°C)', 'Pulverizadora', 'Boquilla', 'Picos', 'Presión (bar)', 'Velocidad (km/h)', 'Caudal por pico (L/min)', 'Volumen calibrado (L/ha)', 'Adyuvante', 'pH del agua'], ...[...apsDe(T)].sort((a, b) => a.fecha.localeCompare(b.fecha)).map(a => [fechaTxt(a.fecha), ...(T.sitios ? [!a.sitio || a.sitio === 'todos' ? 'Todos' : nomSitio(T, a.sitio)] : []), estadoApl(a)[1], a.tipo, aQue(a), a.producto || '', a.dosis || '', a.estadio || '', a.caldo ?? '', a.cond?.t ?? '', a.cond?.hr ?? '', a.cond?.viento ?? '', USERS[a.resp]?.nombre || '', a.obs || '', a.hora || '', a.vientoDir || '', deltaT(a.cond?.t, a.cond?.hr) != null ? +deltaT(a.cond.t, a.cond.hr).toFixed(1) : '', a.equipo?.nombre || '', a.equipo?.boq || '', a.equipo?.picos ?? '', a.equipo?.presion ?? '', a.equipo?.vel ?? '', a.equipo?.q ?? '', a.equipo?.vol ?? '', a.adyuvante || '', a.ph ?? ''])]},
     {nombre: 'Notas', filas: [['Nivel', 'Referencia', 'Nota', 'Autor', 'Fecha'], ...notasDe(T).map(n => [nivelNota(T, n), n.ref, n.texto, USERS[n.autor]?.nombre || '', n.fecha])]},
     {nombre: 'Historial', filas: [['Fecha', 'Usuario', 'Parcela', 'Qué', 'Antes', 'Después', 'Estado', 'Comentario'], ...T.cambios.filter(c => !T.__vista || c.parcela === '—' || T.parcelas.some(p => p.parcela == c.parcela)).map(c => [c.fecha, USERS[c.usuario]?.nombre || c.usuario, T.sitios && +c.parcela ? etiq(T, {parcela: +c.parcela, sitio: sitioDe(T, +c.parcela)?.id}) : c.parcela, T.variables.find(v => v.id === c.variable)?.nombre || c.variable, c.antes ?? '', c.despues ?? '', c.estado, c.comentario || ''])]}];
   const res = [['Variable', 'Trat.', 'Descripción', 'Media', 'Tukey', 'vs testigo / control', 'F', 'p', 'CV (%)', 'Media general']];
@@ -1301,6 +1521,15 @@ async function exportarExcel(T) {
   } else vars.filter(v => v.tipo !== 'texto').forEach(v => { const a = analizar(T, v); if (!a.ok) return res.push([v.nombre, '', a.sinVar ? 'Sin variación' : `Faltan ${a.falta.length} parcelas`]);
     a.orden.forEach((k, i) => res.push([v.nombre, k, tratNom(T, k), +a.R.medias[k].toFixed(4), a.ptr < 0.05 ? a.tk.letras[k] : '', a.vsT(k), i ? '' : +a.R.tabla[1].F.toFixed(3), i ? '' : +a.ptr.toFixed(5), i ? '' : +a.R.cv.toFixed(2), i ? '' : +a.R.media.toFixed(4)])); });
   hojas.push({nombre: 'Resultados', filas: res});
+  const usadas = PULV.filter(q => apsDe(T).some(a => a.equipo?.id === q.id));
+  if (usadas.length) hojas.push({nombre: 'Pulverizadoras', filas: [['Nombre', 'Tipo', 'Marca o modelo', 'Tanque (L)', 'Picos', 'Separación (cm)', 'Altura de barra (cm)', 'Ancho de trabajo (m)', 'Boquilla', 'Tamaño ISO', 'Presión (bar)', 'Velocidad (km/h)', 'Caudal por pico (L/min)', 'CV entre picos (%)', 'Volumen (L/ha)', 'Fecha de calibración', 'Caudales medidos (L/min)', 'Observaciones'],
+    ...usadas.map(q => { const c = calcPulv(q); return [q.nombre, q.tipo, q.marca || '', q.tanque ?? '', c.picos, q.sep ?? '', q.altura ?? '', c.ancho != null ? +c.ancho.toFixed(2) : '', boqTxt(q), q.boqISO || '', q.presion ?? '', q.vel ?? '', c.q != null ? +c.q.toFixed(3) : '', c.cv != null ? +c.cv.toFixed(1) : '', c.vol != null ? Math.round(c.vol) : '', fechaTxt(q.fechaCal), (q.caudales || []).join('; '), q.obs || '']; })]});
+  const PP = (T.papeles || []).filter(x => !T.__vista || !x.parcela || T.parcelas.some(p => p.parcela == x.parcela));
+  if (PP.length) { const apN = id => { const a = T.aplicaciones.find(x => String(x.id) === String(id)); return a ? `${fechaTxt(a.fecha)} · ${a.tipo}` : id; };
+    hojas.push({nombre: 'Papel hidrosensible', filas: [['Aplicación', 'Parcela', 'Trat.', 'Posición', 'Metro lineal', 'Tarjeta', 'Cobertura (%)', 'Gotas contadas', 'Área leída (cm²)', 'Densidad (gotas/cm²)', 'DMV Dv0,5 (µm)', 'Dv0,1 (µm)', 'Dv0,9 (µm)', 'DMN (µm)', 'Amplitud relativa', 'Clase (ASABE, orientativa)', 'Chicas', 'Medianas', 'Grandes', '% chicas', '% medianas', '% grandes', 'Gotas separadas (estaban pegadas)', 'Volumen estimado (L/ha)', 'Resolución (µm/píxel)', 'Fecha', 'Leyó', 'Observaciones'],
+      ...PP.map(x => { const t = x.st, r = v => v == null ? '' : +(+v).toFixed(2); return [apN(x.aplicacion), x.parcela ?? 'General', tratDeParcela(T, x.parcela) || '', x.posicion, x.metro, x.tarjeta || '', r(t.cob), t.n, r(t.areaCm2), r(t.dens), r(t.dmv), r(t.dv01), r(t.dv09), r(t.dmn), r(t.span), claseASABE(t.dmv), ...t.clases, ...t.pct.map(r), t.separadas || 0, r(t.litrosHa), r(t.umPx), fechaTxt(x.fecha), USERS[x.autor]?.nombre || '', x.obs || '']; })]});
+    const filasM = []; [...new Set(PP.map(x => String(x.aplicacion)))].forEach(id => gruposMetro(PP.filter(x => String(x.aplicacion) === id)).forEach(g => { const t = g.st; filasM.push([apN(id), g.parcela ?? 'General', tratDeParcela(T, g.parcela) || '', g.posicion, g.metro, g.tarjetas.length, +t.cob.toFixed(2), t.n, +t.dens.toFixed(1), t.dmv != null ? Math.round(t.dmv) : '', ...t.pct.map(v => +v.toFixed(1)), evDens(t.dens, g.objetivo)[1]]); }));
+    hojas.push({nombre: 'Calidad por metro', filas: [['Aplicación', 'Parcela', 'Trat.', 'Posición', 'Metro lineal', 'Tarjetas', 'Cobertura del metro (%)', 'Gotas', 'Densidad (gotas/cm²)', 'DMV (µm)', '% chicas', '% medianas', '% grandes', 'Densidad respecto de lo recomendado'], ...filasM]}); }
   if (T.cortes?.length) hojas.push({nombre: 'Cortes', filas: [['Corte', 'Fecha', 'Días de rebrote'], ['Uniformización', fechaTxt(T.uniformizacion), ''], ...T.cortes.map(c => [c.n, fechaTxt(c.fecha), c.dias])]});
   descargar(nomArch(T) + '.xlsx', await crearXlsx(hojas));
 }
@@ -1339,7 +1568,7 @@ async function exportarEnsayo(T) {
   await guardarAhora(); const ids = new Set([T.owner, ...Object.values(T.asig), ...Object.keys(T.trabajo || {}), ...Object.keys(T.compartido || {})]);
   const imgs = await DB.imagenesDe(T.id).catch(() => []), imagenes = await Promise.all(imgs.map(async i => ({...i, blob: undefined, data: await blobAData(i.blob)})));
   const perfiles = Object.fromEntries([...ids].filter(id => USERS[id]).map(id => [id, USERS[id]])), equipos = T.equipo && EQUIPOS[T.equipo] ? {[T.equipo]: EQUIPOS[T.equipo]} : {};
-  descargar(nombreArchivo(`${T.id}_${T.titulo}`) + '.json', JSON.stringify({app: 'Ensayos de Campo', version: 2, fecha: new Date().toISOString(), ensayos: [T], config: {perfiles, equipos, custom: []}, imagenes}), 'application/json');
+  descargar(nombreArchivo(`${T.id}_${T.titulo}`) + '.json', JSON.stringify({app: 'Ensayos de Campo', version: 2, fecha: new Date().toISOString(), ensayos: [T], config: {perfiles, equipos, custom: [], pulv: PULV}, imagenes}), 'application/json');
 }
 RENDER.exp = T0 => {
   const T = vistaS(T0), red = !!T0.sitios, sg = red ? (T0.sitios.find(x => x.id === (T.__vista || S.geoSitio)) || T0.sitios[0]) : null; if (red) S.geoSitio = sg.id;
@@ -1496,8 +1725,8 @@ async function enviarPaquete(T, uid) {
   const ids = new Set([T.owner, uid, yo.id, ...Object.values(T.asig), ...Object.keys(T.trabajo || {}), ...Object.keys(T.compartido || {}), ...(T.sitios || []).flatMap(x => x.ops || [])]);
   const perfiles = Object.fromEntries([...ids].filter(id => USERS[id]).map(id => [id, USERS[id]])), equipos = T.equipo && EQUIPOS[T.equipo] ? {[T.equipo]: EQUIPOS[T.equipo]} : {};
   let imagenes = [];
-  if (deOp) { const mias = (await DB.imagenesDe(T.id).catch(() => [])).filter(i => i.autor === yo.id); imagenes = await Promise.all(mias.map(async i => ({...i, blob: undefined, data: await blobAData(i.blob)}))); }
-  const js = {app: 'Ensayos de Campo', version: 2, tipo: 'paquete', de: yo.id, para: uid, fecha: new Date().toISOString(), ensayos: [T], config: {perfiles, equipos, custom: []}, imagenes};
+  { const mias = (await DB.imagenesDe(T.id).catch(() => [])).filter(i => deOp ? i.autor === yo.id : i.tipo === 'papel'); imagenes = await Promise.all(mias.map(async i => ({...i, blob: undefined, data: await blobAData(i.blob)}))); }
+  const js = {app: 'Ensayos de Campo', version: 2, tipo: 'paquete', de: yo.id, para: uid, fecha: new Date().toISOString(), ensayos: [T], config: {perfiles, equipos, custom: [], pulv: PULV}, imagenes};
   const nombre = `${nombreArchivo(T.id)}_${deOp ? 'datos_de_' + nombreArchivo(yo.nombre.split(' ')[0]) : 'para_' + nombreArchivo(u?.nombre.split(' ')[0] || 'equipo')}.json`;
   const archivo = new File([JSON.stringify(js)], nombre, {type: 'application/json'});
   const texto = deOp ? `Datos de ${yo.nombre} del ensayo "${T.titulo}". Abrí Ensayos de Campo → 📥 Recibir archivo y elegí este archivo.` : `${u?.nombre.split(' ')[0] || ''}, te paso el ensayo "${T.titulo}". Abrí la app Ensayos de Campo (${LINK_APP}) → 📥 Recibir archivo y elegí este archivo.`;
@@ -1517,6 +1746,7 @@ function fusionar(L, R, de) {
     lp.ts = lp.ts || {}; lp.sub = lp.sub || {};
     Object.keys(rp.valores || {}).forEach(vid => { const tr = rp.ts?.[vid] || '', tl = lp.ts[vid] || ''; const vacio = lp.valores[vid] == null || lp.valores[vid] === '';
       if ((tr > tl || (vacio && !tl)) && JSON.stringify(lp.valores[vid]) !== JSON.stringify(rp.valores[vid])) { lp.valores[vid] = rp.valores[vid]; if (rp.sub?.[vid] !== undefined) lp.sub[vid] = structuredClone(rp.sub[vid]); if (tr) lp.ts[vid] = tr; res.valores++; } }); });
+  if (R.papeles?.length) { L.papeles = L.papeles || []; R.papeles.forEach(rp => { if (!L.papeles.some(x => x.id === rp.id)) { L.papeles.push(structuredClone(rp)); res.papeles = (res.papeles || 0) + 1; } }); }
   const kN = n => [n.nivel, n.ref, n.texto, n.autor].join('¦'); const hayN = new Set(L.notas.map(kN)); R.notas.forEach(n => { if (!hayN.has(kN(n))) { L.notas.push(structuredClone(n)); res.notas++; } });
   R.aplicaciones.forEach(ra => { const la = L.aplicaciones.find(x => String(x.id) === String(ra.id)); if (!la) { L.aplicaciones.push(structuredClone(ra)); res.aplic++; } else if (la.estado !== 'realizada' && ra.estado === 'realizada') { Object.assign(la, structuredClone(ra)); res.aplic++; } });
   const kC = c => [c.fecha, c.usuario, c.parcela, c.variable, JSON.stringify(c.despues)].join('¦'), mapaC = new Map(L.cambios.map(c => [kC(c), c]));
@@ -1544,6 +1774,7 @@ async function recibirPaquete(js) {
   Object.entries(js.config?.perfiles || {}).forEach(([id, u]) => { if (!USERS[id]) USERS[id] = u; });
   Object.entries(js.config?.equipos || {}).forEach(([id, q]) => { if (!EQUIPOS[id]) EQUIPOS[id] = q; });
   (js.config?.custom || []).forEach(c => { if (!CUSTOM.some(x => x.id === c.id)) CUSTOM.push(c); });
+  (js.config?.pulv || []).forEach(q => { const i = PULV.findIndex(x => x.id === q.id); if (i < 0) PULV.push(q); else if (js.de && USERS[js.de] && q.mod && (!PULV[i].mod || q.mod > PULV[i].mod)) PULV[i] = q; });
   let total = {valores: 0, notas: 0, aplic: 0, nuevo: false};
   for (const R of js.ensayos) { const L = byId(R.id); if (!L) { TRIALS.push(structuredClone(R)); total.nuevo = true; } else { const r = fusionar(L, R, js.de); total.valores += r.valores; total.notas += r.notas; total.aplic += r.aplic; } }
   const ya = new Set((await DB.todasLasImagenes().catch(() => [])).map(i => i.id));
@@ -1582,7 +1813,9 @@ function abrirDrawer(pn) {
       const t = T.tratamientos.find(x => x.cod === p.trat);
       const l1 = tr ? `Última aplicación del tratamiento: <b>${fechaTxt(tr.fecha)}</b>${tr.estadio ? ' (' + esc(tr.estadio.split(' (')[0]) + ')' : ''}${dias(tr.fecha) <= 120 ? ` · hoy <b>${dias(tr.fecha)} DDA</b>` : ''}` : t?.testigo ? 'Testigo: no recibe la aplicación de tratamientos.' : '';
       const l2 = lab ? `Última labor: ${esc(lab.tipo)} ${cuando(lab.fecha)} (${fechaTxt(lab.fecha)})` : '';
-      return l1 || l2 ? `<div class="ultima">${[l1, l2].filter(Boolean).join('<br>')}</div>` : ''; })()}
+      const pul = hechas.find(a => PULVERIZA.includes(a.tipo)), np = (T.papeles || []).filter(x => x.parcela === pn).length;
+      const l3 = pul && puedeAplic(T) ? `<button class="btn small" data-papel-dr="${pul.id}" style="margin-top:4px">🔍 Papel hidrosensible${np ? ` (${np} tarjeta${np > 1 ? 's' : ''})` : ''}</button>` : np ? `Papel hidrosensible: ${np} tarjeta${np > 1 ? 's' : ''}` : '';
+      return l1 || l2 || l3 ? `<div class="ultima">${[l1, l2, l3].filter(Boolean).join('<br>')}</div>` : ''; })()}
     ${!ed ? `<div class="chip neu" style="justify-self:start">${rolEn(T) === 'lector' ? 'Solo lectura' : 'Parcela no asignada a vos: solo lectura'}</div>` : ''}</header>
     <div class="body"><div style="display:grid;gap:6px"><h3>Resultados</h3>${T.cortes?.length ? '<div class="seg" id="seg-corte-dr"></div>' : ''}</div>${filtroCorte(T, vis(T)).map(medida).join('') || '<p class="note">El ensayo no tiene mediciones definidas.</p>'}
       <div style="display:grid;gap:8px"><div class="row" style="justify-content:space-between"><h3>Fotos de la parcela</h3>${rolEn(T) !== 'lector' ? fotoBtn(pn) : ''}</div><div class="fotos" data-fotos="${pn}"></div></div>
@@ -1600,6 +1833,7 @@ function abrirDrawer(pn) {
     d.querySelector(`[data-prom="${vid}"]`).innerHTML = `Promedio: <b>${vals.length ? fmt(vals.reduce((s, x) => s + x, 0) / vals.length, v.dec ?? 2) : '—'}</b> ${esc(v.unidad)} · ${vals.length} de ${v.sub} submuestras`; };
   d.onclick = async e => {
     if (e.target.closest('#dr-cerrar')) return cerrarDrawer();
+    const pd = e.target.closest('[data-papel-dr]'); if (pd) return leerPapel(T, pd.dataset.papelDr, pn);
     if (await clicFotos(e, T, pn)) return;
     if (e.target.closest('#nota-add')) { const t = $('#nota-txt').value.trim(); if (!t) return; T.notas.push({nivel: notaNivel, ref: refN(), texto: t, autor: S.user.id, fecha: ahora()}); toast('Nota agregada'); abrirDrawer(pn); refrescar(); return; }
     if (e.target.closest('#dr-guardar')) { let n = 0, fuera = [];
@@ -1633,7 +1867,7 @@ function refrescar() { if (!$('#s-ensayo').hidden) { const k = PASOS[S.paso][0];
 
 /* ================= guardado automático en este equipo ================= */
 const ULT = new Map(); let cfgUlt = '', tGuardar = null, estadoGuardado = 'ok'; ULT_LISTO = true;
-const cfgActual = () => ({perfiles: USERS, equipos: EQUIPOS, custom: CUSTOM, meta: META, sesion: {user: S.user?.id || null, rubro: S.rubro || null}});
+const cfgActual = () => ({perfiles: USERS, equipos: EQUIPOS, custom: CUSTOM, pulv: PULV, meta: META, sesion: {user: S.user?.id || null, rubro: S.rubro || null}});
 function marcarGuardados() { ULT.clear(); TRIALS.forEach(T => ULT.set(T.id, JSON.stringify(T))); cfgUlt = JSON.stringify(cfgActual()); }
 function guardarPronto(ms = 400) { clearTimeout(tGuardar); tGuardar = setTimeout(guardarAhora, ms); }
 async function guardarAhora() {
@@ -1696,6 +1930,7 @@ async function restaurar(js, modo) {
     js.ensayos.forEach(T => { const i = TRIALS.findIndex(x => x.id === T.id); if (i >= 0) TRIALS[i] = T; else TRIALS.push(T); });
     Object.assign(USERS, js.config?.perfiles || {}); Object.assign(EQUIPOS, js.config?.equipos || {});
     (js.config?.custom || []).forEach(c => { if (!CUSTOM.some(x => x.id === c.id)) CUSTOM.push(c); });
+    (js.config?.pulv || []).forEach(q => { if (!PULV.some(x => x.id === q.id)) PULV.push(q); });
   }
   for (const im of js.imagenes || []) await DB.guardarImagen({...im, data: undefined, blob: await dataABlob(im.data)});
   ULT.clear(); cfgUlt = ''; await guardarAhora();
@@ -1738,12 +1973,13 @@ async function quitarEjemplos() {
   const ids = TRIALS.filter(T => T.ejemplo).map(T => T.id);
   for (let i = TRIALS.length - 1; i >= 0; i--) if (TRIALS[i].ejemplo) TRIALS.splice(i, 1);
   Object.keys(USERS).forEach(k => { if (USERS[k].ejemplo) delete USERS[k]; }); Object.keys(EQUIPOS).forEach(k => { if (EQUIPOS[k].ejemplo) delete EQUIPOS[k]; });
+  for (let i = PULV.length - 1; i >= 0; i--) if (PULV[i].ejemplo) PULV.splice(i, 1);
   if (S.user?.ejemplo) S.user = null; if (S.T?.ejemplo) S.T = null; await DB.borrarEnsayos(ids); await guardarAhora(); listaCuentas();
 }
 async function cargarEjemplos() {
   const sem = JSON.parse(SEMILLA);
   sem.trials.forEach(T => { const i = TRIALS.findIndex(x => x.id === T.id); if (i >= 0) TRIALS[i] = T; else TRIALS.push(T); });
-  Object.assign(USERS, sem.users); Object.assign(EQUIPOS, sem.equipos); await guardarAhora(); listaCuentas();
+  Object.assign(USERS, sem.users); Object.assign(EQUIPOS, sem.equipos); (sem.pulv || []).forEach(q => { const i = PULV.findIndex(x => x.id === q.id); if (i >= 0) PULV[i] = q; else PULV.push(q); }); await guardarAhora(); listaCuentas();
 }
 function volverAlInicio() { cerrarDrawer(); if (S.user && USERS[S.user.id]) { S.user = USERS[S.user.id]; if (S.rubro) irInicio(); else irRubro(); } else { S.user = null; pantalla('bienvenida'); } }
 
@@ -1835,6 +2071,14 @@ const TOUR = [
     go: () => enEjemplo('aplic'), el: () => $('.kpis')},
   {g: 'En el campo', t: 'Condiciones de aplicación', d: 'Al registrar una pulverización se cargan temperatura, humedad y viento, y la app avisa si quedaron fuera de lo permitido por la Ley 3742/09 (más de 32 °C, menos de 60 % de humedad o viento mayor a 10 km/h), como en esta segunda aplicación.',
     go: () => enEjemplo('aplic'), el: () => conTexto('#panel .apl', 'Fuera de lo permitido')},
+  {g: 'En el campo', t: 'Pulverizadora y calibración', d: 'Se carga cada pulverizadora (mochila, barra de parcelas, de arrastre o dron) con sus boquillas por color ISO, la presión y la velocidad. Con el caudal medido de cada pico la app calcula el volumen en L/ha, la uniformidad entre picos, qué boquillas cambiar y a qué velocidad o presión ir para lograr el volumen buscado.',
+    go: () => { enEjemplo('aplic'); const d = $('#card-pulv'); if (d) d.open = true; }, el: () => $('#card-pulv')},
+  {g: 'En el campo', t: 'Datos de cada pulverización', d: 'En cada aplicación queda el equipo usado, la presión, la velocidad, el volumen, la hora, la dirección del viento, el adyuvante y el pH del agua. Con la temperatura y la humedad la app calcula el ΔT (lo ideal es entre 2 y 8 °C).',
+    go: () => enEjemplo('aplic'), el: () => conTexto('#panel .apl', 'Equipo:')},
+  {g: 'En el campo', t: 'Lector de papel hidrosensible', d: 'Con la cámara del celular: aparecen líneas guía para alinear el papel, un nivel y el enfoque. La app endereza la foto, aplica un filtro para ver mejor las manchas, mide la cobertura de cada metro lineal y cuenta las gotas en chicas, medianas y grandes (dos gotas pegadas cuentan como dos). También lee fotos o escaneos.',
+    go: () => enEjemplo('aplic'), el: () => $('#panel [data-papel]')},
+  {g: 'En el campo', t: 'Calidad de aplicación', d: 'Las tarjetas se resumen por tratamiento y posición (tercio superior, inferior, etc.): cobertura, gotas por cm², tamaño de gota y si la densidad alcanza lo recomendado para el producto. Con un toque se pasan a Carga de datos para analizarlas como cualquier medición.',
+    go: () => { enEjemplo('aplic'); const d = $('#panel .calidad'); if (d) d.open = true; }, el: () => $('#panel .calidad')},
   {g: 'En el campo', t: 'Croquis de parcelas', d: 'El croquis sorteado por bloques. Cada parcela muestra su tratamiento y cuántas mediciones le faltan; tocándola se abre el control de parcela.',
     go: () => enEjemplo('campo'), el: () => $('#viewer-host')},
   {g: 'En el campo', t: 'Colorear el croquis', d: 'El croquis se puede pintar por tratamiento o por operador asignado, para ver de un vistazo quién controla cada sector.',

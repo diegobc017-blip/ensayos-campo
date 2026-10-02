@@ -132,6 +132,48 @@
    "origen": "dron",
    "metodo": "Media de los píxeles de la parcela en la imagen multiespectral (NIR − R)/(NIR + R).",
    "ref": "12_plataformas_dron_demo"
+  },
+  {
+   "id": "pulv_cob",
+   "nombre": "Cobertura de pulverización",
+   "unidad": "%",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Papel hidrosensible (26 × 76 mm) colocado en la posición elegida antes de aplicar; se lee con la cámara del celular en la app (Aplicaciones → Leer papel hidrosensible). Cobertura = superficie manchada / superficie del papel, sumando las tarjetas de cada metro lineal.",
+   "momento": "En cada aplicación",
+   "ref": "Papel hidrosensible; DepositScan (Zhu et al., 2011)",
+   "origen": "papel"
+  },
+  {
+   "id": "pulv_dens",
+   "nombre": "Densidad de gotas",
+   "unidad": "gotas/cm²",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 1000,
+   "metodo": "Conteo de impactos en papel hidrosensible con la app; las manchas de gotas pegadas se separan en varias gotas. Recomendado (FAO): 20–30 gotas/cm² sistémicos, 30–40 herbicidas de contacto, 50–70 insecticidas o fungicidas de contacto.",
+   "momento": "En cada aplicación",
+   "ref": "Papel hidrosensible; FAO",
+   "origen": "papel"
+  },
+  {
+   "id": "pulv_dmv",
+   "nombre": "Diámetro mediano volumétrico de gota (DMV)",
+   "unidad": "µm",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": 30,
+   "max": 1500,
+   "metodo": "Dv0,5 estimado desde el diámetro de las manchas con el factor de expansión del papel (d = 0,95·s^0,91). Clase orientativa según ASABE S572.3.",
+   "momento": "En cada aplicación",
+   "ref": "DepositScan (Zhu et al., 2011); ASABE S572.3",
+   "origen": "papel"
   }
  ],
  "horticola": [
@@ -269,6 +311,48 @@
    "origen": "dron",
    "metodo": "Media de la banda térmica en la parcela.",
    "ref": "12"
+  },
+  {
+   "id": "pulv_cob",
+   "nombre": "Cobertura de pulverización",
+   "unidad": "%",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Papel hidrosensible (26 × 76 mm) colocado en la posición elegida antes de aplicar; se lee con la cámara del celular en la app (Aplicaciones → Leer papel hidrosensible). Cobertura = superficie manchada / superficie del papel, sumando las tarjetas de cada metro lineal.",
+   "momento": "En cada aplicación",
+   "ref": "Papel hidrosensible; DepositScan (Zhu et al., 2011)",
+   "origen": "papel"
+  },
+  {
+   "id": "pulv_dens",
+   "nombre": "Densidad de gotas",
+   "unidad": "gotas/cm²",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 1000,
+   "metodo": "Conteo de impactos en papel hidrosensible con la app; las manchas de gotas pegadas se separan en varias gotas. Recomendado (FAO): 20–30 gotas/cm² sistémicos, 30–40 herbicidas de contacto, 50–70 insecticidas o fungicidas de contacto.",
+   "momento": "En cada aplicación",
+   "ref": "Papel hidrosensible; FAO",
+   "origen": "papel"
+  },
+  {
+   "id": "pulv_dmv",
+   "nombre": "Diámetro mediano volumétrico de gota (DMV)",
+   "unidad": "µm",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": 30,
+   "max": 1500,
+   "metodo": "Dv0,5 estimado desde el diámetro de las manchas con el factor de expansión del papel (d = 0,95·s^0,91). Clase orientativa según ASABE S572.3.",
+   "momento": "En cada aplicación",
+   "ref": "DepositScan (Zhu et al., 2011); ASABE S572.3",
+   "origen": "papel"
   }
  ],
  "forestal": [
@@ -350,6 +434,48 @@
    "max": 100,
    "metodo": "Plantas con defoliación por hormigas cortadoras / plantas evaluadas × 100.",
    "ref": "06 §1"
+  },
+  {
+   "id": "pulv_cob",
+   "nombre": "Cobertura de pulverización",
+   "unidad": "%",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Papel hidrosensible (26 × 76 mm) colocado en la posición elegida antes de aplicar; se lee con la cámara del celular en la app (Aplicaciones → Leer papel hidrosensible). Cobertura = superficie manchada / superficie del papel, sumando las tarjetas de cada metro lineal.",
+   "momento": "En cada aplicación",
+   "ref": "Papel hidrosensible; DepositScan (Zhu et al., 2011)",
+   "origen": "papel"
+  },
+  {
+   "id": "pulv_dens",
+   "nombre": "Densidad de gotas",
+   "unidad": "gotas/cm²",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 1000,
+   "metodo": "Conteo de impactos en papel hidrosensible con la app; las manchas de gotas pegadas se separan en varias gotas. Recomendado (FAO): 20–30 gotas/cm² sistémicos, 30–40 herbicidas de contacto, 50–70 insecticidas o fungicidas de contacto.",
+   "momento": "En cada aplicación",
+   "ref": "Papel hidrosensible; FAO",
+   "origen": "papel"
+  },
+  {
+   "id": "pulv_dmv",
+   "nombre": "Diámetro mediano volumétrico de gota (DMV)",
+   "unidad": "µm",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": 30,
+   "max": 1500,
+   "metodo": "Dv0,5 estimado desde el diámetro de las manchas con el factor de expansión del papel (d = 0,95·s^0,91). Clase orientativa según ASABE S572.3.",
+   "momento": "En cada aplicación",
+   "ref": "DepositScan (Zhu et al., 2011); ASABE S572.3",
+   "origen": "papel"
   }
  ],
  "pasturas": [
@@ -599,6 +725,48 @@
    "origen": "dron",
    "metodo": "Promedio del NDVI de los píxeles dentro del área útil, en el vuelo previo a cada corte; útil para estimar biomasa si se calibra con los cortes.",
    "ref": "12; 14 §4.1"
+  },
+  {
+   "id": "pulv_cob",
+   "nombre": "Cobertura de pulverización",
+   "unidad": "%",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Papel hidrosensible (26 × 76 mm) colocado en la posición elegida antes de aplicar; se lee con la cámara del celular en la app (Aplicaciones → Leer papel hidrosensible). Cobertura = superficie manchada / superficie del papel, sumando las tarjetas de cada metro lineal.",
+   "momento": "En cada aplicación",
+   "ref": "Papel hidrosensible; DepositScan (Zhu et al., 2011)",
+   "origen": "papel"
+  },
+  {
+   "id": "pulv_dens",
+   "nombre": "Densidad de gotas",
+   "unidad": "gotas/cm²",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 1000,
+   "metodo": "Conteo de impactos en papel hidrosensible con la app; las manchas de gotas pegadas se separan en varias gotas. Recomendado (FAO): 20–30 gotas/cm² sistémicos, 30–40 herbicidas de contacto, 50–70 insecticidas o fungicidas de contacto.",
+   "momento": "En cada aplicación",
+   "ref": "Papel hidrosensible; FAO",
+   "origen": "papel"
+  },
+  {
+   "id": "pulv_dmv",
+   "nombre": "Diámetro mediano volumétrico de gota (DMV)",
+   "unidad": "µm",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": 30,
+   "max": 1500,
+   "metodo": "Dv0,5 estimado desde el diámetro de las manchas con el factor de expansión del papel (d = 0,95·s^0,91). Clase orientativa según ASABE S572.3.",
+   "momento": "En cada aplicación",
+   "ref": "DepositScan (Zhu et al., 2011); ASABE S572.3",
+   "origen": "papel"
   }
  ]
 }
