@@ -29,14 +29,15 @@ export const desdeMerc = (x, y, z) => { const n = 256 * 2 ** z; return [Math.ata
 export const TESELA = (z, x, y) => `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`;
 export const ATRIB = 'Imagen satelital: Esri, Maxar, Earthstar Geographics';
 // SVG con fondo satelital (si hay internet) y polígonos. pol: [{anillo, color, texto, id, sel}], pts: [{lat, lon, texto}]
-export function svgMapa(pol, pts = [], {ancho = 720, alto = 420, zoomMax = 19, satelite = true, margen = 0.18, limites = []} = {}) {
+export function svgMapa(pol, pts = [], {ancho = 720, alto = 420, zoomMax = 22, satelite = true, margen = 0.18, limites = []} = {}) {
   const todos = [...pol.flatMap(p => p.anillo.map(([lo, la]) => [la, lo])), ...pts.map(p => [p.lat, p.lon]), ...limites]; if (!todos.length) return '';
   let la0 = Infinity, la1 = -Infinity, lo0 = Infinity, lo1 = -Infinity; todos.forEach(([la, lo]) => { la0 = Math.min(la0, la); la1 = Math.max(la1, la); lo0 = Math.min(lo0, lo); lo1 = Math.max(lo1, lo); });
   let z = zoomMax; for (; z > 3; z--) { const a = merc(la1, lo0, z), b = merc(la0, lo1, z); if ((b[0] - a[0]) * (1 + 2 * margen) <= ancho && (b[1] - a[1]) * (1 + 2 * margen) <= alto) break; }
   const c = merc((la0 + la1) / 2, (lo0 + lo1) / 2, z), ox = c[0] - ancho / 2, oy = c[1] - alto / 2, P = (la, lo) => { const m = merc(la, lo, z); return [m[0] - ox, m[1] - oy]; };
   let s = `<svg viewBox="0 0 ${ancho} ${alto}" data-z="${z}" data-ox="${ox}" data-oy="${oy}" width="100%" xmlns="http://www.w3.org/2000/svg" style="display:block;background:#3d4a3f;border-radius:10px;touch-action:manipulation">`;
-  if (satelite) { const tx0 = Math.floor(ox / 256), tx1 = Math.floor((ox + ancho) / 256), ty0 = Math.floor(oy / 256), ty1 = Math.floor((oy + alto) / 256);
-    for (let tx = tx0; tx <= tx1; tx++) for (let ty = ty0; ty <= ty1; ty++) s += `<image href="${TESELA(z, tx, ty)}" x="${tx * 256 - ox}" y="${ty * 256 - oy}" width="256" height="256" onerror="this.remove()"/>`; }
+  if (satelite) { const tz = Math.min(z, 19), k = 2 ** (z - tz), ts = 256 * k; // más allá del zoom 19 se agrandan las teselas
+    const tx0 = Math.floor(ox / ts), tx1 = Math.floor((ox + ancho) / ts), ty0 = Math.floor(oy / ts), ty1 = Math.floor((oy + alto) / ts);
+    for (let tx = tx0; tx <= tx1; tx++) for (let ty = ty0; ty <= ty1; ty++) s += `<image href="${TESELA(tz, tx, ty)}" x="${tx * ts - ox}" y="${ty * ts - oy}" width="${ts}" height="${ts}" onerror="this.remove()"/>`; }
   // escala
   const mpp = 156543.03392 * Math.cos((la0 + la1) / 2 * Math.PI / 180) / 2 ** z, opciones = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000], esc = opciones.find(m => m / mpp > 70) || 1000, w = esc / mpp;
   for (const p of pol) { const d = p.anillo.map(([lo, la], i) => (i ? 'L' : 'M') + P(la, lo).map(v => v.toFixed(1)).join(' ')).join(' ') + 'Z';

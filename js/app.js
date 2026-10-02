@@ -1,7 +1,8 @@
 // app.js — Ensayos de Campo v2 (rubros, roles, control de parcela, mediciones, aplicaciones, análisis).
 // Todo se guarda en este equipo (IndexedDB, ver db.js) y funciona sin internet.
 import {anovaDBCA, tukey, interpretarCV, anovaCombinado, ladoALado, welch} from './estadistica.js';
-import {enRect, enCuad, distancia, areaM2, svgMapa, desdeMerc, mover} from './lib/geo.js';
+import {enRect, enCuad, distancia, areaM2, svgMapa, desdeMerc, mover, rumbo} from './lib/geo.js';
+import {leerArchivoGeo, cuatroEsquinas, centroide, puntoEnPoligono, crearShapefile, crearGpx} from './lib/importgeo.js';
 import * as DB from './db.js';
 import {abrirLector, COL as COL_GOTA, NOMCL} from './papel.js';
 import {combinarTarjetas, histDe, OBJETIVOS, claseASABE, CLASES, homografia, rectificar} from './lib/hidro.js';
@@ -614,7 +615,7 @@ function renderLal(T0) {
   const T = vistaS(T0), cfg = cfgGeoLal(T0.sitios ? T : T0) || {}, ed = puede.diseno(T0) || (T0.sitios && T.__vista && T0.sitios.find(x => x.id === T.__vista)?.ops?.includes(S.user.id)), C = colTrat(T);
   const conGeo = T.parcelas.length && T.parcelas.every(p => p.geo), L = layoutLal(T);
   const pol = conGeo ? T.parcelas.map(p => ({anillo: p.geo, color: COL_LADO[p.trat] || C[p.trat], texto: `${p.trat}${T.bloques > 1 ? p.bloque : ''}`, id: p.parcela, sel: S.sel === p.parcela})) : [];
-  const pts = []; if (lalModo === 'dib' && !conGeo && cfg.centro && !(cfg.esquinas || []).some(Boolean)) pts.push({lat: cfg.centro[0], lon: cfg.centro[1], texto: 'Acá'});
+  const pts = ubAqui ? [{lat: ubAqui[0], lon: ubAqui[1], texto: 'Vos'}] : []; if (lalModo === 'dib' && !conGeo && cfg.centro && !(cfg.esquinas || []).some(Boolean)) pts.push({lat: cfg.centro[0], lon: cfg.centro[1], texto: 'Acá'});
   if (cfg.modo === 'esq' || lalModo === 'dib') (cfg.esquinas || []).forEach((q, i) => q && pts.push({lat: q[0], lon: q[1], texto: i + 1}));
   if (!conGeo && cfg.esquinas?.length === 4 && cfg.esquinas.every(Boolean)) pol.push({anillo: [...cfg.esquinas, cfg.esquinas[0]].map(([la, lo]) => [lo, la]), color: '#facc15'}); else if (cfg.lat != null && !conGeo) pts.push({lat: cfg.lat, lon: cfg.lon, texto: 'Inicio'});
   const supTot = conGeo ? T.parcelas.reduce((s, p) => s + areaM2(p.geo), 0) : T.parcelas.length * T.parcela.area_m2;
@@ -625,7 +626,7 @@ function renderLal(T0) {
     <p class="lead">${esc(lalInfo.productor || '')}${lalInfo.lote ? ' · ' + esc(lalInfo.lote) : ''}${T.__vista ? ' · ' + esc(nomSitio(T0, T.__vista)) : ''}. ${T.tratamientos.length} lados${T.bloques > 1 ? `, ${T.bloques} pares` : ''}, franjas de ${fmt(T.parcela.ancho, 1)} × ${fmt(T.parcela.largo, 0)} m. Tocá una franja para cargar lo que medís en ella.</p>
     <div class="mapwrap"><div style="display:grid;gap:8px;min-width:0">
       <div id="lal-mapa">${conGeo || pts.length ? svgMapa(pol, pts, {satelite: lalSat, ancho: 760, alto: 460, limites: lalModo === 'dib' && !conGeo && cfg.centro ? [mover(cfg.centro, -Math.max(120, T.parcela.largo), -Math.max(120, T.parcela.largo)), mover(cfg.centro, Math.max(120, T.parcela.largo), Math.max(120, T.parcela.largo))] : []}) : svgFranjas(T, {sel: S.sel})}</div>
-      <div class="row note">${conGeo ? `<label class="chk"><input type="checkbox" id="lal-sat" ${lalSat ? 'checked' : ''}><span>Fondo satelital (con internet)</span></label> · Superficie total ${fmt(supTot / 10000, supTot < 1000 ? 3 : 2)} ha` : 'Todavía sin ubicar en el mapa: marcá la ubicación con el GPS (a la derecha).'}${pts.length && !conGeo ? ' · Tocá el mapa para mover el punto.' : ''}</div></div>
+      <div class="row note">${conGeo ? `<button class="btn small" id="lal-donde">📍 ¿Dónde estoy?</button><label class="chk"><input type="checkbox" id="lal-sat" ${lalSat ? 'checked' : ''}><span>Fondo satelital (con internet)</span></label> · Superficie total ${fmt(supTot / 10000, supTot < 1000 ? 3 : 2)} ha` : 'Todavía sin ubicar en el mapa: marcá la ubicación con el GPS (a la derecha).'}${pts.length && !conGeo ? ' · Tocá el mapa para mover el punto.' : ''}</div></div>
       <div class="side"><div class="card ctl"><h3>Lados</h3>${ladoInfo}</div>
       ${ed ? `<div class="card ctl" id="lal-gps"><h3>Ubicar con el GPS</h3><div class="seg" id="seg-lalgps"></div>
         ${lalModo === 'ubic' ? `<p class="note" style="margin:0">Parate en la <b>esquina de inicio de la primera franja</b> (a la izquierda, mirando hacia donde avanza la máquina) y tocá “Usar mi ubicación”. Después apuntá el celular en el sentido de las franjas y tocá “Tomar el rumbo”.</p>
@@ -635,6 +636,9 @@ function renderLal(T0) {
           <label class="f">Ancho de cada franja (m)<input type="number" step="any" id="lal-ancho" value="${T.parcela.ancho}"></label><label class="f">Superficie por franja (ha)<input type="number" step="any" id="lal-ha" value="${+(T.parcela.ancho * T.parcela.largo / 10000).toFixed(4)}" title="Cambia el largo"></label>
           <label class="f">Separación (m)<input type="number" step="any" id="lal-sep" value="${T0.lal?.sep ?? 0}"></label></div>
           <button class="btn primary" id="lal-generar">Generar las franjas</button>`
+        : lalModo === 'imp' ? `<p class="note" style="margin:0">Traé el área o las franjas dibujadas en <b>QGIS</b> (GeoJSON o Shapefile en .zip), <b>Google Earth</b> (KML/KMZ), un recorrido de <b>GPS</b> (GPX) o una planilla con latitud y longitud (CSV). Un solo contorno se divide en ${T.parcelas.length} franjas; si cada polígono tiene el número de franja, se asignan solos.</p>
+          <div class="row" style="align-items:end"><label class="btn primary" style="position:relative">📂 Elegir archivo<input type="file" id="ub-file" accept=".geojson,.json,.zip,.kml,.kmz,.gpx,.csv,.txt" style="position:absolute;inset:0;opacity:0;cursor:pointer"></label>
+          <label class="f">Si está en metros (UTM)<select id="ub-zona">${[['21S', '21 Sur (Paraguay oriental)'], ['20S', '20 Sur (Chaco)'], ['22S', '22 Sur'], ['19S', '19 Sur']].map(([v, t]) => `<option value="${v}" ${(cfgUb(T0, T).zona || '21S') === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label></div>`
         : lalModo === 'dib' ? `<p class="note" style="margin:0">${cfg.centro ? `Tocá en el mapa satelital las 4 esquinas del área, en este orden: <b>1</b> inicio izquierda, <b>2</b> fin izquierda, <b>3</b> fin derecha, <b>4</b> inicio derecha (mirando hacia donde avanza la máquina). La app dibuja el área y la divide en ${T.parcelas.length} franjas iguales.` : 'Primero ubicá el mapa: usá tu ubicación (GPS) o escribí la latitud y longitud de la chacra. Necesita internet para ver la imagen satelital.'}</p>
           <div class="row"><button class="btn small" id="lal-centro">📍 Ir a mi ubicación</button>${(cfg.esquinas || []).some(Boolean) ? '<button class="btn small" id="lal-borrar-dib">↺ Borrar puntos</button>' : ''}</div>
           ${cfg.centro ? '' : `<div class="grid2"><label class="f">Latitud<input type="number" step="any" id="lal-clat"></label><label class="f">Longitud<input type="number" step="any" id="lal-clon"></label></div><button class="btn small" id="lal-ver">Ver el mapa</button>`}
@@ -651,16 +655,17 @@ function renderLal(T0) {
         return `<tr data-pn="${p.parcela}" style="cursor:pointer"><td>${etiq(T, p)}</td><td><span class="swatch" style="background:${COL_LADO[p.trat]}"></span> ${p.trat} · ${esc(t?.nombre || '')}</td><td>${esc(prodTxt(t))}</td><td class="num">${a >= 1000 ? fmt(a / 10000, 3) + ' ha' : fmt(a, 0) + ' m²'}</td><td><a href="https://www.google.com/maps?q=${c[0].toFixed(6)},${c[1].toFixed(6)}" target="_blank" rel="noopener">${c[0].toFixed(5)}, ${c[1].toFixed(5)}</a></td></tr>`; }).join('')}</tbody></table></div>
       <p class="note" style="margin:0">Las franjas salen en QGIS y Google Earth desde “Informe y exportar”.</p></div>` : ''}
     ${cardFotoAerea(T0, T)}</section>`;
-  if ($('#seg-lalgps')) seg('#seg-lalgps', [['ubic', 'Desde un punto'], ['esq', 'Caminando las esquinas'], ['dib', 'Dibujar en el mapa']], lalModo, v => { lalModo = v; renderLal(T0); });
+  if ($('#seg-lalgps')) seg('#seg-lalgps', [['ubic', 'Desde un punto'], ['esq', 'Caminando las esquinas'], ['dib', 'Dibujar en el mapa'], ['imp', 'Importar (QGIS, Google Earth, GPS)']], lalModo, v => { lalModo = v; renderLal(T0); });
   const msg = t => { const m = $('#lal-msg'); if (m) m.textContent = t; };
   const guardarCfg = cambios => { const c = cfgGeoLal(T0.sitios ? T : T0); if (!c) return; Object.assign(c, cambios); };
   pintarFotoAerea(T0, T);
   P().oninput = e => { const id = e.target.id;
     if (id === 'lal-ha') { const v = +e.target.value, a = +$('#lal-ancho').value; if (v > 0 && a > 0) $('#lal-largo').value = +(v * 10000 / a).toFixed(1); }
     if (id === 'lal-largo' || id === 'lal-ancho') { const a = +$('#lal-ancho').value, l = +$('#lal-largo').value; if (a > 0 && l > 0) $('#lal-ha').value = +(a * l / 10000).toFixed(4); } };
-  P().onchange = e => { if (e.target.id === 'lal-sat') { lalSat = e.target.checked; renderLal(T0); } if (clicFotoAereaCambio(e, T0, T)) return; };
+  P().onchange = e => { if (e.target.id === 'lal-sat') { lalSat = e.target.checked; renderLal(T0); } if (e.target.id === 'ub-file' || e.target.id === 'ub-zona') { cambioUbic(e, T0, T); return; } if (clicFotoAereaCambio(e, T0, T)) return; };
   P().onclick = async e => {
     if (await clicFotoAerea(e, T0, T)) return;
+    if (e.target.closest('#lal-donde')) { await donde(T); return; }
     const pn = e.target.closest('[data-pn]'); if (pn) { S.sel = +pn.dataset.pn; abrirDrawer(S.sel); return; }
     const svg = e.target.closest('#lal-mapa svg[data-z]');
     if (svg && ed && lalModo === 'dib' && !conGeo) { const c = cfgGeoLal(T0.sitios ? T : T0), r = svg.getBoundingClientRect(), vb = svg.viewBox.baseVal, x = (e.clientX - r.left) / r.width * vb.width + +svg.dataset.ox, y = (e.clientY - r.top) / r.height * vb.height + +svg.dataset.oy;
@@ -942,6 +947,192 @@ async function fotoAereaBloques(T0, T) {
   const L = layoutM(T), recs = await recortesAereos(T0, T, img, fa, L.grupos);
   for (const r of recs) { const ancho = Math.min(15, 8 * r.w / r.h), alto = Math.min(9, ancho * r.h / r.w); B.push({nota: r.txt}, {img: new Uint8Array(await r.blob.arrayBuffer()), jpg: true, ancho: +(alto * r.w / r.h).toFixed(2), alto: +alto.toFixed(2)}); }
   return B;
+}
+
+/* ================= ubicación de las parcelas: GPS, mapa e importación de QGIS / Google Earth / GPS ================= */
+const PUNTOS_CARD = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'];
+const dirTxt = g => PUNTOS_CARD[Math.round(((g % 360) + 360) % 360 / 45) % 8];
+// Configuración de ubicación: del ensayo o del lugar elegido (redes)
+const cfgUb = (T0, T) => { if (T.__vista) { const st = T0.sitios.find(x => x.id === T.__vista); return st ? (st.ubic = st.ubic || {}) : {}; } return (T0.ubic = T0.ubic || {}); };
+const geoUb = (T0, T) => T.__vista ? T0.sitios.find(x => x.id === T.__vista) : T0; // dónde vive T.geo (esquina 101, rumbo y medidas)
+const nomEsqUb = T => ['Parcela 101 (inicio del bloque 1)', `Fin del bloque 1 (parcela ${100 + T.tratamientos.length})`, `Fin del último bloque (parcela ${T.bloques * 100 + T.tratamientos.length})`, `Inicio del último bloque (parcela ${T.bloques * 100 + 1})`];
+let ubModo = 'esq101', ubSat = true, ubAqui = null;
+const anilloLL = pts => { const r = pts.map(([la, lo]) => [+lo.toFixed(8), +la.toFixed(8)]); r.push([...r[0]]); return r; };
+// Parcelas desde la esquina 101 + rumbo (+ medidas de layoutM); los bloques siguientes a la derecha (o a la izquierda)
+function parcelasDesdePunto(T, o, rumboG, izq) {
+  const L = layoutM(T), r = rumboG * Math.PI / 180, s = izq ? -1 : 1, f = (x, y) => mover(o, x * Math.sin(r) + s * y * Math.sin(r + Math.PI / 2), x * Math.cos(r) + s * y * Math.cos(r + Math.PI / 2));
+  T.parcelas.forEach(p => { const [x, y, w, h] = L.R[p.parcela]; p.geo = anilloLL([f(x, y), f(x + w, y), f(x + w, y + h), f(x, y + h)]); });
+}
+// Parcelas dentro de 4 esquinas: 1 parcela 101, 2 fin del bloque 1, 3 fin del último bloque, 4 inicio del último bloque
+function parcelasEnCuad(T, q) {
+  const L = layoutM(T), f = (x, y) => enCuad(q, y / L.H, x / L.W);
+  T.parcelas.forEach(p => { const [x, y, w, h] = L.R[p.parcela]; p.geo = anilloLL([f(x, y), f(x + w, y), f(x + w, y + h), f(x, y + h)]); });
+}
+const ladosCuad = q => ({a: (distancia(q[0], q[1]) + distancia(q[3], q[2])) / 2, b: (distancia(q[0], q[3]) + distancia(q[1], q[2])) / 2});
+function cardUbicacion(T0, T) {
+  if (esLal(T0) || (T0.sitios && !T.__vista)) return '';
+  const c = cfgUb(T0, T), g = geoUb(T0, T)?.geo || {}, ed = puede.diseno(T0) || (T.__vista && T0.sitios.find(x => x.id === T.__vista)?.ops?.includes(S.user.id)), C = colTrat(T);
+  const conGeo = T.parcelas.length && T.parcelas.every(p => p.geo), algunas = T.parcelas.filter(p => p.geo), L = layoutM(T);
+  const pol = algunas.map(p => ({anillo: p.geo, color: C[p.trat], texto: String(p.parcela % 1000), id: p.parcela, sel: S.sel === p.parcela}));
+  const pts = []; if (!conGeo && (ubModo === 'esq4' || ubModo === 'dib')) (c.esquinas || []).forEach((q, i) => q && pts.push({lat: q[0], lon: q[1], texto: i + 1}));
+  if (ubModo === 'dib' && !conGeo && c.centro && !(c.esquinas || []).some(Boolean)) pts.push({lat: c.centro[0], lon: c.centro[1], texto: 'Acá'});
+  if (ubAqui) pts.push({lat: ubAqui[0], lon: ubAqui[1], texto: 'Vos'});
+  if (!conGeo && c.esquinas?.length === 4 && c.esquinas.every(Boolean)) pol.push({anillo: anilloLL(c.esquinas), color: '#facc15'});
+  const lim = ubModo === 'dib' && !conGeo && c.centro ? [mover(c.centro, -80, -80), mover(c.centro, 80, 80)] : [];
+  const sup = algunas.reduce((s, p) => s + areaM2(p.geo), 0), q4 = c.esquinas?.length === 4 && c.esquinas.every(Boolean), gps = q => q ? `${q[0].toFixed(6)}, ${q[1].toFixed(6)}` : '—';
+  const herr = !ed ? '' : `<div class="seg" id="seg-ub"></div>
+    ${ubModo === 'esq101' ? `<p class="note" style="margin:0">Parate en la esquina de la <b>parcela 101</b> (afuera, al inicio del bloque 1), tocá “Usar mi ubicación” y apuntá el celular hacia la parcela 102 para tomar el rumbo. Con las medidas de las parcelas la app dibuja todo el ensayo.</p>
+      <div class="row"><button class="btn small" id="ub-aqui">📍 Usar mi ubicación</button><button class="btn small" id="ub-brujula">🧭 Tomar el rumbo</button></div>
+      <div class="grid3"><label class="f">Latitud<input type="number" step="any" id="ub-lat" value="${g.lat ?? ''}"></label><label class="f">Longitud<input type="number" step="any" id="ub-lon" value="${g.lon ?? ''}"></label>
+        <label class="f">Rumbo hacia la 102 (°)<input type="number" step="any" id="ub-rumbo" value="${g.rumbo ?? 0}" title="0 = norte, 90 = este"></label>
+        <label class="f">Ancho de parcela (m)<input type="number" step="any" id="ub-ancho" value="${+(g.ancho ?? L.R[T.parcelas[0]?.parcela]?.[2] ?? 0).toFixed(2)}"></label><label class="f">Largo de parcela (m)<input type="number" step="any" id="ub-largo" value="${+(g.largo ?? L.R[T.parcelas[0]?.parcela]?.[3] ?? 0).toFixed(2)}"></label>
+        <label class="f">Calle entre bloques (m)<input type="number" step="any" id="ub-calle" value="${g.calle ?? 1}"></label><label class="f">Separación entre parcelas (m)<input type="number" step="any" id="ub-sep" value="${g.sepP ?? 0}"></label></div>
+      <label class="chk"><input type="checkbox" id="ub-izq" ${g.izq ? 'checked' : ''}><span>Los bloques siguientes quedan a la izquierda (mirando hacia la 102)</span></label>
+      <button class="btn primary" id="ub-generar">Generar las parcelas</button>`
+    : ubModo === 'esq4' ? `<p class="note" style="margin:0">Caminá hasta cada esquina del ensayo y marcala con el GPS, en este orden. Sirve también si las medidas reales no son exactas: la app ajusta las parcelas a las esquinas.</p>
+      ${nomEsqUb(T).map((n, i) => `<div class="row" style="justify-content:space-between;gap:6px"><span><b>${i + 1}</b> · ${n}<br><span class="note">${gps(c.esquinas?.[i])}${c.precision?.[i] ? ` · ±${c.precision[i]} m` : ''}</span></span><button class="btn small" data-ub-esq="${i}">📍 Marcar</button></div>`).join('')}
+      ${q4 ? `<span class="note">Bloque 1: ${fmt(ladosCuad(c.esquinas).a, 1)} m (según las medidas ${fmt(L.W, 1)} m) · ${T.bloques} bloques: ${fmt(ladosCuad(c.esquinas).b, 1)} m (según las medidas ${fmt(L.H, 1)} m)</span>` : ''}
+      <button class="btn primary" id="ub-cuad" ${q4 ? '' : 'disabled'}>Ubicar las parcelas</button>`
+    : ubModo === 'dib' ? `<p class="note" style="margin:0">${c.centro ? `Tocá en el mapa las 4 esquinas del ensayo en este orden: ${nomEsqUb(T).map((n, i) => `<b>${i + 1}</b> ${n.toLowerCase()}`).join(', ')}. Necesita internet para ver la imagen satelital.` : 'Primero ubicá el mapa con tu ubicación (GPS) o con la latitud y longitud.'}</p>
+      <div class="row"><button class="btn small" id="ub-centro">📍 Ir a mi ubicación</button>${(c.esquinas || []).some(Boolean) ? '<button class="btn small" id="ub-borrar-dib">↺ Borrar puntos</button>' : ''}</div>
+      ${c.centro ? '' : '<div class="grid2"><label class="f">Latitud<input type="number" step="any" id="ub-clat"></label><label class="f">Longitud<input type="number" step="any" id="ub-clon"></label></div><button class="btn small" id="ub-ver">Ver el mapa</button>'}
+      ${(c.esquinas || []).filter(Boolean).length ? `<span class="note">${(c.esquinas || []).filter(Boolean).length} de 4 esquinas</span>` : ''}
+      <button class="btn primary" id="ub-cuad" ${q4 ? '' : 'disabled'}>Ubicar las parcelas</button>`
+    : `<p class="note" style="margin:0">Traé las parcelas dibujadas en <b>QGIS</b> (GeoJSON o Shapefile comprimido en .zip), <b>Google Earth</b> (KML o KMZ), un recorrido de una app de <b>GPS</b> (GPX) o una planilla con latitud y longitud (CSV). Si cada polígono tiene el número de parcela se asignan solos; si es un solo contorno, la app lo divide en las parcelas del ensayo.</p>
+      <div class="row" style="align-items:end"><label class="btn primary" style="position:relative">📂 Elegir archivo<input type="file" id="ub-file" accept=".geojson,.json,.zip,.kml,.kmz,.gpx,.csv,.txt" style="position:absolute;inset:0;opacity:0;cursor:pointer"></label>
+        <label class="f">Si las coordenadas están en metros (UTM)<select id="ub-zona">${[['21S', '21 Sur (Paraguay oriental)'], ['20S', '20 Sur (Chaco)'], ['22S', '22 Sur'], ['19S', '19 Sur']].map(([v, t]) => `<option value="${v}" ${(c.zona || '21S') === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label></div>`}
+    <span class="note" id="ub-msg"></span>`;
+  return `<div class="card" id="card-ubic"><div class="row" style="justify-content:space-between"><h3>Ubicación de las parcelas${T.__vista ? ' · ' + esc(nomSitio(T0, T.__vista)) : ''}</h3>
+      <span class="row" style="gap:6px">${algunas.length ? '<button class="btn small" id="ub-donde">📍 ¿Dónde estoy?</button>' : ''}${algunas.length && ed ? '<button class="btn small" id="ub-quitar">Quitar ubicación</button>' : ''}</span></div>
+    ${algunas.length || pts.length ? `<div id="ub-mapa">${svgMapa(pol, pts, {satelite: ubSat, ancho: 760, alto: 420, limites: lim, margen: 0.08})}</div>
+      <div class="row note"><label class="chk"><input type="checkbox" id="ub-sat" ${ubSat ? 'checked' : ''}><span>Fondo satelital (con internet)</span></label>${algunas.length ? ` · ${algunas.length} de ${T.parcelas.length} parcelas ubicadas · ${sup >= 10000 ? fmt(sup / 10000, 2) + ' ha' : fmt(sup, 0) + ' m²'}` : ''}${ubAqui ? ` · <b id="ub-aqui-txt">${esc(ubAqui.txt || '')}</b>` : ''}</div>`
+      : '<p class="note" style="margin:0">Todavía sin ubicar. Con la ubicación, las parcelas se ven sobre el mapa, se encuentran en el campo con el GPS y se exportan a QGIS, Google Earth y GPS. Para repetir el ensayo en otro lugar del país, se ubica el croquis allá de la misma forma.</p>'}
+    ${herr}</div>`;
+}
+function montarUbic(T0, T) {
+  if (!$('#card-ubic')) return;
+  if ($('#seg-ub')) seg('#seg-ub', [['esq101', 'Desde la parcela 101'], ['esq4', 'Caminando las esquinas'], ['dib', 'Dibujar en el mapa'], ['imp', 'Importar (QGIS, Google Earth, GPS)']], ubModo, v => { ubModo = v; rehacerPaso(); });
+}
+const ubMsg = t => { const m = $('#ub-msg'); if (m) m.textContent = t; };
+function guardarUbic(T0, T, texto) {
+  T0.cambios.unshift({fecha: ahora(), usuario: S.user.id, parcela: '—', variable: `Ubicación de las parcelas${T.__vista ? ' · ' + nomSitio(T0, T.__vista) : ''}`, antes: null, despues: texto, estado: 'aprobado'});
+  guardarPronto(); toast('Parcelas ubicadas en el mapa'); rehacerPaso();
+}
+function cambioUbic(e, T0, T) {
+  if (e.target.id === 'ub-sat') { ubSat = e.target.checked; rehacerPaso(); return true; }
+  if (e.target.id === 'ub-zona') { cfgUb(T0, T).zona = e.target.value; return true; }
+  if (e.target.id === 'ub-file') { const f = e.target.files[0]; e.target.value = ''; if (f) importarUbicacion(T0, T, f); return true; }
+  return false;
+}
+async function clicUbic(e, T0, T) {
+  const c = cfgUb(T0, T);
+  const pn = e.target.closest('#ub-mapa [data-pn]'); if (pn) { S.sel = +pn.dataset.pn; abrirDrawer(S.sel); return true; }
+  const svg = e.target.closest('#ub-mapa svg[data-z]');
+  if (svg && ubModo === 'dib' && !T.parcelas.every(p => p.geo)) { const r = svg.getBoundingClientRect(), vb = svg.viewBox.baseVal, x = (e.clientX - r.left) / r.width * vb.width + +svg.dataset.ox, y = (e.clientY - r.top) / r.height * vb.height + +svg.dataset.oy;
+    const [la, lo] = desdeMerc(x, y, +svg.dataset.z); c.esquinas = (c.esquinas || []).filter(Boolean); if (c.esquinas.length >= 4) c.esquinas = []; c.esquinas.push([+la.toFixed(7), +lo.toFixed(7)]); c.precision = []; guardarPronto(); rehacerPaso(); return true; }
+  if (e.target.closest('#ub-aqui')) { ubMsg('Buscando la ubicación… quedate quieto unos segundos'); try { const g = await medirGPS(6, (n, a) => ubMsg(`Leyendo GPS… ${n} lecturas, ±${a} m`)); $('#ub-lat').value = g.lat.toFixed(7); $('#ub-lon').value = g.lon.toFixed(7); ubMsg(`Ubicación tomada (±${Math.max(1, Math.round(g.acc))} m). Ahora tomá el rumbo y tocá “Generar las parcelas”.`); } catch (x) { ubMsg(x.message); } return true; }
+  if (e.target.closest('#ub-brujula')) { ubMsg('Apuntá la parte de arriba del celular hacia la parcela 102…'); try { const r = await medirRumbo(2); $('#ub-rumbo').value = Math.round(r); ubMsg(`Rumbo ${Math.round(r)}° (${dirTxt(r)}). Conviene revisarlo: la brújula se desvía cerca de metales.`); } catch (x) { ubMsg(x.message); } return true; }
+  if (e.target.closest('#ub-generar')) { const n = id => $(id).value === '' ? null : +$(id).value;
+    if (n('#ub-lat') == null || n('#ub-lon') == null) { ubMsg('Falta la ubicación de la parcela 101.'); return true; }
+    if (!(n('#ub-ancho') > 0) || !(n('#ub-largo') > 0)) { ubMsg('Completá el ancho y el largo de las parcelas.'); return true; }
+    const dest = geoUb(T0, T); dest.geo = {...(dest.geo || {}), lat: n('#ub-lat'), lon: n('#ub-lon'), rumbo: n('#ub-rumbo') ?? 0, ancho: n('#ub-ancho'), largo: n('#ub-largo'), calle: n('#ub-calle') ?? 0, sepP: n('#ub-sep') ?? 0, izq: $('#ub-izq').checked};
+    parcelasDesdePunto(T, [dest.geo.lat, dest.geo.lon], dest.geo.rumbo, dest.geo.izq); c.modo = 'esq101';
+    guardarUbic(T0, T, `${dest.geo.lat}, ${dest.geo.lon} · rumbo ${dest.geo.rumbo}°`); return true; }
+  const eq = e.target.closest('[data-ub-esq]'); if (eq) { const i = +eq.dataset.ubEsq; eq.disabled = true; ubMsg(`Marcando la esquina ${i + 1}… quedate quieto`);
+    try { const g = await medirGPS(6, (k, a) => ubMsg(`Esquina ${i + 1}: ${k} lecturas, ±${a} m`)); c.esquinas = c.esquinas?.length === 4 ? c.esquinas : [null, null, null, null]; c.precision = c.precision || [];
+      c.esquinas[i] = [+g.lat.toFixed(7), +g.lon.toFixed(7)]; c.precision[i] = Math.max(1, Math.round(g.acc)); guardarPronto(); rehacerPaso(); } catch (x) { ubMsg(x.message); eq.disabled = false; } return true; }
+  if (e.target.closest('#ub-cuad')) { if (!(c.esquinas?.length === 4 && c.esquinas.every(Boolean))) return true; parcelasEnCuad(T, c.esquinas); c.modo = ubModo;
+    const l = ladosCuad(c.esquinas); guardarUbic(T0, T, `4 esquinas · ${fmt(l.a, 1)} × ${fmt(l.b, 1)} m`); return true; }
+  if (e.target.closest('#ub-centro')) { ubMsg('Buscando la ubicación…'); try { const g = await medirGPS(4); c.centro = [+g.lat.toFixed(7), +g.lon.toFixed(7)]; guardarPronto(); rehacerPaso(); } catch (x) { ubMsg(x.message); } return true; }
+  if (e.target.closest('#ub-ver')) { const la = +$('#ub-clat').value, lo = +$('#ub-clon').value; if (!la || !lo) { ubMsg('Escribí la latitud y la longitud (por ejemplo -26.85 y -55.33).'); return true; } c.centro = [la, lo]; guardarPronto(); rehacerPaso(); return true; }
+  if (e.target.closest('#ub-borrar-dib')) { c.esquinas = []; guardarPronto(); rehacerPaso(); return true; }
+  if (e.target.closest('#ub-quitar')) { if (!await confirmar('Quitar la ubicación', 'Se borran los polígonos de las parcelas (los datos cargados no se tocan).', {ok: 'Quitar', peligro: true})) return true;
+    T.parcelas.forEach(p => { delete p.geo; }); c.esquinas = []; ubAqui = null; guardarPronto(); rehacerPaso(); return true; }
+  if (e.target.closest('#ub-donde')) { donde(T); return true; }
+  return false;
+}
+// ¿Dónde estoy?: en qué parcela está parado, o a cuántos metros y hacia dónde queda la más cercana
+async function donde(T) {
+  ubMsg('Buscando tu ubicación…');
+  try { const g = await medirGPS(4), ll = [g.lon, g.lat], ps = T.parcelas.filter(p => p.geo);
+    const dentro = ps.find(p => puntoEnPoligono(ll, p.geo)); let txt;
+    if (dentro) txt = `Estás en la ${esLal(T) ? 'franja' : 'parcela'} ${etiq(T, dentro)} · ${dentro.trat} (±${Math.max(1, Math.round(g.acc))} m)`;
+    else { const d = ps.map(p => { const c = centroide(p.geo); return {p, d: distancia([g.lat, g.lon], [c[1], c[0]]), r: rumbo([g.lat, g.lon], [c[1], c[0]])}; }).sort((a, b) => a.d - b.d)[0];
+      txt = d ? `La más cercana es la ${etiq(T, d.p)} · ${d.p.trat}: a ${fmt(d.d, 0)} m hacia el ${dirTxt(d.r)} (±${Math.max(1, Math.round(g.acc))} m)` : 'Sin parcelas ubicadas'; }
+    ubAqui = [g.lat, g.lon]; ubAqui.txt = txt; toast(txt); rehacerPaso(); }
+  catch (x) { ubMsg(x.message); }
+}
+// Importar: un polígono por parcela (por número) o un contorno que se divide en parcelas
+async function importarUbicacion(T0, T, file) {
+  const c = cfgUb(T0, T), z = c.zona || '21S';
+  let R; try { R = await leerArchivoGeo(file.name, await file.arrayBuffer(), {zona: +z.slice(0, -1), sur: z.endsWith('S')}); } catch (x) { console.warn(x); return toast('No se pudo leer el archivo: ' + x.message); }
+  const pols = R.feats.filter(f => f.tipo === 'pol'), ptos = R.feats.filter(f => f.tipo === 'pt');
+  if (!pols.length && ptos.length < 3) return toast('El archivo no tiene polígonos ni puntos para ubicar las parcelas');
+  const num = v => { const m = String(v ?? '').match(/\d+/); return m ? +m[0] : null; }, ps = T.parcelas, codigos = new Set(T.tratamientos.map(t => t.cod.toUpperCase()));
+  const campos = [...new Set(pols.flatMap(f => Object.keys(f.props || {})))];
+  const coincide = (campo) => { const m = new Map(); pols.forEach(f => { const n = num(f.props?.[campo]); if (n == null) return; const p = ps.find(x => x.parcela === n) || ps.find(x => x.parcela % 1000 === n % 1000 && n < 1000); if (p && !m.has(p.parcela)) m.set(p.parcela, f); }); return m; };
+  const cand = campos.map(k => ({k, m: coincide(k)})).filter(x => x.m.size).sort((a, b) => b.m.size - a.m.size);
+  const campoTrat = campos.find(k => pols.filter(f => codigos.has(String(f.props?.[k] ?? '').trim().toUpperCase())).length >= Math.min(pols.length, ps.length) * 0.6);
+  const unidad = esLal(T) ? 'franja' : 'parcela';
+  let modo = cand.length && pols.length >= 2 ? 'parcelas' : 'contorno', campo = cand[0]?.k || '', usarTrat = false, giro = 0, espejo = false;
+  const fuente = pols.length ? pols.map(f => f.anillo).sort((a, b) => areaM2(b) - areaM2(a))[0].slice(0, -1) : ptos.map(f => f.punto);
+  const base = cuatroEsquinas(pols.length > 1 ? pols.flatMap(f => f.anillo.slice(0, -1)) : fuente).map(([lo, la]) => [la, lo]);
+  // orientación inicial: el lado 1→2 lo más parecido al bloque 1 (en el lado a lado, al largo de las franjas)
+  const LM = layoutM(T), l12 = esLal(T) ? LM.H : LM.W, l14 = esLal(T) ? LM.W : LM.H; let q0 = base; { const l = ladosCuad(base); if ((l.a > l.b) !== (l12 > l14)) q0 = [base[1], base[2], base[3], base[0]]; }
+  const esqActual = () => { let q = [...q0]; for (let i = 0; i < giro; i++) q = [q[1], q[2], q[3], q[0]]; if (espejo) q = [q[1], q[0], q[3], q[2]]; return q; };
+  const M = modal(`<div class="row" style="justify-content:space-between"><h2>Importar la ubicación</h2><button class="btn small" data-cerrar>✕</button></div>
+    <p class="note" style="margin:0">${esc(file.name)} · ${esc(R.formato)} · ${esc(R.crs?.nombre || 'WGS 84')} · ${pols.length} polígono${pols.length === 1 ? '' : 's'}${ptos.length ? ` y ${ptos.length} punto${ptos.length === 1 ? '' : 's'}` : ''}.${R.avisos.length ? ' <b>' + esc(R.avisos.join(' ')) + '</b>' : ''}</p>
+    <div class="seg" id="imp-modo"></div><div id="imp-op"></div><div id="imp-mapa"></div>
+    <div class="row"><button class="btn primary" id="imp-ok">Aplicar</button><button class="btn" data-cerrar>Cancelar</button><span class="note" id="imp-msg"></span></div>`, 900);
+  const pinta = () => {
+    const op = M.querySelector('#imp-op'), C = colTrat(T); let pol = [], txt = '';
+    if (modo === 'parcelas') { const m = campo ? coincide(campo) : new Map(pols.slice(0, ps.length).map((f, i) => [[...ps].sort((a, b) => a.parcela - b.parcela)[i].parcela, f]));
+      op.innerHTML = `<div class="row" style="align-items:end"><label class="f">Número de ${unidad} en el campo<select id="imp-campo">${cand.map(x => `<option value="${esc(x.k)}" ${x.k === campo ? 'selected' : ''}>${esc(x.k)} (${x.m.size} coinciden)</option>`).join('')}<option value="" ${!campo ? 'selected' : ''}>Por orden (sin campo)</option></select></label>
+        ${campoTrat ? `<label class="chk"><input type="checkbox" id="imp-trat" ${usarTrat ? 'checked' : ''}><span>Usar también los tratamientos del campo “${esc(campoTrat)}”</span></label>` : ''}</div>`;
+      pol = [...m.entries()].map(([pn, f]) => { const p = ps.find(x => x.parcela === pn), tr = usarTrat ? String(f.props[campoTrat]).trim().toUpperCase() : p.trat; return {anillo: f.anillo, color: C[tr] || '#888', texto: `${pn % 1000}`}; });
+      const sin = ps.filter(p => !m.has(p.parcela)); txt = `${m.size} de ${ps.length} ${unidad}s con polígono${sin.length ? ` · sin polígono: ${sin.slice(0, 12).map(p => p.parcela % 1000).join(', ')}${sin.length > 12 ? '…' : ''}` : ''}.`;
+      M._aplicar = () => { m.forEach((f, pn) => { const p = ps.find(x => x.parcela === pn); p.geo = f.anillo.map(([lo, la]) => [+(+lo).toFixed(8), +(+la).toFixed(8)]);
+          if (usarTrat) { const tr = String(f.props[campoTrat]).trim().toUpperCase(), t = T.tratamientos.find(x => x.cod.toUpperCase() === tr); if (t && t.cod !== p.trat) { T0.cambios.unshift({fecha: ahora(), usuario: S.user.id, parcela: p.parcela, variable: 'Tratamiento (importado)', antes: p.trat, despues: t.cod, estado: 'aprobado'}); p.trat = t.cod; } } });
+        return `${m.size} ${unidad}s desde ${file.name}`; }; }
+    else { const q = esqActual(), Tm = Object.create(T); Tm.parcelas = ps.map(p => ({...p}));
+      if (esLal(T)) { const cf = cfgGeoLal(T0.sitios ? T : T0) || {}; generarGeoLal(Tm, {modo: 'esq', esquinas: q}); void cf; } else parcelasEnCuad(Tm, q);
+      const l = ladosCuad(q); op.innerHTML = `<p class="note" style="margin:0">Se toma ${pols.length ? (pols.length > 1 ? 'el contorno de todos los polígonos' : 'el polígono') : 'el contorno de los puntos'} como el área del ${esLal(T) ? 'lado a lado' : 'ensayo'} y se divide en ${ps.length} ${unidad}s según el croquis. Área: ${fmt(l.a, 1)} × ${fmt(l.b, 1)} m. Si la ${unidad} ${esLal(T) ? 'de inicio' : '101'} no queda en su lugar, girá o invertí.</p>
+        <div class="row"><button class="btn small" id="imp-girar">↻ Girar</button><button class="btn small" id="imp-espejo">⇋ Invertir</button></div>`;
+      pol = [{anillo: anilloLL(q), color: '#facc15'}, ...Tm.parcelas.map(p => ({anillo: p.geo, color: C[p.trat], texto: String(p.parcela % 1000)}))]; txt = '';
+      M._aplicar = () => { if (esLal(T)) { const cf = cfgGeoLal(T0.sitios ? T : T0); cf.modo = 'esq'; cf.esquinas = q; cf.precision = []; const ancho = ladosCuad(q).b, largo = ladosCuad(q).a, sep = T0.lal?.sep || 0; cambiarMedidas(T0, +((ancho - sep * (ps.length - 1)) / ps.length).toFixed(2), +largo.toFixed(1), sep); generarGeoLal(T, cf); }
+        else { parcelasEnCuad(T, q); c.esquinas = q; c.modo = 'imp'; } return `contorno de ${file.name} · ${fmt(l.a, 1)} × ${fmt(l.b, 1)} m`; }; }
+    M.querySelector('#imp-mapa').innerHTML = svgMapa([...(modo === 'parcelas' ? pols.map(f => ({anillo: f.anillo, color: '#94a3b8'})) : []), ...pol], ptos.map(f => ({lat: f.punto[1], lon: f.punto[0]})), {satelite: ubSat, ancho: 860, alto: 460});
+    M.querySelector('#imp-msg').textContent = txt;
+  };
+  const opciones = [...(pols.length >= 2 ? [['parcelas', `Un polígono por ${unidad}`]] : []), ['contorno', 'Contorno: dividir en ' + unidad + 's']];
+  seg('#imp-modo', opciones, modo, v => { modo = v; pinta(); }); pinta();
+  M.addEventListener('change', e => { if (e.target.id === 'imp-campo') { campo = e.target.value; pinta(); } if (e.target.id === 'imp-trat') { usarTrat = e.target.checked; pinta(); } });
+  M.addEventListener('click', e => { if (e.target.closest('#imp-girar')) { giro = (giro + 1) % 4; pinta(); } if (e.target.closest('#imp-espejo')) { espejo = !espejo; pinta(); }
+    if (e.target.closest('#imp-ok')) { const t = M._aplicar(); M.cerrar(); guardarUbic(T0, T, t); } });
+}
+// Marcar el contorno de una parcela caminando sus esquinas con el GPS
+function marcarParcelaGPS(T0, pn) {
+  const T = T0, p = T.parcelas.find(x => x.parcela === pn); if (!p) return; let pts = [];
+  const M = modal(`<div class="row" style="justify-content:space-between"><h2>Contorno de la ${esLal(T) ? 'franja' : 'parcela'} ${etiq(T, p)} con el GPS</h2><button class="btn small" data-cerrar>✕</button></div>
+    <p class="note" style="margin:0">Caminá por el borde y parate en cada esquina (o en cada cambio de dirección): tocá “Marcar punto” y quedate quieto unos segundos. Con 3 o más puntos se guarda el polígono. Reemplaza la ubicación calculada de esta ${esLal(T) ? 'franja' : 'parcela'}.</p>
+    <div id="mp-lista" class="note"></div><div class="row"><button class="btn primary" id="mp-marcar">📍 Marcar punto</button><button class="btn" id="mp-deshacer">Deshacer</button><button class="btn" id="mp-ok" disabled>Guardar contorno</button></div><span class="note" id="mp-msg"></span>`, 620);
+  const lista = () => { M.querySelector('#mp-lista').innerHTML = pts.length ? pts.map((q, i) => `${i + 1}: ${q[0].toFixed(6)}, ${q[1].toFixed(6)} (±${q.acc} m)`).join('<br>') + (pts.length >= 3 ? `<br><b>Superficie ${fmt(areaM2(anilloLL(pts)), 1)} m²</b>` : '') : 'Sin puntos todavía.'; M.querySelector('#mp-ok').disabled = pts.length < 3; };
+  lista();
+  M.addEventListener('click', async e => {
+    if (e.target.closest('#mp-marcar')) { const b = e.target.closest('#mp-marcar'); b.disabled = true; try { const g = await medirGPS(5, (k, a) => { M.querySelector('#mp-msg').textContent = `${k} lecturas, ±${a} m`; }); const q = [g.lat, g.lon]; q.acc = Math.max(1, Math.round(g.acc)); pts.push(q); M.querySelector('#mp-msg').textContent = ''; lista(); } catch (x) { M.querySelector('#mp-msg').textContent = x.message; } b.disabled = false; }
+    if (e.target.closest('#mp-deshacer')) { pts.pop(); lista(); }
+    if (e.target.closest('#mp-ok')) { const c = pts.reduce((s, q) => [s[0] + q[0] / pts.length, s[1] + q[1] / pts.length], [0, 0]); const ord = [...pts].sort((a, b) => Math.atan2(a[0] - c[0], a[1] - c[1]) - Math.atan2(b[0] - c[0], b[1] - c[1]));
+      p.geo = anilloLL(ord); T0.cambios.unshift({fecha: ahora(), usuario: S.user.id, parcela: p.parcela, variable: 'Contorno marcado con el GPS', antes: null, despues: `${pts.length} puntos · ${fmt(areaM2(p.geo), 1)} m²`, estado: 'aprobado'});
+      M.cerrar(); guardarPronto(); toast('Contorno guardado'); rehacerPaso(); } });
+}
+// Mapa de todos los lugares de una red (en "Todos")
+function cardMapaRed(T) {
+  if (!T.sitios) return ''; const C = colTrat(T), pts = [], pol = [];
+  T.sitios.forEach(st => { const ps = T.parcelas.filter(p => p.sitio === st.id && p.geo); if (ps.length) { ps.forEach(p => pol.push({anillo: p.geo, color: C[p.trat]})); const c = centroide(ps.flatMap(p => p.geo.slice(0, -1))); pts.push({lat: c[1], lon: c[0], texto: st.nombre}); }
+    else if (st.geo?.lat != null) pts.push({lat: st.geo.lat, lon: st.geo.lon, texto: st.nombre}); });
+  const sinUb = T.sitios.filter(st => !T.parcelas.some(p => p.sitio === st.id && p.geo) && st.geo?.lat == null);
+  return `<div class="card" id="card-mapa-red"><h3>Mapa de los lugares</h3>${pts.length ? svgMapa(pol.length < 400 ? pol : [], pts, {satelite: ubSat, ancho: 760, alto: 380}) : ''}
+    <p class="note" style="margin:0">${pts.length ? `${pts.length} de ${T.sitios.length} lugares ubicados.` : 'Ningún lugar ubicado todavía.'}${sinUb.length ? ` Sin ubicar: ${sinUb.map(x => esc(x.nombre)).join(', ')}. Elegí el lugar arriba y ubicalo en el croquis (con el GPS de quien está allá, dibujándolo en el mapa o importándolo de QGIS).` : ''}</p></div>`;
 }
 
 /* ================= ensayo ================= */
@@ -1592,8 +1783,8 @@ const mapa = (() => {
         ${ops.length ? `<div class="row note">${ops.map(u => `<span class="row" style="gap:4px"><span class="swatch" style="background:${u.color}"></span>${esc(u.nombre.split(' ')[0])}</span>`).join('')}</div>` : ''}
         ${T.dron ? (usaImg() ? `<label class="f">Ver otra imagen encima (JPG o PNG del mismo encuadre)<input type="file" id="archivo" accept="image/jpeg,image/png"></label>` : `<p class="note" style="margin:0">Valores del dron por parcela: exportá las parcelas a QGIS (Informe y exportar), calculá el índice con “Estadísticas de zona” y traé el CSV en <b>Carga de datos → Importar</b>. El ortomosaico se puede guardar como foto del ensayo.</p>`) : `<p class="note" style="margin:0">Este ensayo trabaja sin imágenes de dron.${puede.diseno(T) ? ' Se pueden activar en Planificación.' : ''}</p>`}
       </div>
-      <div class="card"><h3>Resumen</h3><dl class="kv"><dt>Parcelas</dt><dd>${T.parcelas.length}</dd><dt>Con pendientes</dt><dd>${T.parcelas.filter(p => pendientes(T, p).length).length}</dd><dt>Notas</dt><dd>${T.notas.length}</dd></dl></div></div></div>${cardFotoAerea(S.T, T)}</section>`;
-    P().onclick = e => clicFotoAerea(e, S.T, T); P().onchange = e => clicFotoAereaCambio(e, S.T, T); P().oninput = null; pintarFotoAerea(S.T, T);
+      <div class="card"><h3>Resumen</h3><dl class="kv"><dt>Parcelas</dt><dd>${T.parcelas.length}</dd><dt>Con pendientes</dt><dd>${T.parcelas.filter(p => pendientes(T, p).length).length}</dd><dt>Notas</dt><dd>${T.notas.length}</dd></dl></div></div></div>${cardUbicacion(S.T, T)}${cardFotoAerea(S.T, T)}</section>`;
+    P().onclick = async e => { if (await clicUbic(e, S.T, T)) return; clicFotoAerea(e, S.T, T); }; P().onchange = e => { if (cambioUbic(e, S.T, T)) return; clicFotoAereaCambio(e, S.T, T); }; montarUbic(S.T, T); P().oninput = null; pintarFotoAerea(S.T, T);
     if (usaImg()) { await cargar();
       seg('#seg-modo', [['una', 'Una capa'], ['cortina', 'Lado a lado'], ['superponer', 'Superponer'], ['paneles', 'Dos paneles']], st.modo, v => { st.modo = v; montar($('#viewer-host')); });
       seg('#seg-zoom', [['ensayo', 'Ensayo'], ['completa', 'Imagen completa']], st.zoom, v => { st.zoom = v; dibujarTodo(); });
@@ -1615,7 +1806,7 @@ const mapa = (() => {
 RENDER.campo = T => {
   if (esLal(T) && (!T.sitios || S.sitio !== 'todos')) return renderLal(T);
   if (!T.sitios) return mapa.render(T);
-  if (S.sitio === 'todos') { P().innerHTML = `<section class="panel"><h2>Lugares del ensayo</h2><p class="lead">El mismo ensayo repetido en ${T.sitios.length} lugares. Cada lugar tiene su croquis sorteado y su operador. Elegí un lugar arriba (o “Ver croquis y datos”) para ver sus parcelas.</p>${tablaSitios(T)}</section>`;
+  if (S.sitio === 'todos') { P().innerHTML = `<section class="panel"><h2>Lugares del ensayo</h2><p class="lead">El mismo ensayo repetido en ${T.sitios.length} lugares. Cada lugar tiene su croquis sorteado y su operador. Elegí un lugar arriba (o “Ver croquis y datos”) para ver sus parcelas.</p>${tablaSitios(T)}${cardMapaRed(T)}</section>`;
     P().onclick = e => clicSitios(e, T); P().onchange = e => { if (cambioSitioOp(e, T)) RENDER.campo(T); }; P().oninput = null; return; }
   mapa.render(vistaS(T));
 };
@@ -2030,22 +2221,31 @@ function geometriaParcelas(T) {
   if (T.sitios) { const G = {}; T.parcelas.forEach(p => { if (p.geo) G[p.parcela] = p.geo; });
     T.sitios.forEach(x => { if (x.geo?.lat != null && x.geo?.lon != null) Object.assign(G, poligonosCroquis(T.parcelas.filter(p => p.sitio === x.id && !p.geo), x.geo)); });
     return Object.keys(G).length ? G : null; }
-  if (T.parcelas.every(p => p.geo)) return Object.fromEntries(T.parcelas.map(p => [p.parcela, p.geo]));
-  if (T.geo?.lat != null && T.geo?.lon != null) return poligonosCroquis(T.parcelas, T.geo); return null;
+  const G = T.geo?.lat != null && T.geo?.lon != null && !T.parcelas.every(p => p.geo) ? poligonosCroquis(T.parcelas.filter(p => !p.geo), T.geo) : {};
+  T.parcelas.forEach(p => { if (p.geo) G[p.parcela] = p.geo; }); return Object.keys(G).length ? G : null;
 }
-async function exportarQgis(T) {
-  const G = geometriaParcelas(T); if (!G) return toast('Primero cargá la ubicación del ensayo (esquina de la parcela 101)');
-  const vars = vis(T), Cc = colTrat(T), base = nombreArchivo(T.id + (T.__vista ? '_' + nomSitio(T, T.__vista) : ''));
-  const sinUb = T.sitios ? T.sitios.filter(x => !T.parcelas.some(p => p.sitio === x.id && G[p.parcela])) : [];
-  const feats = T.parcelas.filter(p => G[p.parcela]).map(p => { const props = {...(T.sitios ? {lugar: nomSitio(T, p.sitio)} : {}), parcela: p.parcela, bloque: p.bloque, trat: p.trat, tratamiento: tratNom(T, p.trat), asignado: USERS[T.asig[p.parcela]]?.nombre || USERS[sitioDe(T, p.parcela)?.ops?.[0]]?.nombre || '', ensayo: T.id};
+function featsQgis(T, G) {
+  const vars = vis(T);
+  return T.parcelas.filter(p => G[p.parcela]).map(p => { const props = {...(T.sitios ? {lugar: nomSitio(T, p.sitio)} : {}), parcela: p.parcela, bloque: p.bloque, trat: p.trat, tratamiento: tratNom(T, p.trat), asignado: USERS[T.asig[p.parcela]]?.nombre || USERS[sitioDe(T, p.parcela)?.ops?.[0]]?.nombre || '', ensayo: T.id};
     vars.forEach(v => { const x = p.valores[v.id]; props[v.id] = x == null || x === '' ? null : v.tipo === 'texto' ? String(x) : +x; });
     const ns = T.notas.filter(n => (n.nivel === 'parcela' && n.ref == p.parcela) || (n.nivel === 'bloque' && n.ref == refBloque(T, p)) || (n.nivel === 'tratamiento' && n.ref === p.trat));
     props.n_notas = ns.length; props.notas = ns.map(n => `${nivelNota(T, n)}: ${n.texto}`).join(' | ');
     return {type: 'Feature', properties: props, geometry: {type: 'Polygon', coordinates: [G[p.parcela]]}}; });
+}
+const shpArchivos = (base, feats) => { const s = crearShapefile(feats.map(f => ({anillo: f.geometry.coordinates[0], props: f.properties}))); return ['shp', 'shx', 'dbf', 'prj', 'cpg'].map(k => ({nombre: `${base}.${k}`, datos: s[k]})); };
+async function exportarShp(T) { const G = geometriaParcelas(T); if (!G) return toast('Primero ubicá las parcelas (paso del croquis)'); const base = nombreArchivo(T.id + (T.__vista ? '_' + nomSitio(T, T.__vista) : ''));
+  descargar(`${base}_shapefile.zip`, await crearZip(shpArchivos(`${base}_parcelas`, featsQgis(T, G)))); }
+function exportarGpx(T) { const G = geometriaParcelas(T); if (!G) return toast('Primero ubicá las parcelas (paso del croquis)');
+  descargar(nombreArchivo(T.id + (T.__vista ? '_' + nomSitio(T, T.__vista) : '')) + '_parcelas.gpx', crearGpx(T.titulo, T.parcelas.filter(p => G[p.parcela]).sort((a, b) => a.parcela - b.parcela).map(p => ({nombre: `${esLal(T) ? 'F' : 'P'}${etiq(T, p).replace(/\s/g, '')} ${p.trat}`, desc: `${tratNom(T, p.trat)} · ${esLal(T) ? 'par' : 'bloque'} ${p.bloque}`, anillo: G[p.parcela]}))), 'application/gpx+xml'); }
+async function exportarQgis(T) {
+  const G = geometriaParcelas(T); if (!G) return toast('Primero cargá la ubicación del ensayo (esquina de la parcela 101)');
+  const vars = vis(T), Cc = colTrat(T), base = nombreArchivo(T.id + (T.__vista ? '_' + nomSitio(T, T.__vista) : ''));
+  const sinUb = T.sitios ? T.sitios.filter(x => !T.parcelas.some(p => p.sitio === x.id && G[p.parcela])) : [];
+  const feats = featsQgis(T, G);
   const leeme = `Ensayo ${T.id} · ${T.titulo}\r\nExportado ${new Date().toLocaleString('es-PY')} desde Ensayos de Campo.\r\n\r\nCómo abrirlo en QGIS: arrastrá ${base}_parcelas.geojson a QGIS. El estilo (colores por tratamiento y etiquetas) se carga solo porque el archivo .qml tiene el mismo nombre.\r\nCRS: WGS 84 (EPSG:4326).\r\n\r\n${T.sitios ? `Ensayo en red: ${T.sitios.map(x => x.nombre).join(', ')}. ${sinUb.length ? `Sin ubicación cargada (no figuran en el mapa): ${sinUb.map(x => x.nombre).join(', ')}.` : 'Todos los lugares tienen ubicación.'}\r\n\r\n` : ''}Campos: ${T.sitios ? 'lugar, ' : ''}parcela, bloque, trat, tratamiento, asignado, ${vars.map(v => `${v.id} = ${v.nombre}${v.unidad ? ' (' + v.unidad + ')' : ''}`).join('; ')}; n_notas y notas.\r\n\r\nPara sumar valores del dron: con el ortomosaico abierto, usá Procesos → Estadísticas de zona sobre esta capa, exportá la tabla a CSV (columnas parcela y el índice) e importala en la app (Carga de datos → Importar).\r\n${T.geo && !T.parcelas.every(p => p.geo) ? `\r\nUbicación calculada desde la esquina ${T.geo.lat}, ${T.geo.lon}, rumbo ${T.geo.rumbo}°, parcelas de ${T.geo.ancho} × ${T.geo.largo} m.` : ''}`;
   const zip = await crearZip([{nombre: `${base}_parcelas.geojson`, datos: crearGeojson(`${T.id}_parcelas`, feats)}, {nombre: `${base}_parcelas.qml`, datos: crearQml('trat', T.tratamientos.map(t => ({valor: t.cod, etiqueta: `${t.cod} · ${t.nombre}`, color: Cc[t.cod]})))},
     {nombre: `${base}_aplicaciones.csv`, datos: crearCsv([['fecha', 'estado', 'tipo', 'a_que', 'producto', 'dosis', 'momento', 't', 'hr', 'viento', 'obs'], ...apsDe(T).map(a => [a.fecha, a.estado, a.tipo, aQue(a), a.producto || '', a.dosis || '', a.estadio || '', a.cond?.t ?? '', a.cond?.hr ?? '', a.cond?.viento ?? '', a.obs || ''])])},
-    {nombre: `${base}_notas.csv`, datos: crearCsv([['nivel', 'referencia', 'nota', 'autor', 'fecha'], ...notasDe(T).map(n => [n.nivel, n.ref, n.texto, USERS[n.autor]?.nombre || '', n.fecha])])}, {nombre: 'LEEME.txt', datos: leeme}]);
+    {nombre: `${base}_notas.csv`, datos: crearCsv([['nivel', 'referencia', 'nota', 'autor', 'fecha'], ...notasDe(T).map(n => [n.nivel, n.ref, n.texto, USERS[n.autor]?.nombre || '', n.fecha])])}, {nombre: 'LEEME.txt', datos: leeme}, ...shpArchivos(`shapefile/${base}_parcelas`, feats)]);
   descargar(`${base}_QGIS.zip`, zip);
 }
 function exportarKml(T) {
@@ -2061,7 +2261,7 @@ async function exportarEnsayo(T) {
 }
 RENDER.exp = T0 => {
   const T = vistaS(T0), red = !!T0.sitios, sg = red ? (T0.sitios.find(x => x.id === (T.__vista || S.geoSitio)) || T0.sitios[0]) : null; if (red) S.geoSitio = sg.id;
-  const conGeo = red ? T0.sitios.every(x => x.geo?.lat != null) : T.parcelas.every(p => p.geo), g = (red ? sg.geo : T.geo) || {}, pa = T.parcela, ed = puede.diseno(T0), hayGeo = esLal(T0) ? T.parcelas.some(p => p.geo) : red ? T0.sitios.some(x => x.geo?.lat != null) : conGeo || g.lat != null;
+  const conGeo = red ? T0.sitios.every(x => x.geo?.lat != null || T0.parcelas.some(p => p.sitio === x.id && p.geo)) : T.parcelas.every(p => p.geo), g = (red ? sg.geo : T.geo) || {}, pa = T.parcela, ed = puede.diseno(T0), hayGeo = esLal(T0) ? T.parcelas.some(p => p.geo) : red ? T0.sitios.some(x => x.geo?.lat != null) || T.parcelas.some(p => p.geo) : conGeo || g.lat != null;
   const anchoDef = g.ancho ?? (pa.hileras ? +(pa.hileras * pa.dist).toFixed(2) : pa.ancho || (pa.columnas ? pa.columnas * pa.e2 : '')), largoDef = g.largo ?? (pa.largo || (pa.filas ? pa.filas * pa.e1 : ''));
   const listo = vis(T).filter(v => v.tipo !== 'texto').filter(v => (esLal(T) ? compLal(T, v) : esRed(T) ? combinar(T, v) : analizar(T, v)).ok).length;
   const card = (id, t, d, btns) => `<div class="card" id="${id}"><h3>${t}</h3><p class="note" style="margin:0">${d}</p><div class="row">${btns}</div></div>`;
@@ -2079,12 +2279,12 @@ RENDER.exp = T0 => {
         <label class="f">Ancho de parcela (m)<input type="number" step="any" name="ancho" value="${anchoDef}"></label><label class="f">Largo de parcela (m)<input type="number" step="any" name="largo" value="${largoDef}"></label>
         <label class="f">Calle entre bloques (m)<input type="number" step="any" name="calle" value="${g.calle ?? 1}"></label></div>
         <div class="row">${ed || (red && sg.ops?.includes(S.user.id)) ? '<button class="btn small" type="button" id="btn-gps">📍 Usar mi ubicación</button><button class="btn small primary" type="submit">Guardar ubicación</button>' : ''}<span class="note" id="geo-msg">${g.lat != null ? 'Ubicación guardada.' : 'Parado en la esquina de la parcela 101, tocá “Usar mi ubicación”. El rumbo es hacia dónde avanza el bloque 1 (90° = hacia el este).'}</span></div></form>`}
-      <div class="row"><button class="btn primary" data-x="qgis" ${hayGeo ? '' : 'disabled'}>Descargar para QGIS (.zip)</button><button class="btn" data-x="kml" ${hayGeo ? '' : 'disabled'}>Google Earth (.kml)</button></div></div>
+      <div class="row"><button class="btn primary" data-x="qgis" ${hayGeo ? '' : 'disabled'}>Descargar para QGIS (.zip)</button><button class="btn" data-x="kml" ${hayGeo ? '' : 'disabled'}>Google Earth (.kml)</button><button class="btn" data-x="shp" ${hayGeo ? '' : 'disabled'}>Shapefile (.zip)</button><button class="btn" data-x="gpx" ${hayGeo ? '' : 'disabled'} title="Para buscar las parcelas con una app de GPS">GPS (.gpx)</button></div></div>
     ${card('ex-json', 'Pasar el ensayo a otro equipo', 'Archivo con el ensayo completo (datos, notas, fotos y perfiles que participan). En el otro equipo se abre desde el indicador “Guardado” → Restaurar un respaldo.', '<button class="btn" data-x="json">Descargar ensayo (.json)</button>')}
     </div></section>`;
   P().onclick = async e => { const b = e.target.closest('[data-x]'); if (b) { const k = b.dataset.x, t0 = b.textContent; b.disabled = true; b.textContent = 'Generando…';
       try { if (k === 'word') await exportarWord(T); if (k === 'print') await imprimirInforme(T); if (k === 'excel') await exportarExcel(T); if (k === 'csv') exportarCsv(T, false); if (k === 'csv-coma') exportarCsv(T, true);
-        if (k === 'qgis') await exportarQgis(T); if (k === 'kml') exportarKml(T); if (k === 'json') await exportarEnsayo(T0); if (k !== 'print') toast('Archivo descargado'); }
+        if (k === 'qgis') await exportarQgis(T); if (k === 'kml') exportarKml(T); if (k === 'shp') await exportarShp(T); if (k === 'gpx') exportarGpx(T); if (k === 'json') await exportarEnsayo(T0); if (k !== 'print') toast('Archivo descargado'); }
       catch (x) { console.error(x); toast('No se pudo generar el archivo: ' + x.message); } b.disabled = false; b.textContent = t0; return; }
     if (e.target.closest('#btn-gps')) { if (!navigator.geolocation) return toast('Este equipo no tiene GPS disponible'); $('#geo-msg').textContent = 'Buscando ubicación…';
       navigator.geolocation.getCurrentPosition(pos => { const f = $('#f-geo'); f.lat.value = pos.coords.latitude.toFixed(7); f.lon.value = pos.coords.longitude.toFixed(7); $('#geo-msg').textContent = `Precisión ±${Math.round(pos.coords.accuracy)} m. Tocá “Guardar ubicación”.`; },
@@ -2304,7 +2504,9 @@ function abrirDrawer(pn) {
       const l2 = lab ? `Última labor: ${esc(lab.tipo)} ${cuando(lab.fecha)} (${fechaTxt(lab.fecha)})` : '';
       const pul = hechas.find(a => PULVERIZA.includes(a.tipo)), np = (T.papeles || []).filter(x => x.parcela === pn).length;
       const l3 = pul && puedeAplic(T) ? `<button class="btn small" data-papel-dr="${pul.id}" style="margin-top:4px">🔍 Papel hidrosensible${np ? ` (${np} tarjeta${np > 1 ? 's' : ''})` : ''}</button>` : np ? `Papel hidrosensible: ${np} tarjeta${np > 1 ? 's' : ''}` : '';
-      return l1 || l2 || l3 ? `<div class="ultima">${[l1, l2, l3].filter(Boolean).join('<br>')}</div>` : ''; })()}
+      const l4 = puede.diseno(T) || T.sitios?.find(x => x.id === p.sitio)?.ops?.includes(S.user.id) ? `<button class="btn small" data-gps-parcela="${pn}" style="margin-top:4px">📍 Contorno con GPS${p.geo ? ' (ubicada)' : ''}</button>` : '';
+      const l34 = [l3, l4].filter(Boolean).join(' ');
+      return l1 || l2 || l34 ? `<div class="ultima">${[l1, l2, l34].filter(Boolean).join('<br>')}</div>` : ''; })()}
     ${!ed ? `<div class="chip neu" style="justify-self:start">${rolEn(T) === 'lector' ? 'Solo lectura' : 'Parcela no asignada a vos: solo lectura'}</div>` : ''}</header>
     <div class="body"><div style="display:grid;gap:6px"><h3>Resultados</h3>${T.cortes?.length ? '<div class="seg" id="seg-corte-dr"></div>' : ''}</div>${filtroCorte(T, vis(T)).map(medida).join('') || '<p class="note">El ensayo no tiene mediciones definidas.</p>'}
       <div style="display:grid;gap:8px"><div class="row" style="justify-content:space-between"><h3>Fotos de la parcela</h3>${rolEn(T) !== 'lector' ? fotoBtn(pn) : ''}</div><div class="fotos" data-fotos="${pn}"></div></div>
@@ -2326,6 +2528,7 @@ function abrirDrawer(pn) {
   d.onclick = async e => {
     if (e.target.closest('#dr-cerrar')) return cerrarDrawer();
     const pd = e.target.closest('[data-papel-dr]'); if (pd) return leerPapel(T, pd.dataset.papelDr, pn);
+    if (e.target.closest('[data-gps-parcela]')) return marcarParcelaGPS(T, pn);
     if (await clicFotos(e, T, pn)) return;
     if (e.target.closest('#nota-add')) { const t = $('#nota-txt').value.trim(); if (!t) return; T.notas.push({nivel: notaNivel, ref: refN(), texto: t, autor: S.user.id, fecha: ahora()}); toast('Nota agregada'); abrirDrawer(pn); refrescar(); return; }
     if (e.target.closest('#dr-guardar')) { let n = 0, fuera = [];
@@ -2573,6 +2776,8 @@ const TOUR = [
     go: () => { enEjemplo('aplic'); const d = $('#panel .calidad'); if (d) d.open = true; }, el: () => $('#panel .calidad')},
   {g: 'En el campo', t: 'Croquis de parcelas', d: 'El croquis sorteado por bloques. Cada parcela muestra su tratamiento y cuántas mediciones le faltan; tocándola se abre el control de parcela.',
     go: () => enEjemplo('campo'), el: () => $('#viewer-host')},
+  {g: 'En el campo', t: 'Ubicar las parcelas (GPS o QGIS)', d: 'Las parcelas se ubican en el mapa desde la esquina de la parcela 101 con el GPS y la brújula, caminando las 4 esquinas, tocándolas en el mapa satelital o importándolas de QGIS (GeoJSON, Shapefile), Google Earth (KML), un GPS (GPX) o una planilla. Después “¿Dónde estoy?” dice en qué parcela estás parado y se exportan a QGIS, Shapefile, Google Earth y GPS. Sirve para repetir el ensayo en otro lugar del país.',
+    go: () => { enEjemplo('campo'); setTimeout(() => $('#card-ubic')?.scrollIntoView({block: 'center'}), 50); }, el: () => $('#card-ubic')},
   {g: 'En el campo', t: 'Colorear el croquis', d: 'El croquis se puede pintar por tratamiento o por operador asignado, para ver de un vistazo quién controla cada sector.',
     go: () => { enEjemplo('campo'); const c = conTexto('#panel label', 'Color por tratamiento')?.querySelector('input'); if (c && !c.checked) c.click(); }, el: () => cardDe(conTexto('#panel label', 'Color por tratamiento'))},
   {g: 'En el campo', t: 'Control de parcela', d: 'Al tocar una parcela se abre su control: tratamiento, bloque, a quién está asignada y cuántos días pasaron desde la última aplicación.',
