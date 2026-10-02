@@ -1,5 +1,5 @@
 // papel.js — lector de papel hidrosensible: cámara con guías (escáner), ajuste de bordes y resultados.
-import {PAPELES, CLASES, OBJETIVOS, claseASABE, detectarPapel, ordenarEsquinas, rectificar, lado, analizar, imagenFiltrada, histCompacto} from './lib/hidro.js';
+import {PAPELES, CLASES, OBJETIVOS, claseASABE, detectarPapel, ordenarEsquinas, rectificar, lado, analizar, imagenFiltrada, histCompacto, calidadLectura} from './lib/hidro.js';
 
 const h = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
 const f = (v, d = 0) => v == null || !isFinite(v) ? '—' : Number(v).toLocaleString('es-PY', {minimumFractionDigits: d, maximumFractionDigits: d});
@@ -50,6 +50,13 @@ function css() {
   .lec .ok{color:#15803d}.lec .warn{color:#b45309}.lec .mal{color:#b91c1c}
   .lec .hist{display:flex;align-items:flex-end;gap:2px;height:70px}.lec .hist i{flex:1;min-width:2px;border-radius:2px 2px 0 0}
   .lec .esp{display:grid;place-items:center;font-size:1rem;color:#fff}
+  .lec video.filtro{filter:url(#lecRojo)}
+  .lec header button[aria-pressed=true]{background:#1f6b52;border-color:#22c55e}
+  .lec .zoom{display:flex;align-items:center;gap:6px;font-size:.8rem}.lec .zoom input{width:110px;padding:0}
+  .lec .cal{border-left:6px solid #15803d}.lec .cal.n1{border-left-color:#d97706}.lec .cal.n2{border-left-color:#dc2626}
+  .lec .cal h3{margin:0;font-size:1rem;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .lec .sem{display:inline-block;padding:2px 10px;border-radius:99px;font-size:.8rem;font-weight:700;color:#fff;background:#15803d}.lec .sem.n1{background:#d97706}.lec .sem.n2{background:#dc2626}
+  .lec .cal ul{margin:0;padding-left:18px;display:grid;gap:6px;font-size:.88rem}.lec .cal li small{display:block;color:var(--muted,#5d6b62)}
   `;
   document.head.appendChild(s);
 }
@@ -58,15 +65,15 @@ function css() {
 let W0 = null, sec = 0;
 function analizarAsync(img, pxmm, op) {
   return new Promise(res => {
-    const local = () => { const r = analizar(img, pxmm, op), fl = imagenFiltrada(r); res({st: r.st, gotas: r.gotas, filt: fl.data, W: r.W, H: r.H}); };
+    const local = () => { const r = analizar(img, pxmm, op), fl = imagenFiltrada(r); res({st: r.st, diag: r.diag, gotas: r.gotas, filt: fl.data, W: r.W, H: r.H}); };
     try { W0 = W0 || new Worker(new URL('./lib/hidroWorker.js', import.meta.url), {type: 'module'}); } catch (e) { W0 = null; }
     if (!W0) return local();
     const id = ++sec, copia = {data: new Uint8ClampedArray(img.data), width: img.width, height: img.height};
     const fin = e => { if (e.data.id !== id) return; W0.removeEventListener('message', fin); clearTimeout(to);
       if (e.data.error) { console.warn(e.data.error); return local(); }
       const g = e.data.gotas, gotas = []; for (let i = 0; i < g.length; i += 6) gotas.push({x: g[i], y: g[i + 1], s: g[i + 2], d: g[i + 3], c: g[i + 4], borde: !!(g[i + 5] & 1), n: g[i + 5] & 2 ? 2 : 1});
-      res({st: e.data.st, gotas, filt: e.data.filt, W: e.data.W, H: e.data.H}); };
-    const to = setTimeout(() => { W0.removeEventListener('message', fin); W0.terminate(); W0 = null; local(); }, 25000);
+      res({st: e.data.st, diag: e.data.diag, gotas, filt: e.data.filt, W: e.data.W, H: e.data.H}); };
+    const to = setTimeout(() => { W0.removeEventListener('message', fin); W0.terminate(); W0 = null; local(); }, 60000);
     W0.addEventListener('message', fin); W0.addEventListener('error', () => { clearTimeout(to); W0 = null; local(); }, {once: true});
     W0.postMessage({id, img: copia, pxmm, op}, [copia.data.buffer]);
   });
@@ -92,19 +99,27 @@ export function abrirLector(cfg = {}) {
       <header><button data-a="x" aria-label="Cerrar">✕</button><b>${h(cfg.titulo || 'Leer papel hidrosensible')}</b>
         <select data-a="papel" aria-label="Medida del papel">${Object.entries(PAPELES).map(([k, p]) => `<option value="${k}" ${k === E.papel ? 'selected' : ''}>${p.n}</option>`).join('')}</select>
         ${E.papel === 'otro' ? `<input type="number" data-a="mw" value="${E.medida.w}" style="width:70px" aria-label="Ancho mm"> × <input type="number" data-a="mh" value="${E.medida.h}" style="width:70px" aria-label="Largo mm"> mm` : ''}
+        <button data-a="filtro" aria-pressed="${!!E.filtro}" title="Ver la cámara con el filtro que usa el lector: papel claro y gotas oscuras">🎨 Filtro</button>
+        <span class="zoom" hidden>🔍<input type="range" data-a="zoom" min="1" max="4" step="0.1" value="1" aria-label="Zoom"><b data-t="zv">1×</b></span>
         <button data-a="luz" hidden>🔦 Linterna</button></header>
-      <div class="cam"><video playsinline muted autoplay></video><svg class="guia"></svg>
+      <div class="cam"><svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="lecRojo" color-interpolation-filters="sRGB">
+          <feColorMatrix type="matrix" values="1 0 0 0 0  1 0 0 0 0  1 0 0 0 0  0 0 0 1 0"/>
+          <feComponentTransfer><feFuncR type="linear" slope="1.71" intercept="-0.55"/><feFuncG type="linear" slope="1.55" intercept="-0.40"/><feFuncB type="linear" slope="1.03" intercept="0.07"/></feComponentTransfer></filter></svg>
+        <video playsinline muted autoplay class="${E.filtro ? 'filtro' : ''}"></video><svg class="guia"></svg>
         <div class="info"><span class="pill2"><span class="nivel"><i></i></span><span data-t="niv">Nivel</span></span><span class="pill2">Enfoque <span class="barra"><i style="width:0"></i></span></span></div>
-        <div class="msg" data-t="msg">Apoyá el papel sobre una superficie lisa y de color oscuro o gris. Alineá los bordes del papel con las líneas.</div></div>
+        <div class="msg" data-t="msg">Apoyá el papel sobre una superficie lisa y oscura, con luz pareja (sombra clara, sin sol directo ni reflejos). Alineá los bordes con las líneas; si tu sombra cae sobre el papel, alejá el celular y usá el zoom.</div></div>
       <footer style="justify-content:space-between"><label style="position:relative"><span style="pointer-events:none">🖼️ Foto o escaneo</span><input type="file" accept="image/*" data-a="archivo" style="position:absolute;inset:0;opacity:0"></label>
         <button class="disparo" data-a="foto" aria-label="Capturar"></button>
         ${cfg.ejemplo ? '<button data-a="ejemplo">Probar ejemplo</button>' : '<span style="width:90px"></span>'}</footer></section>`;
     dibujarGuia(); iniciarCam();
     raiz.onchange = async e => { const a = e.target.dataset.a; if (a === 'papel') { E.papel = e.target.value; pararCam(); pantallaCam(); return; }
+      if (a === 'zoom') { const z = +e.target.value; raiz.querySelector('[data-t=zv]').textContent = z.toFixed(1).replace('.', ',') + '×'; try { await E.stream?.getVideoTracks()[0].applyConstraints({advanced: [{zoom: z}]}); } catch (er) {} return; }
       if (a === 'mw' || a === 'mh') { const w = +raiz.querySelector('[data-a=mw]').value || 26, l = +raiz.querySelector('[data-a=mh]').value || 76; E.medida = {w: Math.min(w, l), h: Math.max(w, l)}; dibujarGuia(); }
       if (a === 'archivo' && e.target.files[0]) { const bmp = await createImageBitmap(e.target.files[0]); pararCam(); prepararFoto(bmp, null); } };
+    raiz.oninput = e => { if (e.target.dataset.a === 'zoom') raiz.onchange(e); };
     raiz.onclick = async e => { const a = e.target.closest('[data-a]')?.dataset.a;
       if (a === 'x') cerrar(); if (a === 'foto') capturar(); if (a === 'luz') linterna();
+      if (a === 'filtro') { E.filtro = !E.filtro; raiz.querySelector('video')?.classList.toggle('filtro', E.filtro); raiz.querySelector('[data-a=filtro]').setAttribute('aria-pressed', E.filtro); }
       if (a === 'ejemplo') { const b = await (await fetch(cfg.ejemplo)).blob(); pararCam(); prepararFoto(await createImageBitmap(b), null); } };
     addEventListener('resize', dibujarGuia);
   }
@@ -135,6 +150,7 @@ export function abrirLector(cfg = {}) {
     v.srcObject = E.stream; await v.play().catch(() => {});
     const tr = E.stream.getVideoTracks()[0], cap = tr.getCapabilities?.() || {};
     if (cap.torch) raiz.querySelector('[data-a=luz]').hidden = false;
+    if (cap.zoom && cap.zoom.max > 1) { const zr = raiz.querySelector('.zoom'), zi = zr.querySelector('input'); zr.hidden = false; zi.min = cap.zoom.min || 1; zi.max = Math.min(cap.zoom.max, 5); zi.step = cap.zoom.step || 0.1; zi.value = tr.getSettings?.().zoom || 1; }
     try { if (cap.focusMode?.includes('continuous')) await tr.applyConstraints({advanced: [{focusMode: 'continuous'}]}); } catch (e) {}
     window.addEventListener('deviceorientation', nivel);
     const c = document.createElement('canvas'); c.width = c.height = 160; const x = c.getContext('2d', {willReadFrequently: true});
@@ -184,7 +200,9 @@ export function abrirLector(cfg = {}) {
     const dib = () => { const x = cv.getContext('2d'); x.drawImage(F, 0, 0); x.strokeStyle = '#22c55e'; x.lineWidth = 3 / E.kv; x.beginPath(); E.esq.forEach((p, i) => i ? x.lineTo(...p) : x.moveTo(...p)); x.closePath(); x.stroke();
       raiz.querySelectorAll('.asa').forEach(a => a.remove()); const r = cv.getBoundingClientRect(), w = wrap.getBoundingClientRect();
       E.esq.forEach((p, i) => { const a = document.createElement('div'); a.className = 'asa'; a.dataset.i = i; a.style.left = (r.left - w.left + wrap.scrollLeft + p[0] * E.kv) + 'px'; a.style.top = (r.top - w.top + wrap.scrollTop + p[1] * E.kv) + 'px'; wrap.appendChild(a); });
-      const e2 = ordenarEsquinas(E.esq), m = medida(), largo = (lado(e2[0], e2[1]) + lado(e2[3], e2[2])) / 2, ppm = largo / m.h; E.pxmm = Math.max(8, Math.min(40, Math.round(ppm)));
+      const e2 = ordenarEsquinas(E.esq), m = medida(), l1 = lado(e2[0], e2[1]), l2 = lado(e2[3], e2[2]), c1 = lado(e2[1], e2[2]), c2 = lado(e2[0], e2[3]), largo = (l1 + l2) / 2, ppm = largo / m.h; E.pxmm = Math.max(8, Math.min(40, Math.round(ppm)));
+      // inclinación (un lado más corto que su opuesto) y proporción de las esquinas respecto de la medida del papel
+      E.geom = {persp: Math.max(Math.abs(l1 - l2) / Math.max(l1, l2), Math.abs(c1 - c2) / Math.max(c1, c2)), aspecto: Math.abs(largo / ((c1 + c2) / 2) / (m.h / m.w) - 1)};
       raiz.querySelector('[data-t=res]').innerHTML = `${f(ppm, 0)} px/mm · gotas desde ~${f(0.95 * Math.pow(2 * 1000 / Math.min(ppm, 40), 0.91), 0)} µm${ppm < 14 ? ' · <b style="color:#fbbf24">acercá más la cámara</b>' : ''}`; };
     let arr = null;
     wrap.onpointerdown = e => { const a = e.target.closest('.asa'); if (!a) return; arr = +a.dataset.i; a.setPointerCapture(e.pointerId); e.preventDefault(); };
@@ -206,13 +224,18 @@ export function abrirLector(cfg = {}) {
   }
   function pantallaRes() {
     const s = E.r.st, ob = OBJETIVOS[E.objetivo], ev = s.dens >= ob.min ? ['ok', `Densidad adecuada para ${ob.n.toLowerCase()} (${ob.min}–${ob.max} gotas/cm²)`] : s.dens >= ob.min * 0.7 ? ['warn', `Densidad algo baja para ${ob.n.toLowerCase()} (recomendado ${ob.min}–${ob.max} gotas/cm²)`] : ['mal', `Densidad baja para ${ob.n.toLowerCase()} (recomendado ${ob.min}–${ob.max} gotas/cm²)`];
-    const maxH = Math.max(1, ...s.hist.slice(0, 100)), G = cfg.guardar;
+    const maxH = Math.max(1, ...s.hist.slice(0, 100)), G = cfg.guardar, Q = E.cal = calidadLectura(E.r.diag, s, E.geom || {});
     raiz.innerHTML = `<section><header><button data-a="x" aria-label="Cerrar">✕</button><b>Resultado del papel</b>${cfg.ver ? '' : '<button data-a="otra">↺ Otra foto</button>'}</header>
       <div class="res">
         <div class="card"><div class="tabs">${[['orig', 'Original'], ['filt', 'Filtrado'], ['gotas', 'Gotas contadas']].map(([k, t]) => `<button data-v="${k}" aria-pressed="${E.vista === k}">${t}</button>`).join('')}
           <span style="flex:1"></span><button data-z="-" aria-label="Alejar" style="padding:6px 12px">−</button><button data-z="+" aria-label="Acercar" style="padding:6px 12px">+</button></div>
           <div class="vista"><canvas></canvas></div>
-          <p class="lnota">${E.vista === 'gotas' ? `Círculos: <b style="color:${COL[0]}">chicas</b> (&lt; ${E.clases.chica} µm), <b style="color:${COL[1]}">medianas</b>, <b style="color:${COL[2]}">grandes</b> (≥ ${E.clases.grande} µm). Las manchas formadas por gotas pegadas se cuentan como varias gotas (${s.separadas} en este papel). No se cuentan las que tocan el borde (0,5 mm).` : E.vista === 'filt' ? 'Filtro: el papel queda blanco y las manchas en azul según su intensidad; las gotas chicas y tenues quedan celestes pero se cuentan.' : 'Imagen original enderezada.'}</p></div>
+          <p class="lnota">${E.vista === 'gotas' ? `Círculos: <b style="color:${COL[0]}">chicas</b> (&lt; ${E.clases.chica} µm), <b style="color:${COL[1]}">medianas</b>, <b style="color:${COL[2]}">grandes</b> (≥ ${E.clases.grande} µm). Las manchas formadas por gotas pegadas se cuentan como varias gotas (${s.separadas} en este papel). No se cuentan las que tocan el borde (0,5 mm).` : E.vista === 'filt' ? 'Filtro del lector: se corrige la luz (sombras, tintes y viñeteado) y se usa el canal rojo, donde la mancha azul contrasta más con el papel amarillo (fue el que mejor distinguió las gotas en las pruebas). El papel queda blanco y las manchas en azul según su intensidad; las tenues quedan celestes pero se cuentan.' : 'Imagen original enderezada.'}</p></div>
+        <div class="card cal n${Q.nivel}"><h3>Calidad de la lectura <span class="sem n${Q.nivel}">${Q.etiqueta}</span></h3>
+          <p class="lnota" style="color:inherit">Margen esperado de esta lectura: <b>${h(Q.precTxt)}</b>.${Q.prec && Q.prec.dens[1] < 0 ? ' En densidad el lector tiende a contar de menos (gotas superpuestas o demasiado chicas para la foto).' : ''}</p>
+          ${Q.avisos.length ? `<ul>${Q.avisos.map(a => `<li class="${['', 'warn', 'mal'][a.n]}">${h(a.t)}<small>💡 ${h(a.c)}</small></li>`).join('')}</ul>` : '<p class="lnota">Sin problemas detectados en la foto: buena luz, enfoque y resolución.</p>'}
+          ${Q.nivel === 2 ? '<p class="mal" style="margin:0;font-weight:600">Conviene repetir la foto antes de guardar: con estos problemas el lector no puede dar un resultado confiable.</p>' : ''}
+          <p class="lnota">Márgenes estimados con tarjetas de prueba de resultado conocido (foto de celular, escáner, sombra, reflejo, humedad, cobertura alta). Para resultados de referencia, escaneá las tarjetas a 1200 dpi.</p></div>
         <div class="card"><div class="tiles">
           <div class="tile"><span>Cobertura</span><b>${f(s.cob, 1)} %</b><span>superficie manchada</span></div>
           <div class="tile"><span>Densidad</span><b>${f(s.dens, 0)}</b><span>gotas/cm²</span></div>
@@ -223,8 +246,6 @@ export function abrirLector(cfg = {}) {
           <div class="cls">${[0, 1, 2].map(k => `<div><b style="color:${COL[k]}">${NOMCL[k]}</b><span class="b"><i style="width:${s.pct[k]}%;background:${COL[k]}"></i></span><span>${f(s.clases[k])} · ${f(s.pct[k], 0)} %</span></div>`).join('')}</div>
           <div><span class="lnota">Gotas por tamaño (cada barra = 10 µm, hasta 1 mm)</span><div class="hist">${s.hist.slice(0, 100).map((c, k) => `<i title="${k * 10}–${k * 10 + 10} µm: ${c}" style="height:${c / maxH * 100}%;background:${COL[(k + 0.5) * 10 < E.clases.chica ? 0 : (k + 0.5) * 10 < E.clases.grande ? 1 : 2]}"></i>`).join('')}</div></div>
           <p class="${ev[0]}" style="margin:0;font-weight:600">${ev[1]}.</p>
-          ${s.cob > 25 ? '<p class="warn" style="margin:0">Cobertura alta: muchas manchas se superponen y el conteo de gotas es aproximado. La cobertura sigue siendo confiable.</p>' : ''}
-          ${s.umPx > 70 ? '<p class="warn" style="margin:0">Resolución baja: las gotas chicas pueden no verse. Acercá la cámara o usá un escáner (600 a 1200 dpi).</p>' : ''}
           <p class="lnota">Diámetro de gota estimado desde la mancha con el factor de expansión del papel (d = 0,95·s<sup>0,91</sup>, DepositScan). Gota mínima detectable ≈ ${f(s.minDet)} µm. Clase de gota según ASABE S572.3 (orientativa).</p></div>
         <div class="card"><b>Ajustes</b><div class="g2">
           <label class="f">Producto aplicado (para evaluar la densidad)<select data-c="obj">${Object.entries(OBJETIVOS).map(([k, o]) => `<option value="${k}" ${k === E.objetivo ? 'selected' : ''}>${o.n} (${o.min}–${o.max})</option>`).join('')}</select></label>
@@ -269,7 +290,8 @@ export function abrirLector(cfg = {}) {
       E.blob = E.blob || await aBlob(E.rect);
       const st = {...E.r.st, hist: histCompacto(E.r.st.hist)};
       const datos = {aplicacion: val('aplicacion'), parcela: val('parcela'), posicion: val('posicion'), metro: val('metro').trim() || 'Metro 1', obs: val('obs').trim(), objetivo: E.objetivo,
-        st, pxmm: E.pxmm, papel: E.medidaUsada, sens: E.sens, clases: {...E.clases}, blob: E.blob};
+        st, pxmm: E.pxmm, papel: E.medidaUsada, sens: E.sens, clases: {...E.clases}, blob: E.blob,
+        calidad: E.cal ? {nivel: E.cal.nivel, etiqueta: E.cal.etiqueta, prec: E.cal.precTxt, avisos: E.cal.avisos.filter(a => a.n > 0).map(a => a.t)} : null};
       const r = await G.onGuardar(datos); E.guardadas++;
       G.campos.aplSel = datos.aplicacion; G.campos.parSel = datos.parcela; G.campos.posSel = datos.posicion;
       if (modo === 'g-fin') return cerrar();
