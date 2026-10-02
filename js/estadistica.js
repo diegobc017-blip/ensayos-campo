@@ -64,3 +64,27 @@ export function anovaCombinado(datos){
    media:gm, cv:Math.sqrt(cm.e)/gm*100, medias, porSitio, cmeSitio, fmax, a, t, r, cmLT:cm.lt, glLT:gl.lt, cme:cm.e, gle:gl.e,
    pT:pF(F.t,gl.t,gl.lt), pLT:pF(F.lt,gl.lt,gl.e), mediasSitio:Object.fromEntries(mL) };
 }
+
+/* ---------- lado a lado (pares) ---------- */
+export const pT2 = (t, gl) => pF(t * t, 1, gl); // p a dos colas de una t con gl
+export const cdfT = (x, gl) => x >= 0 ? 1 - pT2(x, gl) / 2 : pT2(-x, gl) / 2;
+export function qT(p2, gl) { let lo = 0, hi = 2000; for (let i = 0; i < 200; i++) { const m = (lo + hi) / 2; if (pT2(m, gl) > p2) lo = m; else hi = m; } return (lo + hi) / 2; }
+const sdv = a => { const m = mean(a); return Math.sqrt(a.reduce((s, v) => s + (v - m) ** 2, 0) / (a.length - 1)); };
+// Comparación de dos grupos independientes (Welch): para puntos de muestreo dentro de franjas (orientativo)
+export function welch(a, b) {
+  if (a.length < 2 || b.length < 2) return null; const va = sdv(a) ** 2 / a.length, vb = sdv(b) ** 2 / b.length, se = Math.sqrt(va + vb);
+  if (!(se > 0)) return null; const t = (mean(a) - mean(b)) / se, gl = (va + vb) ** 2 / (va ** 2 / (a.length - 1) + vb ** 2 / (b.length - 1));
+  return {t, gl, p: pT2(t, gl), dif: mean(a) - mean(b), ic: qT(0.05, gl) * se};
+}
+// Prueba binomial de signos (dos colas)
+export function pSignos(pos, neg) { const n = pos + neg; if (!n) return null; const k = Math.min(pos, neg); let s = 0, c = 1;
+  for (let i = 0; i <= n; i++) { if (i > 0) c = c * (n - i + 1) / i; if (i <= k) s += c; } return Math.min(1, 2 * s / 2 ** n); }
+// Pares tratado–testigo (un par por repetición o por chacra)
+export function ladoALado(trat, test, umbral = 0) {
+  const d = trat.map((v, i) => v - test[i]), n = d.length; if (n < 1) return null;
+  const md = mean(d), r = {n, mediaT: mean(trat), mediaC: mean(test), dif: md, difPct: md / Math.abs(mean(test)) * 100, pos: d.filter(x => x > 0).length, neg: d.filter(x => x < 0).length, umbral, sobreUmbral: d.filter(x => x > umbral).length};
+  r.pctPos = r.pos / n * 100; r.pctUmbral = r.sobreUmbral / n * 100; r.pSignos = pSignos(r.pos, r.neg);
+  if (n >= 2) { const sd = sdv(d), se = sd / Math.sqrt(n), gl = n - 1; r.sd = sd;
+    if (sd > 0) { const tc = qT(0.05, gl); r.t = md / se; r.gl = gl; r.p = pT2(r.t, gl); r.icInf = md - tc * se; r.icSup = md + tc * se; r.probNuevo = 1 - cdfT((umbral - md) / (sd * Math.sqrt(1 + 1 / n)), gl); } }
+  return r;
+}

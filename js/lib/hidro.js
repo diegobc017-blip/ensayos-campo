@@ -240,3 +240,4 @@ export function imagenFiltrada(r) {
     out[o] = 255 - k * (255 - 12); out[o + 1] = 255 - k * (255 - 36); out[o + 2] = 255 - k * (255 - 110); out[o + 3] = 255; }
   return {data: out, width: W, height: H};
 }
+export const homografia = homografiaUV; // (u,v) ∈ [0,1]² → punto de la imagen

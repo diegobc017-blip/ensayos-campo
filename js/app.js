@@ -1,9 +1,10 @@
 // app.js — Ensayos de Campo v2 (rubros, roles, control de parcela, mediciones, aplicaciones, análisis).
 // Todo se guarda en este equipo (IndexedDB, ver db.js) y funciona sin internet.
-import {anovaDBCA, tukey, interpretarCV, anovaCombinado} from './estadistica.js';
+import {anovaDBCA, tukey, interpretarCV, anovaCombinado, ladoALado, welch} from './estadistica.js';
+import {enRect, enCuad, distancia, areaM2, svgMapa, desdeMerc, mover} from './lib/geo.js';
 import * as DB from './db.js';
 import {abrirLector, COL as COL_GOTA, NOMCL} from './papel.js';
-import {combinarTarjetas, histDe, OBJETIVOS, claseASABE, CLASES} from './lib/hidro.js';
+import {combinarTarjetas, histDe, OBJETIVOS, claseASABE, CLASES, homografia, rectificar} from './lib/hidro.js';
 import {crearZip, crearDocx, crearXlsx, crearCsv, crearGeojson, crearQml, crearKml, poligonosCroquis, graficoBarras} from './exportar.js';
 
 /* ================= utilidades ================= */
@@ -168,7 +169,7 @@ function cargarEstado(ensayos, cfg) {
 }
 if (GUARD?.config) cargarEstado(GUARD.ensayos, GUARD.config);
 else META.creado = new Date().toISOString();
-const EJ_ = () => byId('DEMO-AG-02'), PA_ = () => byId('DEMO-PA-01'), RED_ = () => byId('DEMO-AG-01');
+const EJ_ = () => byId('DEMO-AG-02'), PA_ = () => byId('DEMO-PA-01'), RED_ = () => byId('DEMO-AG-01'), LAL_ = () => byId('DEMO-LAL-01');
 
 /* ================= estado y permisos ================= */
 const S = {user: null, rubro: null, T: null, paso: 0, sel: null, sitio: null};
@@ -259,7 +260,7 @@ const puede = {
     return T.parcelas.some(p => p.trat === ref && tieneOp(T, p.parcela, S.user.id)); }
 };
 const visibles = rubro => TRIALS.filter(T => T.rubro === rubro && rolEn(T));
-const colTrat = T => Object.fromEntries(T.tratamientos.map((t, i) => [t.cod, PALETA[i % PALETA.length]]));
+const colTrat = T => Object.fromEntries(T.tratamientos.map((t, i) => [t.cod, T.modo === 'lal' ? ({A: '#2563eb', B: '#d97706', C: '#6b7280', D: '#16a34a'}[t.cod] || PALETA[i % PALETA.length]) : PALETA[i % PALETA.length]]));
 const tratNom = (T, c) => T.tratamientos.find(t => t.cod === c)?.nombre || c;
 const vis = T => T.variables.filter(v => T.dron || v.origen !== 'dron');
 const auto = v => v.origen === 'dron' || v.origen === 'calc';
@@ -379,7 +380,9 @@ function nuevoEnsayo() {
   Object.assign(NV, {paso: 1, titulo: '', cultivo: R.cultivos[0], tipo: R.tipos[0], lugar: '', otros: '', bloques: 4,
     trats: S.rubro === 'forestal' ? 'Testigo comercial\nClon A\nClon B\nClon C' : S.rubro === 'pasturas' ? 'Marandu (testigo)\nCultivar 2\nCultivar 3\nCultivar 4\nCultivar 5' : 'Testigo sin tratar\nTratamiento 2\nTratamiento 3\nTratamiento 4\nTratamiento 5',
     par: S.rubro === 'agricola' ? {hileras: 4, dist: 0.45, largo: 5, util: 2} : S.rubro === 'horticola' ? {plantas: 20, utiles: 12, entre: 1.2, sobre: 0.4} : S.rubro === 'pasturas' ? {ancho: 3, largo: 5, borde: 0.5, marco: 0.25, marcos: 2, altura_corte: 20} : {filas: 5, columnas: 5, e1: 3, e2: 2, borde: 1},
-    vars: new Set(MET[S.rubro].filter(v => v.origen !== 'dron').slice(0, 3).map(v => v.id)), ops: new Set(), modoOps: 'bloques', dron: false});
+    vars: new Set(MET[S.rubro].filter(v => v.origen !== 'dron').slice(0, 3).map(v => v.id)), ops: new Set(), modoOps: 'bloques', dron: false,
+    modo: 'dbca', productor: '', lote: '', escala: 'macro', testigo: false, pares: 1, puntos: ESCALAS.macro.puntos, lal: {...ESCALAS.macro, sep: 0},
+    lados: [{nombre: 'Producto a probar', prod: '', dosis: '', unidad: 'L/ha'}, {nombre: 'Producto del productor', prod: '', dosis: '', unidad: 'L/ha'}]});
   renderNuevo(); pantalla('nuevo');
 }
 function areaNueva() {
@@ -391,23 +394,55 @@ function areaNueva() {
 }
 function renderNuevo() {
   const R = RUBROS[S.rubro], trs = NV.trats.split('\n').map(s => s.trim()).filter(Boolean), gl = (trs.length - 1) * (NV.bloques - 1), A = areaNueva();
-  const pasos = ['Datos', 'Parcela y tratamientos', 'Qué vas a medir'];
-  let h = `<div class="row" style="justify-content:space-between"><div style="display:grid;gap:4px"><button class="linkbtn" id="nv-cancel" style="justify-self:start">← Cancelar</button><h1>Nuevo ensayo ${R.nombre.toLowerCase()}</h1></div>
+  const lal = NV.modo === 'lal', pasos = lal ? ['Datos', 'Productos y franjas', 'Qué vas a medir'] : ['Datos', 'Parcela y tratamientos', 'Qué vas a medir'];
+  let h = `<div class="row" style="justify-content:space-between"><div style="display:grid;gap:4px"><button class="linkbtn" id="nv-cancel" style="justify-self:start">← Cancelar</button><h1>${lal ? 'Nuevo lado a lado' : 'Nuevo ensayo'} ${R.nombre.toLowerCase()}</h1></div>
     <div class="row">${pasos.map((p, i) => `<span class="chip ${i + 1 === NV.paso ? 'acc' : 'neu'}">${i + 1}. ${p}</span>`).join('')}</div></div><div class="card" style="gap:14px">`;
   if (NV.paso === 1) {
+    h += `<div class="modos" role="radiogroup" aria-label="Qué querés hacer">
+      <label class="modo ${!lal ? 'on' : ''}"><input type="radio" name="nv-modo-t" value="dbca" ${!lal ? 'checked' : ''}><b>🧪 Ensayo experimental</b><span>Varios tratamientos en bloques al azar, con análisis estadístico (ANAVA y Tukey).</span></label>
+      <label class="modo ${lal ? 'on' : ''}"><input type="radio" name="nv-modo-t" value="lal"><b>↔️ Lado a lado en la parcela del productor</b><span>Para probar la eficacia de un producto contra el que usa el productor, en macroparcelas o microparcelas. No es un ensayo experimental.</span></label></div>`;
+  }
+  if (NV.paso === 1 && lal) {
+    h += `<div class="grid2"><label class="f">Nombre<input type="text" id="nv-titulo" value="${esc(NV.titulo)}" placeholder="Ej.: Fungicida nuevo vs. el del productor, soja"></label>
+      <label class="f">Productor<input type="text" id="nv-productor" value="${esc(NV.productor)}" placeholder="Nombre del productor o empresa"></label>
+      <label class="f">Establecimiento o lote<input type="text" id="nv-lote" value="${esc(NV.lote)}" placeholder="Ej.: Estancia San José, lote 4"></label>
+      <label class="f">Lugar<input type="text" id="nv-lugar" value="${esc(NV.lugar)}" placeholder="Distrito, departamento"></label>
+      <label class="f">Cultivo o especie<input type="text" id="nv-cultivo" list="nv-cult-l" value="${esc(NV.cultivo)}"><datalist id="nv-cult-l">${R.cultivos.map(c => `<option value="${c}">`).join('')}</datalist></label>
+      <label class="f">Escala<select id="nv-escala">${Object.entries(ESCALAS).map(([k, e]) => `<option value="${k}" ${k === NV.escala ? 'selected' : ''}>${e.n}</option>`).join('')}</select><span class="note">${NV.escala === 'macro' ? 'Franjas del ancho de la máquina, a lo largo del lote (100 m o más).' : 'Parcelas chicas dentro del lote del productor, aplicadas con mochila.'}</span></label>
+      <label class="f">¿Se prueba en otras chacras? (opcional, una por renglón)<textarea id="nv-otros" rows="2" placeholder="Ej.: Chacra Benítez, Naranjal&#10;Chacra Ortiz, Santa Rosa">${esc(NV.otros || '')}</textarea><span class="note">Con varias chacras la app calcula en cuántas ganó el producto y la ganancia media.</span></label>
+      <label class="f">Dron<select id="nv-dron"><option value="no" ${NV.dron ? '' : 'selected'}>Sin dron, o solo una foto aérea general</option><option value="si" ${NV.dron ? 'selected' : ''}>Sí, también imágenes multiespectrales</option></select></label></div>`;
+  } else if (NV.paso === 1) {
     h += `<div class="grid2"><label class="f">Nombre del ensayo<input type="text" id="nv-titulo" value="${esc(NV.titulo)}" placeholder="Ej.: Fungicidas en ${esc(R.cultivos[0].toLowerCase())}, zafra 2026"></label>
       <label class="f">Cultivo o especie<input type="text" id="nv-cultivo" list="nv-cult-l" value="${esc(NV.cultivo)}"><datalist id="nv-cult-l">${R.cultivos.map(c => `<option value="${c}">`).join('')}</datalist></label>
-      <label class="f">Tipo de ensayo<select id="nv-tipo">${R.tipos.map(t => `<option ${t === NV.tipo ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
+      <label class="f">Tipo de ensayo<select id="nv-tipo">${R.tipos.filter(t => t !== 'Lado a lado').map(t => `<option ${t === NV.tipo ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
       <label class="f">Lugar<input type="text" id="nv-lugar" value="${esc(NV.lugar)}" placeholder="Departamento, distrito o establecimiento"></label>
       <label class="f">¿Se repite en otros lugares? (opcional, uno por renglón)<textarea id="nv-otros" rows="2" placeholder="Ej.: Naranjal, Alto Paraná&#10;Santa Rosa, San Pedro">${esc(NV.otros || '')}</textarea><span class="note">Cada lugar tiene su croquis sorteado y puede tener su propio operador.</span></label>
-      <label class="f">Imágenes de dron<select id="nv-dron"><option value="no" ${NV.dron ? '' : 'selected'}>No uso dron (solo mediciones de campo)</option><option value="si" ${NV.dron ? 'selected' : ''}>Sí, voy a cargar imágenes de dron</option></select></label></div>
-      <p class="note" style="margin:0">El dron es opcional: sin él, el ensayo se centra en lo que medís a campo y en lo que vas aplicando. Se puede activar después en “Planificación”.</p>`;
+      <label class="f">Imágenes de dron<select id="nv-dron"><option value="no" ${NV.dron ? '' : 'selected'}>Sin dron, o solo una foto aérea general</option><option value="si" ${NV.dron ? 'selected' : ''}>Sí, también imágenes multiespectrales (índices)</option></select></label></div>
+      <p class="note" style="margin:0">El dron es opcional: sin él, el ensayo se centra en lo que medís a campo y en lo que vas aplicando. Una foto aérea general se puede cargar siempre, en “Croquis”.</p>`;
+  }
+  if (NV.paso === 1) {
     const cand = opsDisponibles();
     h += `<div style="display:grid;gap:8px"><h3>Operadores de este trabajo</h3>
       ${cand.length ? `<p class="note" style="margin:0">${S.user.perfil === 'gerente' ? `Operadores del ${esc(EQUIPOS[S.user.equipo].nombre)}.` : 'Se les envía una invitación; al aceptarla ven el ensayo.'} También podés asignarlos después.</p>
         <div class="row">${cand.map(u => `<label class="pill" style="cursor:pointer"><input type="checkbox" data-nvop="${u.id}" ${NV.ops.has(u.id) ? 'checked' : ''}>${avatar(u)}${esc(u.nombre)}</label>`).join('')}</div>
-        <label class="f" style="max-width:460px">Cómo trabajan<select id="nv-modo"><option value="bloques" ${NV.modoOps === 'bloques' ? 'selected' : ''}>Repartir los bloques entre ellos</option><option value="ensayo" ${NV.modoOps === 'ensayo' ? 'selected' : ''}>Todos cargan en todo el ensayo</option><option value="despues" ${NV.modoOps === 'despues' ? 'selected' : ''}>Asignar parcelas después</option></select></label>`
+        <label class="f" style="max-width:460px">Cómo trabajan<select id="nv-modo"><option value="bloques" ${NV.modoOps === 'bloques' ? 'selected' : ''}>${lal ? 'Repartir los pares de franjas entre ellos' : 'Repartir los bloques entre ellos'}</option><option value="ensayo" ${NV.modoOps === 'ensayo' ? 'selected' : ''}>Todos cargan en todo el ensayo</option><option value="despues" ${NV.modoOps === 'despues' ? 'selected' : ''}>Asignar parcelas después</option></select></label>`
         : `<p class="note" style="margin:0">${S.user.perfil === 'gerente' ? 'Tu equipo todavía no tiene operadores: compartí el código ' + esc(EQUIPOS[S.user.equipo]?.codigo || '') + '.' : 'Vas a trabajar solo. Podés invitar operadores más adelante desde “Equipo y cambios”.'}</p>`}</div>`;
+  } else if (NV.paso === 2 && lal) {
+    const L = NV.lal, ha = L.ancho * L.largo / 10000, util = Math.max(0, L.anchoCos ?? L.ancho) * Math.max(0, L.largo - 2 * (L.cab || 0));
+    const lado = (l, i) => `<div class="card" style="gap:8px;border-left:5px solid ${['#2563eb', '#d97706'][i]}"><b>${i ? 'Lado B · producto del productor' : 'Lado A · producto a probar'}</b>
+      <label class="f">Nombre del lado<input type="text" data-lado="${i}|nombre" value="${esc(l.nombre)}"></label>
+      <div class="grid3"><label class="f" style="grid-column:span 2">Producto (nombre comercial)<input type="text" data-lado="${i}|prod" value="${esc(l.prod)}" list="nv-prods" placeholder="${i ? 'El que usa siempre el productor' : 'El producto que se quiere probar'}"></label>
+      <label class="f">Dosis<span class="row" style="flex-wrap:nowrap;gap:4px"><input type="number" step="any" data-lado="${i}|dosis" value="${esc(l.dosis)}" style="width:80px"><select data-lado="${i}|unidad">${UNIDADES.map(u => `<option ${u === l.unidad ? 'selected' : ''}>${u}</option>`).join('')}</select></span></label></div></div>`;
+    h += `<p class="lead" style="font-size:.92rem;margin:0">Se compara el producto que querés probar contra el que usa el productor, en franjas pegadas, con todo el resto del manejo igual. Después podés sumar más productos por lado y buscarlos en el listado SENAVE.</p>
+      <div class="grid2">${NV.lados.map(lado).join('')}</div>
+      <label class="opchk"><input type="checkbox" id="nv-testigo" ${NV.testigo ? 'checked' : ''}><span><b>Sumar una franja testigo sin aplicar (lado C)</b><br><span class="note">Permite calcular la eficacia de cada producto (control respecto del testigo).</span></span></label>
+      <h3>Medidas de cada franja</h3><div class="grid3">
+        <label class="f">Ancho (m)<input type="number" step="any" min="0" data-lal="ancho" value="${L.ancho}"></label><label class="f">Largo (m)<input type="number" step="any" min="0" data-lal="largo" value="${L.largo}"></label>
+        <label class="f">Separación entre franjas (m)<input type="number" step="any" min="0" data-lal="sep" value="${L.sep ?? 0}"></label>
+        <label class="f">Cabeceras que no se evalúan (m)<input type="number" step="any" min="0" data-lal="cab" value="${L.cab ?? 0}"></label>
+        <label class="f">Ancho cosechado o evaluado (m)<input type="number" step="any" min="0" data-lal="anchoCos" value="${L.anchoCos ?? L.ancho}"></label>
+        <label class="f">Repeticiones (pares de franjas)<select id="nv-pares">${[1, 2, 3, 4].map(n => `<option ${n === NV.pares ? 'selected' : ''}>${n}</option>`).join('')}</select></label></div>
+      <p class="note" style="margin:0" id="nv-lal-area">Cada franja: ${fmt(L.ancho * L.largo, 0)} m² (${fmt(ha, ha < 0.1 ? 3 : 2)} ha) · se evalúan ${fmt(util, 0)} m². ${NV.pares > 1 ? `El orden se alterna en cada par (A-B, B-A…) para no favorecer un lado.` : 'Con un solo par la comparación es directa; con 2 o más pares (o varias chacras) se puede saber si la diferencia es confiable.'} La ubicación se marca después con el GPS.</p>`;
   } else if (NV.paso === 2) {
     const p = NV.par, num = (id, l, v, st = 1) => `<label class="f">${l}<input type="number" data-par="${id}" value="${v}" step="${st}" min="0"></label>`;
     const campos = S.rubro === 'agricola' ? num('hileras', 'Hileras por parcela', p.hileras) + num('dist', 'Distancia entre hileras (m)', p.dist, 0.05) + num('largo', 'Largo (m)', p.largo, 0.5) + num('util', 'Hileras cosechadas', p.util)
@@ -421,21 +456,31 @@ function renderNuevo() {
       <div class="note">Diseño: bloques completos al azar. El croquis se sortea al crear el ensayo.${S.rubro === 'pasturas' ? ' Las fechas de corte se cargan después, en “Mediciones”.' : ''}</div></div></div>`;
   } else {
     const lista = [...MET[S.rubro], ...CUSTOM.filter(c => c.rubro === S.rubro)].filter(v => NV.dron || v.origen !== 'dron');
+    if (lal) h += `<label class="f" style="max-width:340px">Puntos de muestreo por franja<input type="number" min="1" max="30" id="nv-puntos" value="${NV.puntos}"><span class="note">En cada franja se mide en varios puntos repartidos a lo largo (sin cabeceras) y la app promedia.</span></label>`;
     h += `<p class="lead" style="font-size:.92rem">Estas son las mediciones sugeridas para ${R.nombre.toLowerCase()}, cada una con su forma de medir. Tildá las que vas a usar; después podés cambiar el método o crear tus propios indicadores en el paso “Mediciones”.${NV.dron ? '' : ' Las mediciones del dron no aparecen porque elegiste trabajar sin dron.'}${S.rubro === 'pasturas' ? ' Las marcadas “en cada corte” se repiten en cada corte que agregues.' : ''}</p>
       <div>${lista.map(v => `<label class="opchk"><input type="checkbox" data-var="${v.id}" ${NV.vars.has(v.id) ? 'checked' : ''}><span><b>${esc(v.nombre)}</b> ${v.unidad ? `<span class="note">(${esc(v.unidad)})</span>` : ''} ${v.origen === 'dron' ? '<span class="chip dron">dron</span>' : ''}${v.porCorte ? '<span class="chip acc">en cada corte</span>' : ''}${v.propio ? '<span class="chip hypo">propio</span>' : ''}<br><span class="note">${esc(v.metodo)}</span></span></label>`).join('')}</div>`;
   }
-  h += `</div><div class="stepper"><button class="btn" id="nv-prev" ${NV.paso === 1 ? 'style="visibility:hidden"' : ''}>← Anterior</button><button class="btn primary" id="nv-next">${NV.paso === 3 ? 'Crear ensayo y empezar a cargar' : 'Siguiente →'}</button></div>`;
+  h += `</div><div class="stepper"><button class="btn" id="nv-prev" ${NV.paso === 1 ? 'style="visibility:hidden"' : ''}>← Anterior</button><button class="btn primary" id="nv-next">${NV.paso === 3 ? (lal ? 'Crear y ubicar las franjas' : 'Crear ensayo y empezar a cargar') : 'Siguiente →'}</button></div>`;
   $('#s-nuevo').innerHTML = h;
+  if (lal && NV.paso === 2 && !document.getElementById('nv-prods')) { const d = document.createElement('datalist'); d.id = 'nv-prods'; d.innerHTML = [...new Set(CAT.rows.filter(r => r[catIdx.sit] !== 'CANCELADO').map(r => r[catIdx.prod]))].map(n => `<option value="${esc(n)}">`).join(''); document.body.appendChild(d); }
 }
 $('#s-nuevo').addEventListener('input', e => {
   const t = e.target;
   if (t.id === 'nv-titulo') NV.titulo = t.value; if (t.id === 'nv-cultivo') NV.cultivo = t.value; if (t.id === 'nv-lugar') NV.lugar = t.value; if (t.id === 'nv-otros') NV.otros = t.value;
   if (t.dataset.par) { NV.par[t.dataset.par] = parseFloat(t.value) || 0; const A = areaNueva(); t.closest('.card').querySelector('p.note').textContent = `${A.txt}: ${fmt(A.area, 1)} m² por parcela, ${fmt(A.util, 1)} m² útiles.`; }
   if (t.id === 'nv-trats') NV.trats = t.value;
+  if (t.id === 'nv-productor') NV.productor = t.value; if (t.id === 'nv-lote') NV.lote = t.value; if (t.id === 'nv-puntos') NV.puntos = Math.max(1, +t.value || 1);
+  if (t.dataset.lado) { const [i, k] = t.dataset.lado.split('|'); NV.lados[+i][k] = t.value; }
+  if (t.dataset.lal) { NV.lal[t.dataset.lal] = parseFloat(t.value) || 0; if (t.dataset.lal === 'ancho' && NV.lal.anchoCos > NV.lal.ancho) NV.lal.anchoCos = NV.lal.ancho;
+    const L = NV.lal, ha = L.ancho * L.largo / 10000, util = Math.max(0, L.anchoCos ?? L.ancho) * Math.max(0, L.largo - 2 * (L.cab || 0)), el = $('#nv-lal-area'); if (el) el.firstChild.textContent = `Cada franja: ${fmt(L.ancho * L.largo, 0)} m² (${fmt(ha, ha < 0.1 ? 3 : 2)} ha) · se evalúan ${fmt(util, 0)} m². `; }
 });
 $('#s-nuevo').addEventListener('change', e => {
   const t = e.target;
   if (t.id === 'nv-tipo') NV.tipo = t.value;
+  if (t.name === 'nv-modo-t') { NV.modo = t.value; renderNuevo(); return; }
+  if (t.id === 'nv-escala') { NV.escala = t.value; const e = ESCALAS[t.value]; NV.lal = {...NV.lal, ancho: e.ancho, largo: e.largo, cab: e.cab, anchoCos: e.anchoCos}; NV.puntos = e.puntos; renderNuevo(); return; }
+  if (t.id === 'nv-testigo') NV.testigo = t.checked; if (t.id === 'nv-pares') { NV.pares = +t.value; renderNuevo(); return; }
+  if (t.dataset.lado && t.tagName === 'SELECT') { const [i, k] = t.dataset.lado.split('|'); NV.lados[+i][k] = t.value; }
   if (t.dataset.nvop) t.checked ? NV.ops.add(t.dataset.nvop) : NV.ops.delete(t.dataset.nvop);
   if (t.id === 'nv-modo') NV.modoOps = t.value;
   if (t.id === 'nv-dron') NV.dron = t.value === 'si';
@@ -446,12 +491,13 @@ $('#s-nuevo').addEventListener('click', e => {
   if (e.target.closest('#nv-cancel')) return irInicio();
   if (e.target.closest('#nv-prev')) { NV.paso--; renderNuevo(); }
   if (e.target.closest('#nv-next')) {
-    if (NV.paso === 1 && !NV.titulo.trim()) { NV.titulo = `${NV.tipo} en ${NV.cultivo}`; }
+    if (NV.paso === 1 && !NV.titulo.trim()) { NV.titulo = NV.modo === 'lal' ? `Lado a lado en ${NV.cultivo}${NV.productor ? ' · ' + NV.productor : ''}` : `${NV.tipo} en ${NV.cultivo}`; }
     if (NV.paso < 3) { NV.paso++; renderNuevo(); return; }
     crearEnsayo();
   }
 });
 async function crearEnsayo() {
+  if (NV.modo === 'lal') return crearLal();
   const trs = NV.trats.split('\n').map(s => s.trim()).filter(Boolean), pref = S.rubro === 'forestal' ? 'C' : 'T';
   const tratamientos = trs.map((n, i) => ({cod: pref + (i + 1), nombre: n, testigo: i === 0, productos: []}));
   const rnd = mulberry(Date.now() % 100000), parcelas = [];
@@ -473,9 +519,433 @@ async function crearEnsayo() {
   toast(otros.length ? `Ensayo creado en ${T.sitios.length} lugares` : ops.length ? `Ensayo creado y asignado a ${ops.map(id => USERS[id].nombre.split(' ')[0]).join(', ')}` : 'Ensayo creado y croquis sorteado'); abrir(T, 'campo');
 }
 
+/* ================= lado a lado (prueba de producto en la parcela del productor) ================= */
+const esLal = T => T?.modo === 'lal';
+const ESCALAS = {macro: {n: 'Macroparcelas (franjas de máquina)', ancho: 20, largo: 200, cab: 10, anchoCos: 9, puntos: 10}, micro: {n: 'Microparcelas (parcelas chicas)', ancho: 5, largo: 10, cab: 1, anchoCos: 3, puntos: 5}};
+const COL_LADO = {A: '#2563eb', B: '#d97706', C: '#6b7280', D: '#16a34a'};
+const NOM_POS = ['izquierda', 'derecha'];
+const menorEsMejor = v => /sev|incid|descarte|hormig|chinch|defol|ewrc|saliv|ninfa|maleza|dano|daño|plaga/.test(v.id + ' ' + v.nombre.toLowerCase());
+const media0 = a => a.length ? a.reduce((s, x) => s + x, 0) / a.length : null;
+const desvio = a => { if (a.length < 2) return null; const m = media0(a); return Math.sqrt(a.reduce((s, x) => s + (x - m) ** 2, 0) / (a.length - 1)); };
+const ladoDe = (T, cod) => T.tratamientos.find(t => t.cod === cod);
+const prodTxt = t => t.productos?.length ? t.productos.map(p => `${p.prod}${p.dosis ? ' ' + fmt(p.dosis, 2) + ' ' + p.unidad : ''}`).join(' + ') : t.testigo ? 'Sin aplicar' : '—';
+
+async function crearLal() {
+  const L = NV.lal, lados = NV.lados.map((l, i) => { const t = {cod: String.fromCharCode(65 + i), nombre: l.nombre.trim() || (i ? 'Producto del productor' : 'Producto a probar'), testigo: false, lado: i ? 'productor' : 'prueba', productos: []};
+    if (l.prod.trim()) { const r = buscarEnCatalogo(l.prod, false); t.productos.push({reg: r ? Number(r[catIdx.reg]) : null, prod: r ? r[catIdx.prod] : l.prod.trim(), pa: r ? r[catIdx.pa] : '', dosis: parseFloat(l.dosis) || 0, unidad: l.unidad, momento: 'principal'}); }
+    return t; });
+  if (NV.testigo) lados.push({cod: 'C', nombre: 'Testigo sin aplicar', testigo: true, lado: 'testigo', productos: []});
+  const parcelas = [];
+  for (let r = 1; r <= NV.pares; r++) { const c = lados.map(t => t.cod); if (r % 2 === 0) [c[0], c[1]] = [c[1], c[0]]; c.forEach((cod, i) => parcelas.push({parcela: r * 100 + i + 1, bloque: r, trat: cod, valores: {}, sub: {}})); }
+  const util = Math.max(0, L.anchoCos ?? L.ancho) * Math.max(0, L.largo - 2 * (L.cab || 0)), ha = L.ancho * L.largo / 10000;
+  const variables = [...NV.vars].map(id => varDef(S.rubro, id)).filter(v => v && (NV.dron || v.origen !== 'dron'));
+  variables.forEach(v => { if (!v.entrada && v.origen !== 'calc' && v.origen !== 'dron' && v.origen !== 'papel' && v.tipo !== 'texto') v.sub = NV.puntos; });
+  const T = {id: nuevoIdEnsayo().replace('ENS-', 'LAL-'), creado: new Date().toISOString(), rubro: S.rubro, modo: 'lal', titulo: NV.titulo.trim() || `Lado a lado en ${NV.cultivo}`, cultivo: NV.cultivo,
+    tipo: NV.escala === 'macro' ? 'Lado a lado (macroparcelas)' : 'Lado a lado (microparcelas)', campana: '2026/27', lugar: NV.lugar || 'Sin ubicación', owner: S.user.id, equipo: S.user.perfil === 'gerente' ? S.user.equipo : null, bloques: NV.pares,
+    parcela: {forma: 'franja', ancho: L.ancho, largo: L.largo, cab: L.cab || 0, anchoCos: L.anchoCos ?? L.ancho, area_m2: +(L.ancho * L.largo).toFixed(1), area_util_m2: +util.toFixed(1), texto: `Franjas de ${fmt(L.ancho, 1)} × ${fmt(L.largo, 0)} m (${fmt(ha, ha < 0.1 ? 3 : 2)} ha)`},
+    lal: {escala: NV.escala, productor: NV.productor.trim(), lote: NV.lote.trim(), sep: L.sep || 0, puntos: NV.puntos, costo: {}, precio: null},
+    tratamientos: lados, variables, parcelas, asig: {}, compartido: {}, notas: [], cambios: [], aplicaciones: [], dron: NV.dron,
+    objetivo: `Comparar en la parcela del productor la eficacia de ${lados[0].productos[0]?.prod || lados[0].nombre} frente a ${lados[1].productos[0]?.prod || lados[1].nombre}${NV.testigo ? ', con una franja testigo sin aplicar' : ''}.`};
+  if (S.rubro === 'pasturas') { T.porCorte = T.variables.filter(v => v.porCorte).map(v => v.id); T.variables = T.variables.filter(v => !v.porCorte); T.cortes = []; }
+  const ops = [...NV.ops]; T.trabajo = {};
+  if (ops.length) { if (!T.equipo) T.invitados = ops; ops.forEach(id => T.trabajo[id] = NV.modoOps === 'ensayo' ? 'ensayo' : 'parcelas'); if (NV.modoOps === 'bloques') repartir(T, ops); }
+  TRIALS.push(T);
+  const otros = String(NV.otros || '').split('\n').map(x => x.trim()).filter(Boolean);
+  if (otros.length) { await convertirARed(T); T.sitios[0].nombre = (NV.lote || NV.productor || NV.lugar || 'Chacra 1').split(',')[0].trim() || 'Chacra 1';
+    for (const l of otros) { await agregarSitio(T, l.split(',')[0].trim(), l); const st = T.sitios[T.sitios.length - 1], ps = T.parcelas.filter(p => p.sitio === st.id);
+      // en cada chacra el mismo orden alternado que en la primera (A-B, B-A…), no un sorteo
+      const base = T.parcelas.filter(p => p.sitio === T.sitios[0].id); ps.forEach(p => { const b = base.find(q => q.parcela % 1000 === p.parcela % 1000); if (b) p.trat = b.trat; }); }
+    T.cambios = []; }
+  toast(otros.length ? `Lado a lado creado en ${T.sitios.length} chacras` : 'Lado a lado creado: ahora ubicá las franjas con el GPS'); abrir(T, 'campo');
+}
+
+/* ----- geometría de las franjas ----- */
+// Franjas una al lado de la otra, en orden de número (101, 102, … 201, …), a lo ancho; el largo es el sentido de avance.
+function layoutLal(T) {
+  const ps = [...T.parcelas].sort((a, b) => a.parcela - b.parcela), w = +T.parcela.ancho || 10, h = +T.parcela.largo || 50, sep = +(T.lal?.sep || 0), R = {};
+  ps.forEach((p, i) => { R[p.parcela] = [i * (w + sep), 0, w, h]; });
+  return {W: ps.length * w + (ps.length - 1) * sep, H: h, R, orden: ps.map(p => p.parcela)};
+}
+const cfgGeoLal = T => { if (T.__vista) { const st = T.sitios.find(x => x.id === T.__vista); return st ? (st.lalGeo = st.lalGeo || {}) : null; } if (T.sitios) return null; T.lal = T.lal || {}; return (T.lal.geo = T.lal.geo || {}); };
+function generarGeoLal(T, cfg) {
+  const L = layoutLal(T), anillo = (x, y, w, h, f) => { const r = [f(x, y), f(x + w, y), f(x + w, y + h), f(x, y + h)]; r.push(r[0]); return r.map(([la, lo]) => [lo, la]); };
+  let f;
+  if (cfg.modo === 'esq') { const q = cfg.esquinas; if (!q || q.some(p => !p)) return false; f = (x, y) => enCuad(q, x / L.W, y / L.H); }
+  else { if (cfg.lat == null || cfg.lon == null) return false; f = (x, y) => enRect([cfg.lat, cfg.lon], cfg.rumbo ?? 0, x, y); }
+  T.parcelas.forEach(p => { const [x, y, w, h] = L.R[p.parcela]; p.geo = anillo(x, y, w, h, f); });
+  return true;
+}
+// GPS: promedia las lecturas de unos segundos (mejor precisión que una sola)
+function medirGPS(seg = 6, prog) {
+  return new Promise((ok, mal) => {
+    if (!navigator.geolocation) return mal(new Error('Este equipo no tiene GPS disponible'));
+    const L = []; let id = null; const fin = () => { navigator.geolocation.clearWatch(id); clearTimeout(t);
+      if (!L.length) return mal(new Error('No se pudo obtener la ubicación (probá al aire libre y con la ubicación del celular activada)'));
+      const w = L.map(p => 1 / Math.max(1, p.acc) ** 2), sw = w.reduce((a, b) => a + b, 0);
+      ok({lat: L.reduce((s, p, i) => s + p.lat * w[i], 0) / sw, lon: L.reduce((s, p, i) => s + p.lon * w[i], 0) / sw, acc: Math.min(...L.map(p => p.acc)) / Math.sqrt(L.length), n: L.length}); };
+    const t = setTimeout(fin, seg * 1000);
+    id = navigator.geolocation.watchPosition(pos => { L.push({lat: pos.coords.latitude, lon: pos.coords.longitude, acc: pos.coords.accuracy}); prog?.(L.length, Math.round(pos.coords.accuracy)); },
+      er => { if (!L.length) { navigator.geolocation.clearWatch(id); clearTimeout(t); mal(new Error(er.code === 1 ? 'Permiso de ubicación denegado: activalo en el navegador' : 'No se pudo obtener la ubicación')); } }, {enableHighAccuracy: true, maximumAge: 0, timeout: seg * 1000});
+  });
+}
+// Brújula: rumbo hacia donde apunta la parte de arriba del celular
+function medirRumbo(seg = 2) {
+  return new Promise(async (ok, mal) => {
+    try { if (typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission) { const r = await DeviceOrientationEvent.requestPermission(); if (r !== 'granted') return mal(new Error('Sin permiso para la brújula')); } } catch (e) {}
+    const L = [], h = e => { let v = e.webkitCompassHeading != null ? e.webkitCompassHeading : e.absolute && e.alpha != null ? (360 - e.alpha) % 360 : null; if (v != null) L.push(v); };
+    addEventListener('deviceorientationabsolute', h); addEventListener('deviceorientation', h);
+    setTimeout(() => { removeEventListener('deviceorientationabsolute', h); removeEventListener('deviceorientation', h);
+      if (!L.length) return mal(new Error('Este equipo no tiene brújula: escribí el rumbo a mano o marcá las 4 esquinas'));
+      const sx = L.reduce((s, a) => s + Math.sin(a * Math.PI / 180), 0), sy = L.reduce((s, a) => s + Math.cos(a * Math.PI / 180), 0); ok((Math.atan2(sx, sy) * 180 / Math.PI + 360) % 360); }, seg * 1000);
+  });
+}
+// Dibujo esquemático en metros (sin ubicación) o para el informe
+function svgFranjas(T, {sel} = {}) {
+  const L = layoutLal(T), k = Math.min(640 / L.W, 360 / L.H), W = L.W * k, H = L.H * k, m = 30, C = colTrat(T);
+  let s = `<svg viewBox="0 0 ${W + 2 * m} ${H + 2 * m}" width="100%" style="max-height:420px;display:block;background:var(--field,#e3eadb);border-radius:10px" xmlns="http://www.w3.org/2000/svg">`;
+  T.parcelas.forEach(p => { const [x, y, w, h] = L.R[p.parcela], c = COL_LADO[p.trat] || C[p.trat];
+    s += `<rect x="${m + x * k}" y="${m + y * k}" width="${w * k}" height="${h * k}" fill="${c}" fill-opacity="${sel === p.parcela ? .6 : .35}" stroke="${sel === p.parcela ? '#111' : c}" stroke-width="2" data-pn="${p.parcela}" style="cursor:pointer"/>
+      <text x="${m + (x + w / 2) * k}" y="${m + (y + h / 2) * k}" text-anchor="middle" dominant-baseline="middle" font-size="${Math.min(20, w * k / 2.2)}" font-weight="700" fill="#111" pointer-events="none">${p.trat}</text>`; });
+  s += `<text x="${m}" y="${m - 10}" font-size="11" fill="#5d6b62">${fmt(L.W, 1)} m de ancho total</text><text x="${m - 8}" y="${m + H / 2}" font-size="11" fill="#5d6b62" transform="rotate(-90 ${m - 8} ${m + H / 2})" text-anchor="middle">${fmt(L.H, 0)} m de largo · sentido de avance ↑</text>`;
+  return s + '</svg>';
+}
+let lalModo = 'ubic', lalSat = true;
+function renderLal(T0) {
+  const T = vistaS(T0), cfg = cfgGeoLal(T0.sitios ? T : T0) || {}, ed = puede.diseno(T0) || (T0.sitios && T.__vista && T0.sitios.find(x => x.id === T.__vista)?.ops?.includes(S.user.id)), C = colTrat(T);
+  const conGeo = T.parcelas.length && T.parcelas.every(p => p.geo), L = layoutLal(T);
+  const pol = conGeo ? T.parcelas.map(p => ({anillo: p.geo, color: COL_LADO[p.trat] || C[p.trat], texto: `${p.trat}${T.bloques > 1 ? p.bloque : ''}`, id: p.parcela, sel: S.sel === p.parcela})) : [];
+  const pts = []; if (lalModo === 'dib' && !conGeo && cfg.centro && !(cfg.esquinas || []).some(Boolean)) pts.push({lat: cfg.centro[0], lon: cfg.centro[1], texto: 'Acá'});
+  if (cfg.modo === 'esq' || lalModo === 'dib') (cfg.esquinas || []).forEach((q, i) => q && pts.push({lat: q[0], lon: q[1], texto: i + 1}));
+  if (!conGeo && cfg.esquinas?.length === 4 && cfg.esquinas.every(Boolean)) pol.push({anillo: [...cfg.esquinas, cfg.esquinas[0]].map(([la, lo]) => [lo, la]), color: '#facc15'}); else if (cfg.lat != null && !conGeo) pts.push({lat: cfg.lat, lon: cfg.lon, texto: 'Inicio'});
+  const supTot = conGeo ? T.parcelas.reduce((s, p) => s + areaM2(p.geo), 0) : T.parcelas.length * T.parcela.area_m2;
+  const ladoInfo = T.tratamientos.map(t => { const ps = T.parcelas.filter(p => p.trat === t.cod), sup = conGeo ? ps.reduce((s, p) => s + areaM2(p.geo), 0) : ps.length * T.parcela.area_m2;
+    return `<div class="row" style="gap:8px;align-items:flex-start"><span class="swatch" style="background:${COL_LADO[t.cod] || C[t.cod]};width:16px;height:16px"></span><div style="display:grid;gap:2px"><b>${t.cod} · ${esc(t.nombre)}</b><span class="note">${esc(prodTxt(t))} · ${ps.length} franja${ps.length > 1 ? 's' : ''} · ${sup >= 1000 ? fmt(sup / 10000, 2) + ' ha' : fmt(sup, 0) + ' m²'}</span></div></div>`; }).join('');
+  const lalInfo = T0.lal || {}, gps = q => q ? `${q[0].toFixed(6)}, ${q[1].toFixed(6)}` : '—';
+  P().innerHTML = `<section class="panel"><h2>Ubicación y franjas</h2>
+    <p class="lead">${esc(lalInfo.productor || '')}${lalInfo.lote ? ' · ' + esc(lalInfo.lote) : ''}${T.__vista ? ' · ' + esc(nomSitio(T0, T.__vista)) : ''}. ${T.tratamientos.length} lados${T.bloques > 1 ? `, ${T.bloques} pares` : ''}, franjas de ${fmt(T.parcela.ancho, 1)} × ${fmt(T.parcela.largo, 0)} m. Tocá una franja para cargar lo que medís en ella.</p>
+    <div class="mapwrap"><div style="display:grid;gap:8px;min-width:0">
+      <div id="lal-mapa">${conGeo || pts.length ? svgMapa(pol, pts, {satelite: lalSat, ancho: 760, alto: 460, limites: lalModo === 'dib' && !conGeo && cfg.centro ? [mover(cfg.centro, -Math.max(120, T.parcela.largo), -Math.max(120, T.parcela.largo)), mover(cfg.centro, Math.max(120, T.parcela.largo), Math.max(120, T.parcela.largo))] : []}) : svgFranjas(T, {sel: S.sel})}</div>
+      <div class="row note">${conGeo ? `<label class="chk"><input type="checkbox" id="lal-sat" ${lalSat ? 'checked' : ''}><span>Fondo satelital (con internet)</span></label> · Superficie total ${fmt(supTot / 10000, supTot < 1000 ? 3 : 2)} ha` : 'Todavía sin ubicar en el mapa: marcá la ubicación con el GPS (a la derecha).'}${pts.length && !conGeo ? ' · Tocá el mapa para mover el punto.' : ''}</div></div>
+      <div class="side"><div class="card ctl"><h3>Lados</h3>${ladoInfo}</div>
+      ${ed ? `<div class="card ctl" id="lal-gps"><h3>Ubicar con el GPS</h3><div class="seg" id="seg-lalgps"></div>
+        ${lalModo === 'ubic' ? `<p class="note" style="margin:0">Parate en la <b>esquina de inicio de la primera franja</b> (a la izquierda, mirando hacia donde avanza la máquina) y tocá “Usar mi ubicación”. Después apuntá el celular en el sentido de las franjas y tocá “Tomar el rumbo”.</p>
+          <div class="row"><button class="btn small" id="lal-aqui">📍 Usar mi ubicación</button><button class="btn small" id="lal-brujula">🧭 Tomar el rumbo</button></div>
+          <div class="grid2"><label class="f">Latitud<input type="number" step="any" id="lal-lat" value="${cfg.lat ?? ''}"></label><label class="f">Longitud<input type="number" step="any" id="lal-lon" value="${cfg.lon ?? ''}"></label>
+          <label class="f">Rumbo de las franjas (°)<input type="number" step="any" id="lal-rumbo" value="${cfg.rumbo ?? 0}" title="0 = norte, 90 = este"></label><label class="f">Largo (m)<input type="number" step="any" id="lal-largo" value="${T.parcela.largo}"></label>
+          <label class="f">Ancho de cada franja (m)<input type="number" step="any" id="lal-ancho" value="${T.parcela.ancho}"></label><label class="f">Superficie por franja (ha)<input type="number" step="any" id="lal-ha" value="${+(T.parcela.ancho * T.parcela.largo / 10000).toFixed(4)}" title="Cambia el largo"></label>
+          <label class="f">Separación (m)<input type="number" step="any" id="lal-sep" value="${T0.lal?.sep ?? 0}"></label></div>
+          <button class="btn primary" id="lal-generar">Generar las franjas</button>`
+        : lalModo === 'dib' ? `<p class="note" style="margin:0">${cfg.centro ? `Tocá en el mapa satelital las 4 esquinas del área, en este orden: <b>1</b> inicio izquierda, <b>2</b> fin izquierda, <b>3</b> fin derecha, <b>4</b> inicio derecha (mirando hacia donde avanza la máquina). La app dibuja el área y la divide en ${T.parcelas.length} franjas iguales.` : 'Primero ubicá el mapa: usá tu ubicación (GPS) o escribí la latitud y longitud de la chacra. Necesita internet para ver la imagen satelital.'}</p>
+          <div class="row"><button class="btn small" id="lal-centro">📍 Ir a mi ubicación</button>${(cfg.esquinas || []).some(Boolean) ? '<button class="btn small" id="lal-borrar-dib">↺ Borrar puntos</button>' : ''}</div>
+          ${cfg.centro ? '' : `<div class="grid2"><label class="f">Latitud<input type="number" step="any" id="lal-clat"></label><label class="f">Longitud<input type="number" step="any" id="lal-clon"></label></div><button class="btn small" id="lal-ver">Ver el mapa</button>`}
+          ${(cfg.esquinas || []).filter(Boolean).length ? `<span class="note">${(cfg.esquinas || []).filter(Boolean).length} de 4 esquinas marcadas${(cfg.esquinas?.length === 4 && cfg.esquinas.every(Boolean)) ? ` · largo ${fmt((distancia(cfg.esquinas[0], cfg.esquinas[1]) + distancia(cfg.esquinas[3], cfg.esquinas[2])) / 2, 1)} m · ancho ${fmt((distancia(cfg.esquinas[0], cfg.esquinas[3]) + distancia(cfg.esquinas[1], cfg.esquinas[2])) / 2, 1)} m` : ''}</span>` : ''}
+          <button class="btn primary" id="lal-dividir" ${cfg.esquinas?.length === 4 && cfg.esquinas.every(Boolean) ? '' : 'disabled'}>Dividir en franjas</button>`
+        : `<p class="note" style="margin:0">Caminá el contorno de toda el área y marcá las 4 esquinas en este orden. La app la divide en ${T.parcelas.length} franjas iguales.</p>
+          ${['Inicio, lado izquierdo', 'Fin, lado izquierdo', 'Fin, lado derecho', 'Inicio, lado derecho'].map((n, i) => `<div class="row" style="justify-content:space-between;gap:6px"><span><b>${i + 1}</b> · ${n}<br><span class="note">${gps(cfg.esquinas?.[i])}${cfg.precision?.[i] ? ` · ±${cfg.precision[i]} m` : ''}</span></span><button class="btn small" data-esq="${i}">📍 Marcar</button></div>`).join('')}
+          ${(cfg.esquinas?.length === 4 && cfg.esquinas.every(Boolean)) ? `<span class="note">Largo ${fmt((distancia(cfg.esquinas[0], cfg.esquinas[1]) + distancia(cfg.esquinas[3], cfg.esquinas[2])) / 2, 1)} m · ancho ${fmt((distancia(cfg.esquinas[0], cfg.esquinas[3]) + distancia(cfg.esquinas[1], cfg.esquinas[2])) / 2, 1)} m</span>` : ''}
+          <button class="btn primary" id="lal-dividir" ${(cfg.esquinas?.length === 4 && cfg.esquinas.every(Boolean)) ? '' : 'disabled'}>Dividir en franjas</button>`}
+        <span class="note" id="lal-msg"></span></div>` : ''}
+      </div></div>
+    ${conGeo ? `<div class="card"><h3>Franjas</h3><div class="tw"><table><thead><tr><th>Franja</th><th>Lado</th><th>Producto</th><th class="num">Superficie</th><th>Centro</th></tr></thead><tbody>
+      ${[...T.parcelas].sort((a, b) => a.parcela - b.parcela).map(p => { const r = p.geo.slice(0, 4), c = [r.reduce((s, q) => s + q[1], 0) / 4, r.reduce((s, q) => s + q[0], 0) / 4], t = ladoDe(T, p.trat), a = areaM2(p.geo);
+        return `<tr data-pn="${p.parcela}" style="cursor:pointer"><td>${etiq(T, p)}</td><td><span class="swatch" style="background:${COL_LADO[p.trat]}"></span> ${p.trat} · ${esc(t?.nombre || '')}</td><td>${esc(prodTxt(t))}</td><td class="num">${a >= 1000 ? fmt(a / 10000, 3) + ' ha' : fmt(a, 0) + ' m²'}</td><td><a href="https://www.google.com/maps?q=${c[0].toFixed(6)},${c[1].toFixed(6)}" target="_blank" rel="noopener">${c[0].toFixed(5)}, ${c[1].toFixed(5)}</a></td></tr>`; }).join('')}</tbody></table></div>
+      <p class="note" style="margin:0">Las franjas salen en QGIS y Google Earth desde “Informe y exportar”.</p></div>` : ''}
+    ${cardFotoAerea(T0, T)}</section>`;
+  if ($('#seg-lalgps')) seg('#seg-lalgps', [['ubic', 'Desde un punto'], ['esq', 'Caminando las esquinas'], ['dib', 'Dibujar en el mapa']], lalModo, v => { lalModo = v; renderLal(T0); });
+  const msg = t => { const m = $('#lal-msg'); if (m) m.textContent = t; };
+  const guardarCfg = cambios => { const c = cfgGeoLal(T0.sitios ? T : T0); if (!c) return; Object.assign(c, cambios); };
+  pintarFotoAerea(T0, T);
+  P().oninput = e => { const id = e.target.id;
+    if (id === 'lal-ha') { const v = +e.target.value, a = +$('#lal-ancho').value; if (v > 0 && a > 0) $('#lal-largo').value = +(v * 10000 / a).toFixed(1); }
+    if (id === 'lal-largo' || id === 'lal-ancho') { const a = +$('#lal-ancho').value, l = +$('#lal-largo').value; if (a > 0 && l > 0) $('#lal-ha').value = +(a * l / 10000).toFixed(4); } };
+  P().onchange = e => { if (e.target.id === 'lal-sat') { lalSat = e.target.checked; renderLal(T0); } if (clicFotoAereaCambio(e, T0, T)) return; };
+  P().onclick = async e => {
+    if (await clicFotoAerea(e, T0, T)) return;
+    const pn = e.target.closest('[data-pn]'); if (pn) { S.sel = +pn.dataset.pn; abrirDrawer(S.sel); return; }
+    const svg = e.target.closest('#lal-mapa svg[data-z]');
+    if (svg && ed && lalModo === 'dib' && !conGeo) { const c = cfgGeoLal(T0.sitios ? T : T0), r = svg.getBoundingClientRect(), vb = svg.viewBox.baseVal, x = (e.clientX - r.left) / r.width * vb.width + +svg.dataset.ox, y = (e.clientY - r.top) / r.height * vb.height + +svg.dataset.oy;
+      const [la, lo] = desdeMerc(x, y, +svg.dataset.z); c.esquinas = (c.esquinas || []).filter(Boolean); if (c.esquinas.length >= 4) c.esquinas = []; c.esquinas.push([+la.toFixed(7), +lo.toFixed(7)]); c.modo = 'esq'; c.precision = []; guardarPronto(); return renderLal(T0); }
+    if (e.target.closest('#lal-centro')) { msg('Buscando la ubicación…'); try { const g = await medirGPS(4); const c = cfgGeoLal(T0.sitios ? T : T0); c.centro = [+g.lat.toFixed(7), +g.lon.toFixed(7)]; guardarPronto(); return renderLal(T0); } catch (x) { msg(x.message); } return; }
+    if (e.target.closest('#lal-ver')) { const la = +$('#lal-clat').value, lo = +$('#lal-clon').value; if (!la || !lo) return msg('Escribí la latitud y la longitud (por ejemplo -27.08 y -55.65).'); cfgGeoLal(T0.sitios ? T : T0).centro = [la, lo]; guardarPronto(); return renderLal(T0); }
+    if (e.target.closest('#lal-borrar-dib')) { const c = cfgGeoLal(T0.sitios ? T : T0); c.esquinas = []; guardarPronto(); return renderLal(T0); }
+    if (svg && ed && lalModo === 'ubic' && !conGeo) { const r = svg.getBoundingClientRect(), vb = svg.viewBox.baseVal, x = (e.clientX - r.left) / r.width * vb.width + +svg.dataset.ox, y = (e.clientY - r.top) / r.height * vb.height + +svg.dataset.oy;
+      const [la, lo] = desdeMerc(x, y, +svg.dataset.z); guardarCfg({modo: 'ubic', lat: +la.toFixed(7), lon: +lo.toFixed(7)}); return renderLal(T0); }
+    if (e.target.closest('#lal-aqui')) { msg('Buscando la ubicación… (quedate quieto unos segundos)');
+      try { const g = await medirGPS(6, (n, a) => msg(`Leyendo GPS… ${n} lecturas, ±${a} m`)); $('#lal-lat').value = g.lat.toFixed(7); $('#lal-lon').value = g.lon.toFixed(7); msg(`Ubicación tomada (±${Math.max(1, Math.round(g.acc))} m, ${g.n} lecturas). Ahora tomá el rumbo y tocá “Generar las franjas”.`); } catch (x) { msg(x.message); } return; }
+    if (e.target.closest('#lal-brujula')) { msg('Apuntá la parte de arriba del celular hacia donde van las franjas…'); try { const r = await medirRumbo(2); $('#lal-rumbo').value = Math.round(r); msg(`Rumbo ${Math.round(r)}° (0 = norte). Conviene revisarlo: los celulares se desvían cerca de metales.`); } catch (x) { msg(x.message); } return; }
+    if (e.target.closest('#lal-generar')) { const n = id => $(id).value === '' ? null : +$(id).value;
+      if (n('#lal-lat') == null || n('#lal-lon') == null) return msg('Falta la ubicación: usá el GPS, escribila o tocá el mapa.');
+      if (!(n('#lal-ancho') > 0) || !(n('#lal-largo') > 0)) return msg('Completá el ancho y el largo.');
+      cambiarMedidas(T0, n('#lal-ancho'), n('#lal-largo'), n('#lal-sep') ?? 0);
+      guardarCfg({modo: 'ubic', lat: n('#lal-lat'), lon: n('#lal-lon'), rumbo: n('#lal-rumbo') ?? 0}); generarGeoLal(T, cfgGeoLal(T0.sitios ? T : T0));
+      T0.cambios.unshift({fecha: ahora(), usuario: S.user.id, parcela: '—', variable: 'Ubicación de las franjas', antes: null, despues: `${n('#lal-lat')}, ${n('#lal-lon')} · rumbo ${n('#lal-rumbo') ?? 0}°`, estado: 'aprobado'});
+      toast('Franjas ubicadas en el mapa'); guardarPronto(); return renderLal(T0); }
+    const eq = e.target.closest('[data-esq]'); if (eq) { const i = +eq.dataset.esq; eq.disabled = true; msg(`Marcando la esquina ${i + 1}… quedate quieto`);
+      try { const g = await medirGPS(6, (k, a) => msg(`Esquina ${i + 1}: ${k} lecturas, ±${a} m`)); const c = cfgGeoLal(T0.sitios ? T : T0); c.modo = 'esq'; c.esquinas = c.esquinas || [null, null, null, null]; c.precision = c.precision || [];
+        c.esquinas[i] = [+g.lat.toFixed(7), +g.lon.toFixed(7)]; c.precision[i] = Math.max(1, Math.round(g.acc)); guardarPronto(); renderLal(T0); } catch (x) { msg(x.message); eq.disabled = false; } return; }
+    if (e.target.closest('#lal-dividir')) { const c = cfgGeoLal(T0.sitios ? T : T0); c.modo = 'esq';
+      const largo = (distancia(c.esquinas[0], c.esquinas[1]) + distancia(c.esquinas[3], c.esquinas[2])) / 2, ancho = (distancia(c.esquinas[0], c.esquinas[3]) + distancia(c.esquinas[1], c.esquinas[2])) / 2, sep = T0.lal?.sep || 0, n = T.parcelas.length;
+      cambiarMedidas(T0, +((ancho - sep * (n - 1)) / n).toFixed(2), +largo.toFixed(1), sep); generarGeoLal(T, c);
+      T0.cambios.unshift({fecha: ahora(), usuario: S.user.id, parcela: '—', variable: 'Ubicación de las franjas (4 esquinas)', antes: null, despues: `${fmt(largo, 0)} × ${fmt(ancho, 0)} m`, estado: 'aprobado'});
+      toast('Área dividida en franjas'); guardarPronto(); return renderLal(T0); }
+  };
+}
+function cambiarMedidas(T, ancho, largo, sep) {
+  const pa = T.parcela, util = Math.max(0, Math.min(pa.anchoCos ?? ancho, ancho)) * Math.max(0, largo - 2 * (pa.cab || 0));
+  Object.assign(pa, {ancho, largo, area_m2: +(ancho * largo).toFixed(1), area_util_m2: +util.toFixed(1), texto: `Franjas de ${fmt(ancho, 1)} × ${fmt(largo, 0)} m (${fmt(ancho * largo / 10000, ancho * largo < 1000 ? 3 : 2)} ha)`});
+  if (pa.anchoCos > ancho) pa.anchoCos = ancho; T.lal = T.lal || {}; T.lal.sep = sep;
+}
+
+/* ----- comparación ----- */
+function puntosDe(ps, v) { return ps.flatMap(p => { const sb = p.sub?.[v.id], arr = Array.isArray(sb) ? sb.filter(x => x !== '' && x != null && !isNaN(+x)).map(Number) : [];
+  if (arr.length) return arr; const x = p.valores[v.id]; return x == null || x === '' || isNaN(+x) ? [] : [+x]; }); }
+const valorP = (p, v) => { const x = p?.valores?.[v.id]; return x == null || x === '' || isNaN(+x) ? null : +x; };
+function ladosLal(T) { const A = T.tratamientos.find(t => t.lado === 'prueba') || T.tratamientos[0], B = T.tratamientos.find(t => t.lado === 'productor') || T.tratamientos.find(t => t !== A && !t.testigo), C = T.tratamientos.find(t => t.testigo); return {A, B, C}; }
+function compLal(T, v) {
+  const {A, B, C} = ladosLal(T), dec = v.dec ?? 2, menor = menorEsMejor(v);
+  const de = t => { if (!t) return null; const ps = T.parcelas.filter(p => p.trat === t.cod), vals = ps.map(p => valorP(p, v)), pts = puntosDe(ps, v);
+    return {t, ps, vals, pts, media: vals.length && vals.every(x => x != null) ? media0(vals) : null, sd: desvio(pts), n: pts.length}; };
+  const a = de(A), b = de(B), c = de(C), R = {ok: false, a, b, c, menor, dec, v};
+  if (a?.media == null || b?.media == null) return R;
+  R.ok = true; R.dif = a.media - b.media; R.pct = R.dif / Math.abs(b.media || 1) * 100; R.mejorA = menor ? R.dif < 0 : R.dif > 0; R.igual = Math.abs(R.pct) < 1;
+  // pares (repeticiones): t pareada si hay 3 o más; si no, comparación de los puntos (orientativa)
+  const pares = [...new Set(T.parcelas.map(p => p.bloque))].sort((x, y) => x - y).map(r => [valorP(a.ps.find(p => p.bloque === r), v), valorP(b.ps.find(p => p.bloque === r), v)]).filter(([x, y]) => x != null && y != null);
+  R.pares = pares.length; if (pares.length >= 3) R.prueba = {tipo: 'pareada', ...ladoALado(pares.map(p => p[0]), pares.map(p => p[1]))};
+  else if (a.pts.length >= 3 && b.pts.length >= 3) R.prueba = {tipo: 'puntos', ...welch(a.pts, b.pts)};
+  if (c?.media != null && c.media !== 0) { const ef = x => menor ? (1 - x / c.media) * 100 : (x / c.media - 1) * 100; R.efA = ef(a.media); R.efB = ef(b.media); }
+  // economía (rendimiento): umbral = diferencia de costo / precio del grano
+  const rend = /^rend/.test(v.id) || /kg\/ha/.test(v.unidad || ''), co = T.lal?.costo || {};
+  if (rend && T.lal?.precio > 0 && co[A.cod] != null && co[B.cod] != null) { R.costoExtra = co[A.cod] - co[B.cod]; R.umbral = R.costoExtra / T.lal.precio; R.margen = R.dif * T.lal.precio - R.costoExtra; R.cubre = R.dif >= R.umbral; }
+  const u = v.unidad ? ' ' + v.unidad : '', nA = `${A.cod} (${prodTxt(A)})`, nB = `${B.cod} (${prodTxt(B)})`;
+  let txt = R.igual ? `${A.cod} y ${B.cod} dieron prácticamente lo mismo (${fmt(a.media, dec)} y ${fmt(b.media, dec)}${u}).`
+    : `${R.mejorA ? 'El producto probado' : 'El producto del productor'} fue mejor: ${nA} ${fmt(a.media, dec)}${u} frente a ${nB} ${fmt(b.media, dec)}${u} (${R.dif > 0 ? '+' : ''}${fmt(R.dif, dec)}${u}, ${R.pct > 0 ? '+' : ''}${fmt(R.pct, 1)} %).`;
+  if (R.prueba?.tipo === 'pareada' && R.prueba.p != null) txt += R.prueba.p < 0.05 ? ` Con ${R.pares} pares la diferencia es significativa (t pareada p = ${fmt(R.prueba.p, 3)}).` : ` Con ${R.pares} pares la diferencia no es significativa (p = ${fmt(R.prueba.p, 3)}): puede deberse a la variación del lote.`;
+  else if (R.prueba?.tipo === 'puntos' && R.prueba.p != null) txt += ` Comparando los ${a.pts.length} y ${b.pts.length} puntos de muestreo la diferencia ${R.prueba.p < 0.05 ? 'supera' : 'no supera'} la variación entre puntos (p = ${fmt(R.prueba.p, 3)}); es orientativo, porque los puntos de una misma franja no son repeticiones independientes.`;
+  if (R.efA != null) txt += ` Respecto del testigo sin aplicar: ${A.cod} ${menor ? 'controló' : 'mejoró'} ${fmt(R.efA, 1)} % y ${B.cod} ${fmt(R.efB, 1)} %.`;
+  if (R.umbral != null) txt += ` Con un costo ${R.costoExtra >= 0 ? 'extra' : 'menor'} de ${fmt(Math.abs(R.costoExtra), 2)} USD/ha y ${fmt(T.lal.precio, 3)} USD/kg, ${R.costoExtra > 0 ? `hacen falta ${fmt(R.umbral, 0)} kg/ha para pagarlo: ${R.cubre ? 'la diferencia lo cubre' : 'la diferencia no lo cubre'}` : 'el producto probado es más barato'}; margen ${R.margen >= 0 ? '+' : ''}${fmt(R.margen, 1)} USD/ha.`;
+  R.txt = txt; return R;
+}
+// Red de chacras: un par (promedio por lado) por chacra
+function redLal(T, v) {
+  const {A, B} = ladosLal(T), filas = T.sitios.map(st => { const ps = T.parcelas.filter(p => p.sitio === st.id), m = t => { const vs = ps.filter(p => p.trat === t.cod).map(p => valorP(p, v)); return vs.length && vs.every(x => x != null) ? media0(vs) : null; };
+    return {st, a: m(A), b: m(B)}; }), ok = filas.filter(f => f.a != null && f.b != null);
+  const rend = /^rend/.test(v.id) || /kg\/ha/.test(v.unidad || ''), co = T.lal?.costo || {}, umbral = rend && T.lal?.precio > 0 && co[A.cod] != null && co[B.cod] != null ? (co[A.cod] - co[B.cod]) / T.lal.precio : 0;
+  const menor = menorEsMejor(v), sg = menor ? -1 : 1;
+  const r = ok.length ? ladoALado(ok.map(f => sg * f.a), ok.map(f => sg * f.b), sg * umbral) : null;
+  return {filas, ok, r, menor, umbral, A, B};
+}
+let varLal = null;
+function analLal(T0) {
+  const T = vistaS(T0), red = T0.sitios && !T.__vista, num = vis(T).filter(v => v.tipo !== 'texto'); if (!num.find(v => v.id === varLal)) varLal = num[0]?.id;
+  const {A, B, C} = ladosLal(T), ed = puede.diseno(T0), lal = T0.lal || (T0.lal = {}), hayRend = num.some(v => /^rend/.test(v.id) || /kg\/ha/.test(v.unidad || ''));
+  const resumen = num.map(v => ({v, R: compLal(T, v)}));
+  const celda = (R, l) => l?.media != null ? `<b>${fmt(l.media, R.dec)}</b>${l.sd != null ? `<br><span class="note">± ${fmt(l.sd, R.dec)} (${l.n} pts)</span>` : ''}` : '<span class="note">falta</span>';
+  P().innerHTML = `<section class="panel"><h2>${red ? 'Comparación en todas las chacras' : 'Comparación directa'}</h2>
+    <p class="lead">${red ? 'Cada chacra aporta un par (promedio de cada lado). Con varias chacras se ve en cuántas ganó el producto y cuánto se gana en promedio.' : 'Producto probado contra el del productor, en la misma chacra y con el mismo manejo. Es una prueba de eficacia a campo, no un ensayo experimental: para generalizar, conviene repetirla en varias chacras.'}</p>
+    ${red ? '' : `<div class="card"><div class="tw"><table><thead><tr><th>Medición</th><th class="num"><span class="swatch" style="background:${COL_LADO.A}"></span> ${A.cod} · ${esc(A.nombre)}</th><th class="num"><span class="swatch" style="background:${COL_LADO.B}"></span> ${B.cod} · ${esc(B.nombre)}</th>${C ? `<th class="num">${C.cod} · testigo</th>` : ''}<th class="num">Diferencia ${A.cod} − ${B.cod}</th><th>Resultado</th></tr></thead><tbody>
+      ${resumen.map(({v, R}) => `<tr><td>${esc(v.nombre)}${v.unidad ? ` <span class="note">(${esc(v.unidad)})</span>` : ''}</td><td class="num">${celda(R, R.a)}</td><td class="num">${celda(R, R.b)}</td>${C ? `<td class="num">${celda(R, R.c)}</td>` : ''}
+        <td class="num">${R.ok ? `${R.dif > 0 ? '+' : ''}${fmt(R.dif, R.dec)}<br><span class="note">${R.pct > 0 ? '+' : ''}${fmt(R.pct, 1)} %</span>` : '—'}</td>
+        <td>${R.ok ? (R.igual ? '<span class="chip neu">Igual</span>' : R.mejorA ? `<span class="chip ok">Mejor ${A.cod}</span>` : `<span class="chip warn">Mejor ${B.cod}</span>`) + (R.prueba?.p != null ? ` <span class="note">p ${fmt(R.prueba.p, 3)}</span>` : '') : '<span class="note">Faltan datos</span>'}</td></tr>`).join('')}</tbody></table></div>
+      <p class="note" style="margin:0">Valores: promedio de cada lado (± desvío entre los puntos de muestreo). ${num.some(menorEsMejor) ? 'En enfermedades, plagas y daño, menos es mejor.' : ''}</p></div>`}
+    <div class="card row" style="align-items:end"><label class="f">Ver en detalle<select id="var-lal">${num.map(v => `<option value="${v.id}" ${v.id === varLal ? 'selected' : ''}>${esc(v.nombre)}</option>`).join('')}</select></label>
+      ${hayRend ? `<label class="f">Costo del lado ${A.cod} (USD/ha)<input type="number" step="any" data-costo="${A.cod}" value="${lal.costo?.[A.cod] ?? ''}" ${ed ? '' : 'disabled'}></label><label class="f">Costo del lado ${B.cod} (USD/ha)<input type="number" step="any" data-costo="${B.cod}" value="${lal.costo?.[B.cod] ?? ''}" ${ed ? '' : 'disabled'}></label>
+        <label class="f">Precio del grano (USD/kg)<input type="number" step="any" id="lal-precio" value="${lal.precio ?? ''}" ${ed ? '' : 'disabled'}></label>` : ''}</div>
+    <div id="lal-det"></div></section>`;
+  const det = () => { const v = num.find(x => x.id === varLal); if (!v) return; const host = $('#lal-det');
+    if (red) { const N = redLal(T0, v), r = N.r, u = v.unidad ? ' ' + esc(v.unidad) : '', sg = N.menor ? -1 : 1, dec = v.dec ?? 2;
+      host.innerHTML = `<div class="card"><h3>${esc(v.nombre)} en cada chacra</h3><div class="tw"><table><thead><tr><th>Chacra</th><th class="num">${A.cod}</th><th class="num">${B.cod}</th><th class="num">Diferencia</th><th>Ganó</th></tr></thead><tbody>
+        ${N.filas.map(f => `<tr><td>${esc(f.st.nombre)}</td><td class="num">${fmt(f.a, dec)}</td><td class="num">${fmt(f.b, dec)}</td><td class="num">${f.a != null && f.b != null ? (f.a - f.b > 0 ? '+' : '') + fmt(f.a - f.b, dec) : '—'}</td><td>${f.a == null || f.b == null ? '<span class="note">faltan datos</span>' : sg * (f.a - f.b) > 0 ? `<span class="chip ok">${A.cod}</span>` : sg * (f.a - f.b) < 0 ? `<span class="chip warn">${B.cod}</span>` : 'Empate'}</td></tr>`).join('')}</tbody></table></div>
+        ${r ? `<div class="kpis"><div class="kpi"><span>Chacras con datos</span><b>${r.n}</b></div><div class="kpi"><span>${A.cod} mejor en</span><b>${r.pos} de ${r.n}</b><span>${fmt(r.pctPos, 0)} %</span></div><div class="kpi"><span>Diferencia media</span><b>${r.dif * sg > 0 ? '+' : ''}${fmt(r.dif * sg, dec)}${u}</b><span>${fmt(r.difPct, 1)} %</span></div>
+          ${r.icInf != null ? `<div class="kpi"><span>IC 95 %</span><b style="font-size:1rem">${fmt(Math.min(r.icInf * sg, r.icSup * sg), dec)} a ${fmt(Math.max(r.icInf * sg, r.icSup * sg), dec)}</b><span>t pareada p ${fmt(r.p, 3)}</span></div>` : ''}</div>
+          <div class="callout"><b>Lectura.</b> En ${r.n} chacra${r.n > 1 ? 's' : ''}, ${esc(A.nombre)} ${N.menor ? 'tuvo menos' : 'superó a'} ${esc(B.nombre)} en ${r.pos} (${fmt(r.pctPos, 0)} %), con una diferencia media de ${r.dif * sg > 0 ? '+' : ''}${fmt(r.dif * sg, dec)}${u}${r.icInf != null ? ` (IC 95 %: ${fmt(Math.min(r.icInf * sg, r.icSup * sg), dec)} a ${fmt(Math.max(r.icInf * sg, r.icSup * sg), dec)}; p = ${fmt(r.p, 3)})` : ''}.${N.umbral ? ` Para pagar el costo extra hacen falta ${fmt(N.umbral, 0)} kg/ha: se superó en ${fmt(r.pctUmbral, 0)} % de las chacras${r.probNuevo != null ? ` (probabilidad estimada de ${fmt(r.probNuevo * 100, 0)} % en una chacra nueva)` : ''}.` : ''}${r.n < 8 ? ' Con menos de 8 chacras la conclusión es preliminar.' : ''}</div>` : '<p class="note">Faltan datos en las chacras.</p>'}</div>`;
+      return; }
+    const R = compLal(T, v), u = v.unidad ? ' ' + v.unidad : '', ls = [R.a, R.b, R.c].filter(Boolean), max = Math.max(...ls.map(l => l.media || 0)) || 1;
+    host.innerHTML = `<div class="card"><h3>${esc(v.nombre)}</h3>
+      <div style="display:grid;gap:8px">${ls.map(l => `<div class="row" style="gap:8px;flex-wrap:nowrap"><span style="width:150px;flex:none"><b>${l.t.cod}</b> · ${esc(l.t.nombre)}</span><span style="flex:1;background:var(--soft);border-radius:6px;overflow:hidden;height:22px"><i style="display:block;height:100%;width:${(l.media || 0) / max * 100}%;background:${COL_LADO[l.t.cod]}"></i></span><b style="width:110px;text-align:right">${fmt(l.media, R.dec)}${esc(u)}</b></div>`).join('')}</div>
+      ${R.ok ? `<div class="callout"><b>Lectura.</b> ${esc(R.txt)}</div>` : '<p class="note">Cargá los datos de las franjas para ver la comparación.</p>'}
+      <details><summary class="note" style="cursor:pointer">Datos de cada franja y punto</summary><div class="tw"><table><thead><tr><th>Franja</th><th>Lado</th><th class="num">Promedio</th><th>Puntos</th></tr></thead><tbody>
+        ${[...T.parcelas].sort((a, b) => a.parcela - b.parcela).map(p => `<tr><td>${etiq(T, p)}</td><td>${p.trat}</td><td class="num">${fmt(valorP(p, v), R.dec)}</td><td class="note">${puntosDe([p], v).map(x => fmt(x, R.dec)).join(' · ')}</td></tr>`).join('')}</tbody></table></div></details></div>`; };
+  det();
+  P().onchange = e => { if (e.target.id === 'var-lal') { varLal = e.target.value; det(); return; }
+    if (e.target.dataset.costo) { lal.costo = lal.costo || {}; lal.costo[e.target.dataset.costo] = e.target.value === '' ? null : +e.target.value; guardarPronto(); analLal(T0); }
+    if (e.target.id === 'lal-precio') { lal.precio = e.target.value === '' ? null : +e.target.value; guardarPronto(); analLal(T0); } };
+  P().onclick = null;
+}
+async function bloquesLal(T0) {
+  const T = vistaS(T0), red = T0.sitios && !T.__vista, {A, B, C} = ladosLal(T), lal = T0.lal || {}, autor = USERS[T0.owner]?.nombre || '', B_ = [];
+  const vars = vis(T).filter(v => v.tipo !== 'texto'), conGeo = T.parcelas.every(p => p.geo);
+  B_.push({titulo: T0.titulo}, {nota: `${T0.id} · ${RUBROS[T0.rubro].nombre} · ${T0.cultivo} · ${lal.productor || ''}${lal.lote ? ' · ' + lal.lote : ''} · ${T0.lugar} · campaña ${T0.campana || '—'} · responsable: ${autor} · informe generado el ${new Date().toLocaleDateString('es-PY')}`});
+  if (T0.ejemplo) B_.push({nota: 'Ejemplo con datos hipotéticos.'});
+  B_.push({p: [{t: 'Comparación lado a lado en la parcela del productor. ', b: true}, 'Sirve para probar la eficacia de un producto a campo frente al que usa el productor, con el mismo manejo. No es un ensayo experimental: sus resultados valen para esta chacra y se fortalecen repitiéndola en otras.']});
+  B_.push({h1: '1. Objetivo'}, {p: T0.objetivo || '—'});
+  const L = layoutLal(T), sup = conGeo ? T.parcelas.reduce((s, p) => s + areaM2(p.geo), 0) : T.parcelas.length * T.parcela.area_m2;
+  const cen = conGeo ? (() => { const r = T.parcelas.flatMap(p => p.geo.slice(0, 4)); return [r.reduce((s, q) => s + q[1], 0) / r.length, r.reduce((s, q) => s + q[0], 0) / r.length]; })() : null;
+  B_.push({h1: '2. Dónde y cómo'}, {tabla: {cab: ['Dato', 'Valor'], anchos: [3000, 6000], filas: [['Productor', lal.productor || '—'], ['Establecimiento o lote', lal.lote || '—'], ['Lugar', red ? T0.sitios.map(x => x.nombre + (x.lugar ? ' (' + x.lugar + ')' : '')).join('; ') : T.__vista ? nomSitio(T0, T.__vista) : T0.lugar], ['Ubicación (centro)', cen ? `${cen[0].toFixed(6)}, ${cen[1].toFixed(6)}` : 'Sin ubicar con GPS'],
+    ['Escala', ESCALAS[lal.escala]?.n || '—'], ['Franjas', `${T.parcelas.length} franjas de ${fmt(T.parcela.ancho, 1)} × ${fmt(T.parcela.largo, 0)} m${lal.sep ? `, separadas ${fmt(lal.sep, 1)} m` : ''} · ${fmt(sup / 10000, 2)} ha en total`], ['Repeticiones', `${T.bloques} par${T.bloques > 1 ? 'es' : ''} por chacra${red ? ` · ${T0.sitios.length} chacras` : ''}`], ['Muestreo', `${lal.puntos || '—'} puntos por franja; se evalúan ${fmt(T.parcela.area_util_m2, 0)} m² por franja (sin ${fmt(T.parcela.cab || 0, 0)} m de cabecera)`]]}});
+  try { B_.push({img: await croquisPNG(T), ancho: 15, alto: 9}); } catch (e) { console.warn(e); }
+  const fa = await fotoAereaBloques(T0, T); fa.forEach(x => B_.push(x));
+  B_.push({h1: '3. Productos comparados'}, {tabla: {cab: ['', ...T.tratamientos.map(t => `${t.cod} · ${t.nombre}`)], anchos: [1800, ...T.tratamientos.map(() => Math.floor(7200 / T.tratamientos.length))], filas: [
+    ['Producto y dosis', ...T.tratamientos.map(prodTxt)], ['Principio activo', ...T.tratamientos.map(t => t.productos.map(p => p.pa).filter(Boolean).join(' + ') || '—')],
+    ['Registro SENAVE', ...T.tratamientos.map(t => t.productos.map(p => p.reg).filter(Boolean).join(', ') || '—')], ['Costo (USD/ha)', ...T.tratamientos.map(t => lal.costo?.[t.cod] != null ? fmt(lal.costo[t.cod], 2) : '—')], ['Franjas', ...T.tratamientos.map(t => T.parcelas.filter(p => p.trat === t.cod).map(p => etiq(T, p)).join(', '))]]}});
+  if (apsDe(T).length) B_.push({h2: 'Aplicaciones y labores'}, {tabla: {cab: ['Fecha', 'Tipo', 'A qué', 'Producto / dosis', 'Momento', 'Condiciones', 'Estado'], anchos: [1180, 1450, 1150, 1950, 1300, 1300, 1050], filas: [...apsDe(T)].sort((a, b) => a.fecha.localeCompare(b.fecha)).map(a => [fechaTxt(a.fecha), a.tipo, aQue(a), a.producto ? a.producto + (a.dosis ? ' · ' + a.dosis : '') : a.tipo === 'Aplicación de tratamientos' ? 'Según el producto de cada lado' : '', a.estadio || '', condTxt(a.cond), estadoApl(a)[1]])}});
+  bloqueEquipo(T, B_);
+  bloquesCalidad(T, B_);
+  B_.push({h1: '4. Resultados'});
+  if (red) for (const v of vars) { const N = redLal(T0, v), r = N.r, sg = N.menor ? -1 : 1, dec = v.dec ?? 2; B_.push({h2: v.nombre + (v.unidad ? ` (${v.unidad})` : '')}, {tabla: {cab: ['Chacra', A.cod, B.cod, 'Diferencia'], num: [1, 2, 3], filas: N.filas.map(f => [f.st.nombre, fmt(f.a, dec), fmt(f.b, dec), f.a != null && f.b != null ? fmt(f.a - f.b, dec) : '—'])}});
+    if (r) B_.push({p: [{t: 'Lectura: ', b: true}, `En ${r.n} chacras, ${A.nombre} fue mejor en ${r.pos} (${fmt(r.pctPos, 0)} %); diferencia media ${fmt(r.dif * sg, dec)} ${v.unidad || ''}${r.icInf != null ? ` (IC 95 % ${fmt(Math.min(r.icInf * sg, r.icSup * sg), dec)} a ${fmt(Math.max(r.icInf * sg, r.icSup * sg), dec)}; t pareada p = ${fmt(r.p, 3)})` : ''}.${N.umbral ? ` Umbral económico ${fmt(N.umbral, 0)} kg/ha, superado en ${fmt(r.pctUmbral, 0)} % de las chacras.` : ''}`]}); }
+  else { const res = vars.map(v => ({v, R: compLal(T, v)}));
+    B_.push({tabla: {cab: ['Medición', A.cod, B.cod, ...(C ? [C.cod + ' (testigo)'] : []), `Diferencia ${A.cod} − ${B.cod}`, 'Resultado'], num: [1, 2, 3, ...(C ? [4] : [])], anchos: C ? [2300, 1200, 1200, 1200, 1500, 1600] : [2700, 1400, 1400, 1800, 1700],
+      filas: res.map(({v, R}) => [v.nombre + (v.unidad ? ` (${v.unidad})` : ''), fmt(R.a?.media, R.dec), fmt(R.b?.media, R.dec), ...(C ? [fmt(R.c?.media, R.dec)] : []), R.ok ? `${R.dif > 0 ? '+' : ''}${fmt(R.dif, R.dec)} (${R.pct > 0 ? '+' : ''}${fmt(R.pct, 1)} %)` : '—', R.ok ? (R.igual ? 'Igual' : R.mejorA ? `Mejor ${A.cod}` : `Mejor ${B.cod}`) : 'Faltan datos'])}});
+    for (const {v, R} of res) { if (!R.ok) continue; B_.push({h2: v.nombre + (v.unidad ? ` (${v.unidad})` : '')});
+      try { B_.push({img: await graficoBarras({titulo: v.nombre, unidad: v.unidad, barras: [R.a, R.b, R.c].filter(l => l?.media != null).map(l => ({etiqueta: `${l.t.cod} · ${l.t.nombre}`.slice(0, 28), valor: l.media, color: COL_LADO[l.t.cod], letra: ''}))}), ancho: 14, alto: 6.5}); } catch (e) { console.warn(e); }
+      B_.push({nota: [R.a, R.b, R.c].filter(Boolean).map(l => `${l.t.cod}: ${fmt(l.media, R.dec)}${l.sd != null ? ' ± ' + fmt(l.sd, R.dec) : ''} (${l.n} puntos)`).join(' · ')}, {p: [{t: 'Lectura: ', b: true}, R.txt]}); } }
+  B_.push({h1: '5. Conclusión'}, {p: conclusionLal(T0)});
+  if (T.notas.length) B_.push({h1: 'Anexo 1 · Notas de campo'}, {tabla: {cab: ['Nivel', 'Nota', 'Autor', 'Fecha'], anchos: [1500, 5200, 1400, 1000], filas: notasDe(T).map(n => [nivelNota(T, n), n.texto, USERS[n.autor]?.nombre || '', n.fecha])}});
+  B_.push({h1: 'Anexo 2 · Datos por franja'}, {tabla: {cab: ['Franja', 'Lado', ...vars.slice(0, 6).map(v => v.nombre + (v.unidad ? ` (${v.unidad})` : ''))], num: vars.slice(0, 6).map((_, i) => i + 2), filas: [...T.parcelas].sort((a, b) => a.parcela - b.parcela).map(p => [etiq(T, p), p.trat, ...vars.slice(0, 6).map(v => fmt(valorP(p, v), v.dec ?? 2))])}});
+  return B_;
+}
+function conclusionLal(T0) {
+  const T = vistaS(T0), vars = vis(T).filter(v => v.tipo !== 'texto'), {A, B} = ladosLal(T);
+  if (T0.sitios && !T.__vista) { const v = vars.find(x => /^rend/.test(x.id)) || vars[0]; const N = v && redLal(T0, v); return N?.r ? `${A.nombre} fue mejor que ${B.nombre} en ${N.r.pos} de ${N.r.n} chacras en ${v.nombre.toLowerCase()}.` : 'Faltan datos para concluir.'; }
+  const res = vars.map(v => ({v, R: compLal(T, v)})).filter(x => x.R.ok); if (!res.length) return 'Faltan datos para concluir.';
+  const gana = res.filter(x => x.R.mejorA && !x.R.igual), pierde = res.filter(x => !x.R.mejorA && !x.R.igual), rend = res.find(x => /^rend/.test(x.v.id));
+  return `${A.nombre} (${prodTxt(A)}) fue mejor que ${B.nombre} (${prodTxt(B)}) en ${gana.length} de ${res.length} mediciones${gana.length ? ` (${gana.map(x => x.v.nombre.toLowerCase()).join(', ')})` : ''}${pierde.length ? ` y peor en ${pierde.map(x => x.v.nombre.toLowerCase()).join(', ')}` : ''}.${rend ? ` En rendimiento la diferencia fue de ${rend.R.dif > 0 ? '+' : ''}${fmt(rend.R.dif, 0)} kg/ha (${rend.R.pct > 0 ? '+' : ''}${fmt(rend.R.pct, 1)} %)${rend.R.margen != null ? `, con un margen de ${rend.R.margen >= 0 ? '+' : ''}${fmt(rend.R.margen, 1)} USD/ha` : ''}.` : ''} Resultado de una sola chacra${T.bloques > 1 ? ` con ${T.bloques} pares` : ''}: para recomendarlo conviene repetir la prueba en otras chacras.`;
+}
+// Croquis como imagen (para el Word): franjas sobre fondo liso, con medidas
+async function croquisPNG(T) {
+  const L = layoutLal(T), W = 1400, H = 820, m = 70, k = Math.min((W - 2 * m) / L.W, (H - 2 * m) / L.H), c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d');
+  g.fillStyle = '#eef3ea'; g.fillRect(0, 0, W, H); const ox = (W - L.W * k) / 2, oy = (H - L.H * k) / 2;
+  T.parcelas.forEach(p => { const [x, y, w, h] = L.R[p.parcela], col = COL_LADO[p.trat] || '#888'; g.fillStyle = col + '66'; g.fillRect(ox + x * k, oy + y * k, w * k, h * k); g.strokeStyle = col; g.lineWidth = 4; g.strokeRect(ox + x * k, oy + y * k, w * k, h * k);
+    g.fillStyle = '#111'; g.font = `bold ${Math.max(22, Math.min(54, w * k / 3))}px Calibri, Arial`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(p.trat, ox + (x + w / 2) * k, oy + (y + h / 2) * k);
+    g.font = '22px Calibri, Arial'; g.fillText(String(etiq(T, p)), ox + (x + w / 2) * k, oy + (y + h / 2) * k + 44); });
+  g.fillStyle = '#334'; g.font = '24px Calibri, Arial'; g.textAlign = 'center'; g.fillText(`${fmt(L.W, 1)} m`, W / 2, oy - 22); g.save(); g.translate(ox - 26, H / 2); g.rotate(-Math.PI / 2); g.fillText(`${fmt(L.H, 0)} m · sentido de avance →`, 0, 0); g.restore();
+  const blob = await new Promise(ok => c.toBlob(ok, 'image/png')); return new Uint8Array(await blob.arrayBuffer());
+}
+
+/* ================= foto aérea general (dron) recortada por bloque ================= */
+// Medidas del croquis en metros: parcelas por bloque a lo ancho, bloques uno debajo del otro (con calle).
+function layoutM(T) {
+  if (esLal(T)) { const L = layoutLal(T), grupos = T.parcelas.map(p => ({id: p.parcela, txt: `Franja ${etiq(T, p)} · ${p.trat}`, r: L.R[p.parcela]})); return {...L, grupos, unidad: 'franja'}; }
+  const pa = T.parcela, g = (T.__vista ? T.sitios.find(x => x.id === T.__vista)?.geo : T.geo) || {};
+  const ancho = +(g.ancho || (pa.hileras ? pa.hileras * pa.dist : pa.ancho || (pa.columnas ? pa.columnas * pa.e2 : pa.entre ? pa.entre * 2 : 0)) || Math.sqrt(pa.area_m2 || 9));
+  const largo = +(g.largo || pa.largo || (pa.filas ? pa.filas * pa.e1 : 0) || (pa.area_m2 ? pa.area_m2 / ancho : 3)), calle = +(g.calle ?? 1), sep = +(g.sepP || 0), nT = T.tratamientos.length, R = {};
+  T.parcelas.forEach(p => { const c = (p.parcela % 100) - 1, b = p.bloque - 1; R[p.parcela] = [c * (ancho + sep), b * (largo + calle), ancho, largo]; });
+  const W = nT * ancho + (nT - 1) * sep, H = T.bloques * largo + (T.bloques - 1) * calle;
+  const grupos = Array.from({length: T.bloques}, (_, i) => ({id: 'B' + (i + 1), txt: `Bloque ${i + 1}`, r: [0, i * (largo + calle), W, largo]}));
+  return {W, H, R, grupos, unidad: 'bloque'};
+}
+const faDe = (T0, T) => (T.__vista ? T0.sitios.find(x => x.id === T.__vista) : T0.sitios ? null : T0);
+const IMG_AEREA = new Map(); // caché de imágenes cargadas
+async function imagenAerea(T0, fa) {
+  const k = fa.img || fa.src; if (IMG_AEREA.has(k)) return IMG_AEREA.get(k);
+  let url = fa.src; if (fa.img) { const im = (await DB.imagenesDe(T0.id).catch(() => [])).find(i => i.id === fa.img); if (!im) return null; url = URL.createObjectURL(im.blob); }
+  const img = await new Promise(ok => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = url; }); if (img) IMG_AEREA.set(k, img); return img;
+}
+const rehacerPaso = () => { if (S.T && !$('#s-ensayo').hidden) RENDER[PASOS[S.paso][0]](S.T); };
+function cardFotoAerea(T0, T) {
+  if (T0.sitios && !T.__vista) return '';
+  const fa = faDe(T0, T)?.fotoAerea, ed = rolEn(T0) !== 'lector', L = layoutM(T);
+  return `<div class="card" id="card-aerea"><div class="row" style="justify-content:space-between"><h3>Foto aérea general (dron)</h3>
+    ${ed ? `<span class="row" style="gap:6px">${fa ? '<button class="btn small" id="fa-ajustar">Ajustar al croquis</button>' : ''}<label class="btn small ${fa ? '' : 'primary'}" style="position:relative">📷 ${fa ? 'Cambiar foto' : 'Cargar foto aérea'}<input type="file" accept="image/*" id="fa-file" style="position:absolute;inset:0;opacity:0;cursor:pointer"></label>${fa ? '<button class="btn small" id="fa-quitar">Quitar</button>' : ''}</span>` : ''}</div>
+    ${fa ? `<canvas id="fa-cv" style="width:100%;border-radius:10px;background:#222;display:block"></canvas>
+      <p class="note" style="margin:0">Foto ${fa.fecha ? 'del ' + fechaTxt(fa.fecha) : ''}${fa.ejemplo ? ' (imagen simulada de ejemplo)' : ''}. Con las medidas del croquis (${fmt(L.W, 1)} × ${fmt(L.H, 1)} m) la app recorta la imagen de cada ${L.unidad}. Tocá un recorte para verlo grande.</p>
+      <div class="fa-rec" id="fa-rec"></div>`
+      : `<p class="note" style="margin:0">Una foto común tomada con el dron (no hace falta que sea multiespectral). Se marca dónde quedan las esquinas del ensayo y la app encuadra la imagen de cada ${L.unidad} según las medidas. Queda como foto general del ensayo y sale en el informe.</p>`}</div>`;
+}
+// Dibuja la foto con el croquis encima y arma los recortes
+async function pintarFotoAerea(T0, T) {
+  const fa = faDe(T0, T)?.fotoAerea, cv = $('#fa-cv'); if (!fa || !cv) return;
+  const img = await imagenAerea(T0, fa); if (!img || !cv.isConnected) return;
+  const W = Math.min(1400, img.naturalWidth), H = Math.round(W * img.naturalHeight / img.naturalWidth); cv.width = W; cv.height = H;
+  const g = cv.getContext('2d'); g.drawImage(img, 0, 0, W, H); dibujarCroquisSobre(g, T, fa.esq.map(([u, v]) => [u * W, v * H]), W / 1400);
+  const host = $('#fa-rec'); if (!host) return; const L = layoutM(T), recs = await recortesAereos(T0, T, img, fa, L.grupos);
+  host.innerHTML = recs.map(r => `<figure data-fa-ver="${r.id}"><img src="${r.url}" alt="${esc(r.txt)}"><figcaption>${esc(r.txt)}</figcaption></figure>`).join('');
+}
+function dibujarCroquisSobre(g, T, q, esc0 = 1) {
+  const L = layoutM(T), map = homografia(q), P = (x, y) => map(x / L.W, y / L.H), C = colTrat(T);
+  g.lineWidth = Math.max(1.5, 2.5 * esc0); g.font = `700 ${Math.max(11, 15 * esc0)}px Archivo, system-ui, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  for (const p of T.parcelas) { const [x, y, w, h] = L.R[p.parcela], pts = [P(x, y), P(x + w, y), P(x + w, y + h), P(x, y + h)];
+    g.strokeStyle = esLal(T) ? COL_LADO[p.trat] : 'rgba(255,238,88,.95)'; g.beginPath(); pts.forEach((pt, i) => i ? g.lineTo(...pt) : g.moveTo(...pt)); g.closePath(); g.stroke();
+    const c = P(x + w / 2, y + h / 2), t = esLal(T) ? p.trat : `${p.parcela % 1000} ${p.trat}`; g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.75)'; g.strokeText(t, ...c); g.fillStyle = '#fff'; g.fillText(t, ...c); g.lineWidth = Math.max(1.5, 2.5 * esc0); }
+}
+// Recortes enderezados de cada bloque (o franja) a partir de las esquinas marcadas
+const REC_AEREA = new Map();
+async function recortesAereos(T0, T, img, fa, grupos) {
+  const clave = (fa.img || fa.src) + JSON.stringify(fa.esq) + JSON.stringify(layoutM(T).R) + grupos.map(g => g.id).join(',');
+  if (REC_AEREA.has(clave)) return REC_AEREA.get(clave);
+  const W = Math.min(2400, img.naturalWidth), H = Math.round(W * img.naturalHeight / img.naturalWidth), c = document.createElement('canvas'); c.width = W; c.height = H;
+  const x = c.getContext('2d', {willReadFrequently: true}); x.drawImage(img, 0, 0, W, H); const src = x.getImageData(0, 0, W, H);
+  const q = fa.esq.map(([u, v]) => [u * W, v * H]), L = layoutM(T), map = homografia(q), P = (a, b) => map(a / L.W, b / L.H);
+  const ppm = (Math.hypot(q[1][0] - q[0][0], q[1][1] - q[0][1]) + Math.hypot(q[2][0] - q[3][0], q[2][1] - q[3][1])) / 2 / L.W; // píxeles por metro
+  const out = [];
+  for (const gr of grupos) { const [gx, gy, gw, gh] = gr.r, k = Math.min(ppm * 1.2, 900 / Math.max(gw, gh)), ow = Math.max(8, Math.round(gw * k)), oh = Math.max(8, Math.round(gh * k));
+    const R = rectificar(src, [P(gx, gy), P(gx + gw, gy), P(gx + gw, gy + gh), P(gx, gy + gh)], ow, oh), cc = document.createElement('canvas'); cc.width = ow; cc.height = oh; cc.getContext('2d').putImageData(new ImageData(R.data, ow, oh), 0, 0);
+    const blob = await new Promise(ok => cc.toBlob(ok, 'image/jpeg', 0.88)); out.push({id: gr.id, txt: gr.txt, blob, url: URL.createObjectURL(blob), w: ow, h: oh}); }
+  REC_AEREA.set(clave, out); return out;
+}
+async function cargarFotoAerea(T0, T, file) {
+  const dest = faDe(T0, T); if (!dest) return toast('Elegí un lugar arriba para cargar su foto aérea');
+  const bmp = await createImageBitmap(file), k = Math.min(1, 2400 / Math.max(bmp.width, bmp.height)), c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height); const blob = await new Promise(ok => c.toBlob(ok, 'image/jpeg', 0.86)), id = 'aerea-' + Date.now().toString(36);
+  if (dest.fotoAerea?.img) await DB.borrarImagen(dest.fotoAerea.img).catch(() => {});
+  await DB.guardarImagen({id, ensayo: T0.id, tipo: 'aerea', nombre: file.name, fecha: ahora(), autor: S.user.id, blob});
+  dest.fotoAerea = {img: id, esq: [[0.15, 0.15], [0.85, 0.15], [0.85, 0.85], [0.15, 0.85]], fecha: HOY, W: c.width, H: c.height};
+  T0.cambios.unshift({fecha: ahora(), usuario: S.user.id, parcela: '—', variable: 'Foto aérea general', antes: null, despues: file.name, estado: 'aprobado'});
+  await guardarAhora(); ajustarFotoAerea(T0, T, true);
+}
+// Marcar las 4 esquinas del ensayo sobre la foto, con el croquis dibujado encima mientras se arrastra
+async function ajustarFotoAerea(T0, T, nueva) {
+  const dest = faDe(T0, T), fa = dest?.fotoAerea; if (!fa) return; const img = await imagenAerea(T0, fa); if (!img) return toast('No se encontró la imagen');
+  const L = layoutM(T), nom = esLal(T) ? ['Inicio de la primera franja (izquierda)', 'Inicio de la última franja (derecha)', 'Fin de la última franja', 'Fin de la primera franja'] : ['Esquina de la parcela 101', `Fin del bloque 1 (parcela ${100 + T.tratamientos.length})`, 'Fin del último bloque', `Inicio del último bloque (parcela ${T.bloques * 100 + 1})`];
+  let esq = fa.esq.map(p => [...p]);
+  const M = modal(`<div class="row" style="justify-content:space-between"><h2>Ubicar el croquis en la foto</h2><button class="btn small" data-cerrar>✕</button></div>
+    <p class="note" style="margin:0">Arrastrá los 4 puntos a las esquinas del ${esLal(T) ? 'área de las franjas' : 'ensayo'} en la foto. Las líneas muestran cómo quedan ${esLal(T) ? 'las franjas' : 'las parcelas'} según las medidas (${fmt(L.W, 1)} × ${fmt(L.H, 1)} m). Punto <b style="color:#22c55e">1</b>: ${esc(nom[0])}.</p>
+    <div style="position:relative;touch-action:none" id="fa-wrap"><canvas id="fa-ed" style="width:100%;display:block;border-radius:10px"></canvas></div>
+    <div class="row"><button class="btn small" id="fa-girar">↻ Girar el croquis</button><button class="btn small" id="fa-espejo">⇋ Invertir</button><span class="note">${nom.map((n, i) => `${i + 1}: ${esc(n)}`).join(' · ')}</span></div>
+    <div class="row"><button class="btn primary" id="fa-ok">Guardar y recortar</button>${nueva ? '' : '<button class="btn" data-cerrar>Cancelar</button>'}</div>`, 980);
+  const cv = M.querySelector('#fa-ed'), wrap = M.querySelector('#fa-wrap'), W = Math.min(1600, img.naturalWidth), H = Math.round(W * img.naturalHeight / img.naturalWidth); cv.width = W; cv.height = H;
+  const g = cv.getContext('2d'), dib = () => { g.drawImage(img, 0, 0, W, H); dibujarCroquisSobre(g, T, esq.map(([u, v]) => [u * W, v * H]), W / 1400);
+    esq.forEach(([u, v], i) => { g.beginPath(); g.arc(u * W, v * H, 16 * W / 1400 + 6, 0, 7); g.fillStyle = i ? 'rgba(250,204,21,.85)' : 'rgba(34,197,94,.9)'; g.fill(); g.lineWidth = 2; g.strokeStyle = '#000'; g.stroke();
+      g.fillStyle = '#000'; g.font = `700 ${Math.round(14 * W / 1400 + 6)}px Archivo, system-ui`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(i + 1, u * W, v * H); }); };
+  dib(); let arr = null;
+  const pos = e => { const r = cv.getBoundingClientRect(); return [Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)), Math.min(1, Math.max(0, (e.clientY - r.top) / r.height))]; };
+  cv.onpointerdown = e => { const [u, v] = pos(e), r = cv.getBoundingClientRect(); let mejor = -1, dm = 40 / r.width; esq.forEach(([a, b], i) => { const d = Math.hypot((a - u) * r.width, (b - v) * r.height) / r.width; if (d < dm) { dm = d; mejor = i; } });
+    if (mejor >= 0) { arr = mejor; cv.setPointerCapture(e.pointerId); e.preventDefault(); } };
+  cv.onpointermove = e => { if (arr == null) return; esq[arr] = pos(e); dib(); }; cv.onpointerup = () => { arr = null; };
+  M.querySelector('#fa-girar').onclick = () => { esq = [esq[3], esq[0], esq[1], esq[2]]; dib(); };
+  M.querySelector('#fa-espejo').onclick = () => { esq = [esq[1], esq[0], esq[3], esq[2]]; dib(); };
+  M.querySelector('#fa-ok').onclick = async () => { fa.esq = esq.map(([u, v]) => [+u.toFixed(5), +v.toFixed(5)]); delete fa.ejemplo; M.cerrar(); toast('Croquis ubicado: recortes listos'); await guardarAhora(); rehacerPaso(); };
+}
+function clicFotoAereaCambio(e, T0, T) { if (e.target.id !== 'fa-file') return false; const f = e.target.files[0]; if (f) cargarFotoAerea(T0, T, f); return true; }
+async function clicFotoAerea(e, T0, T) {
+  if (e.target.closest('#fa-ajustar')) { ajustarFotoAerea(T0, T); return true; }
+  if (e.target.closest('#fa-quitar')) { if (!await confirmar('Quitar la foto aérea', 'Se quita la foto aérea general y sus recortes.', {ok: 'Quitar', peligro: true})) return true;
+    const d = faDe(T0, T); if (d?.fotoAerea?.img) await DB.borrarImagen(d.fotoAerea.img).catch(() => {}); delete d.fotoAerea; await guardarAhora(); rehacerPaso(); return true; }
+  const v = e.target.closest('[data-fa-ver]'); if (v) { const im = v.querySelector('img'); const M = modal(`<div class="row" style="justify-content:space-between"><h2>${esc(v.querySelector('figcaption').textContent)}</h2><button class="btn small" data-cerrar>✕</button></div><img src="${im.src}" alt="" style="width:100%;border-radius:10px">`, 1100); void M; return true; }
+  if (e.target.closest('#fa-cv')) { const d = faDe(T0, T); if (d?.fotoAerea) { const img = await imagenAerea(T0, d.fotoAerea); if (img) modal(`<div class="row" style="justify-content:space-between"><h2>Foto aérea</h2><button class="btn small" data-cerrar>✕</button></div><img src="${img.src}" alt="" style="width:100%;border-radius:10px">`, 1200); } return true; }
+  return false;
+}
+// Recorte de una parcela para el control de parcela
+async function recorteParcela(T0, pn) {
+  const T = T0.sitios ? vistaS(T0, sitioDe(T0, pn)?.id) : T0, fa = faDe(T0, T)?.fotoAerea; if (!fa) return null;
+  const img = await imagenAerea(T0, fa); if (!img) return null; const L = layoutM(T); if (!L.R[pn]) return null;
+  const [r] = await recortesAereos(T0, T, img, fa, [{id: 'p' + pn, txt: `${esLal(T) ? 'Franja' : 'Parcela'} ${pn}`, r: L.R[pn]}]); return r;
+}
+// Bloques para el Word: foto general con el croquis y un recorte por bloque o franja
+async function fotoAereaBloques(T0, T) {
+  const fa = faDe(T0, T)?.fotoAerea; if (!fa) return []; const img = await imagenAerea(T0, fa); if (!img) return [];
+  const W = Math.min(1600, img.naturalWidth), H = Math.round(W * img.naturalHeight / img.naturalWidth), c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d'); g.drawImage(img, 0, 0, W, H); dibujarCroquisSobre(g, T, fa.esq.map(([u, v]) => [u * W, v * H]), W / 1400);
+  const u8 = async cv => new Uint8Array(await (await new Promise(ok => cv.toBlob(ok, 'image/jpeg', 0.85))).arrayBuffer());
+  const B = [{h2: 'Foto aérea general (dron)'}, {img: await u8(c), jpg: true, ancho: 15, alto: +(15 * H / W).toFixed(2)}, {nota: `Foto aérea ${fa.fecha ? 'del ' + fechaTxt(fa.fecha) : ''} con el croquis ubicado según las medidas.${fa.ejemplo ? ' Imagen simulada de ejemplo.' : ''}`}];
+  const L = layoutM(T), recs = await recortesAereos(T0, T, img, fa, L.grupos);
+  for (const r of recs) { const ancho = Math.min(15, 8 * r.w / r.h), alto = Math.min(9, ancho * r.h / r.w); B.push({nota: r.txt}, {img: new Uint8Array(await r.blob.arrayBuffer()), jpg: true, ancho: +(alto * r.w / r.h).toFixed(2), alto: +alto.toFixed(2)}); }
+  return B;
+}
+
 /* ================= ensayo ================= */
 const PASOS = [['plan', 'Planificación'], ['trat', 'Tratamientos y dosis'], ['aplic', 'Aplicaciones y manejo'], ['campo', 'Croquis y parcelas'], ['medir', 'Mediciones'], ['datos', 'Carga de datos'], ['equipo', 'Equipo y cambios'], ['anal', 'Análisis'], ['exp', 'Informe y exportar']];
-const metaEnsayo = T => `<span>${RUBROS[T.rubro].nombre}</span><span>${esc(T.cultivo)}</span><span>${esc(T.tipo)}</span><span>${esc(T.sitios ? T.sitios.map(x => x.nombre).join(' · ') : T.lugar)}</span><span>DBCA · ${T.tratamientos.length} × ${T.bloques}${T.sitios ? ` × ${T.sitios.length} lugares` : ''}</span>`;
+const metaEnsayo = T => `<span>${RUBROS[T.rubro].nombre}</span><span>${esc(T.cultivo)}</span><span>${esc(T.tipo)}</span>${esLal(T) && T.lal?.productor ? `<span>${esc(T.lal.productor)}</span>` : ''}<span>${esc(T.sitios ? T.sitios.map(x => x.nombre).join(' · ') : T.lugar)}</span><span>${esLal(T) ? `Lado a lado · ${T.tratamientos.length} lados${T.bloques > 1 ? ` × ${T.bloques} pares` : ''}${T.sitios ? ` × ${T.sitios.length} chacras` : ''}` : `DBCA · ${T.tratamientos.length} × ${T.bloques}${T.sitios ? ` × ${T.sitios.length} lugares` : ''}`}</span>`;
 function abrir(T, paso) {
   if (S.T !== T) S.sitio = null; S.T = T; S.sel = null; S.rubro = T.rubro; mapa.reset(); aplForm = false; aplReal = null;
   const r = rolEn(T);
@@ -495,7 +965,7 @@ $('#e-ren-box').addEventListener('submit', e => { e.preventDefault(); const T = 
 function irPaso(i) {
   S.paso = Math.max(0, Math.min(PASOS.length - 1, i)); const T = S.T;
   const pc = T.cambios.filter(c => c.estado === 'pendiente').length;
-  $('#steps').innerHTML = PASOS.map((p, j) => `<button role="tab" aria-selected="${j === S.paso}" data-i="${j}"><span class="n">${j + 1}</span><span>${p[0] === 'campo' && T.dron ? 'Campo y dron' : p[1]}</span>${p[0] === 'equipo' && pc && puede.revisar(T) ? `<span class="chip warn">${pc}</span>` : '<span></span>'}</button>`).join('');
+  $('#steps').innerHTML = PASOS.map((p, j) => `<button role="tab" aria-selected="${j === S.paso}" data-i="${j}"><span class="n">${j + 1}</span><span>${esLal(T) ? ({trat: 'Productos comparados', campo: 'Ubicación y franjas', anal: 'Comparación'}[p[0]] || p[1]) : p[0] === 'campo' && T.dron ? 'Campo y dron' : p[1]}</span>${p[0] === 'equipo' && pc && puede.revisar(T) ? `<span class="chip warn">${pc}</span>` : '<span></span>'}</button>`).join('');
   $('#prev').style.visibility = S.paso ? 'visible' : 'hidden'; $('#next').style.visibility = S.paso < PASOS.length - 1 ? 'visible' : 'hidden';
   barraSitios(T); RENDER[PASOS[S.paso][0]](T); vozEn(P());
   const act = $('#steps [aria-selected="true"]'); if (act && innerWidth <= 900) act.parentElement.scrollLeft = act.offsetLeft - (act.parentElement.clientWidth - act.offsetWidth) / 2;
@@ -545,7 +1015,7 @@ async function subirFotos(input, T, pn) {
 }
 async function pintarFotos(T, pn) {
   const host = document.querySelector(`[data-fotos="${pn ?? 'ensayo'}"]`); if (!host) return;
-  const todas = await DB.imagenesDe(T.id).catch(() => []), mias = todas.filter(i => i.tipo !== 'papel' && (i.parcela ?? null) === (pn ?? null)).sort((a, b) => a.fecha.localeCompare(b.fecha));
+  const todas = await DB.imagenesDe(T.id).catch(() => []), mias = todas.filter(i => i.tipo !== 'papel' && i.tipo !== 'aerea' && (i.parcela ?? null) === (pn ?? null)).sort((a, b) => a.fecha.localeCompare(b.fecha));
   host.querySelectorAll('img').forEach(i => URL.revokeObjectURL(i.src));
   const borra = rolEn(T) !== 'lector';
   host.innerHTML = mias.length ? mias.map(i => `<figure><img src="${URL.createObjectURL(i.blob)}" alt="${esc(i.nombre)}" data-ver="${i.id}" title="${esc(USERS[i.autor]?.nombre || '')} · ${new Date(i.fecha).toLocaleString('es-PY')}">${borra ? `<button class="btn small" data-borra-foto="${i.id}" aria-label="Borrar foto">✕</button>` : ''}</figure>`).join('') : '<p class="note" style="margin:0">Sin fotos.</p>';
@@ -583,10 +1053,11 @@ function vozEn(host) {
 function comoVa(T) {
   if (rolEn(T) === 'lector') return '';
   const conProd = /fungic|herbic|insectic|fertiliz|dosis|eficacia|producto|bioestim|fitotox|salivazo|malezas/i.test(T.tipo), noTest = T.tratamientos.filter(t => !t.testigo);
-  const medibles = vis(T).filter(v => v.tipo !== 'texto'), pr = progreso(T), listas = medibles.filter(v => analizar(T, v).ok).length;
+  const medibles = vis(T).filter(v => v.tipo !== 'texto'), pr = progreso(T), listas = medibles.filter(v => (esLal(T) ? compLal(T, v) : analizar(T, v)).ok).length;
   const items = [
-    conProd && {ok: noTest.every(t => t.productos.length), t: 'Productos y dosis de cada tratamiento', d: noTest.every(t => t.productos.length) ? 'Cargados' : `Faltan en ${noTest.filter(t => !t.productos.length).map(t => t.cod).join(', ')}`, ir: 'trat'},
-    {ok: medibles.length > 0 || (T.porCorte || []).length > 0, t: 'Qué se va a medir', d: medibles.length ? `${medibles.length} medición${medibles.length === 1 ? '' : 'es'}` : 'Elegí al menos una medición', ir: 'medir'},
+    conProd && {ok: noTest.every(t => t.productos.length), t: esLal(T) ? 'Productos de cada lado' : 'Productos y dosis de cada tratamiento', d: noTest.every(t => t.productos.length) ? 'Cargados' : `Faltan en ${noTest.filter(t => !t.productos.length).map(t => t.cod).join(', ')}`, ir: 'trat'},
+    esLal(T) && {ok: T.parcelas.every(p => p.geo), t: 'Ubicar las franjas con el GPS', d: T.parcelas.every(p => p.geo) ? 'Ubicadas en el mapa' : 'Marcá la ubicación en el campo', ir: 'campo'},
+    {ok: medibles.length > 0 || (T.porCorte || []).length > 0, t: 'Qué se va a medir', d: medibles.length ? `${medibles.length} ${medibles.length === 1 ? 'medición' : 'mediciones'}` : 'Elegí al menos una medición', ir: 'medir'},
     T.cortes && {ok: T.cortes.length > 0, t: 'Cortes de forraje', d: T.cortes.length ? `${T.cortes.length} corte${T.cortes.length === 1 ? '' : 's'}` : 'Cargá la fecha del primer corte', ir: 'medir'},
     {ok: T.aplicaciones.some(a => a.estado === 'realizada'), t: 'Aplicaciones y labores', d: T.aplicaciones.length ? `${T.aplicaciones.filter(a => a.estado === 'realizada').length} realizadas, ${T.aplicaciones.filter(a => a.estado !== 'realizada').length} planificadas` : 'Registrá la siembra y las aplicaciones', ir: 'aplic'},
     {ok: pr >= 1, t: 'Datos de las parcelas', d: `${Math.round(pr * 100)} % cargado`, ir: 'datos', barra: pr},
@@ -613,14 +1084,16 @@ RENDER.plan = T => {
         <label class="f">Lugar<input type="text" name="lugar" value="${esc(T.lugar)}"></label><label class="f">Campaña<input type="text" name="campana" value="${esc(T.campana)}"></label></div>
         <label class="f">Objetivo<textarea name="objetivo" data-voz placeholder="Qué se quiere comparar y para qué">${esc(T.objetivo || '')}</textarea></label>
         <div class="row"><button class="btn primary small" type="submit">Guardar</button><button class="btn small" type="button" id="btn-datos-no">Cancelar</button></div></form>` : ''}</div>
-    <div class="card"><h3>Diseño</h3><dl class="kv"><dt>Diseño</dt><dd>Bloques completos al azar</dd><dt>Parcelas</dt><dd>${t} tratamientos × ${b} bloques = ${t * b}</dd>
+    ${esLal(T) ? `<div class="card"><h3>Lado a lado</h3><dl class="kv"><dt>Productor</dt><dd>${esc(T.lal?.productor || '—')}</dd><dt>Lote</dt><dd>${esc(T.lal?.lote || '—')}</dd><dt>Escala</dt><dd>${esc(ESCALAS[T.lal?.escala]?.n || '—')}</dd>
+      <dt>Lados</dt><dd>${T.tratamientos.map(x => `<span class="swatch" style="background:${COL_LADO[x.cod]}"></span> ${x.cod} · ${esc(x.nombre)}`).join('<br>')}</dd><dt>Franjas</dt><dd>${T.parcelas.length} de ${fmt(pa.ancho, 1)} × ${fmt(pa.largo, 0)} m${T.bloques > 1 ? ` · ${T.bloques} pares` : ''}</dd><dt>Muestreo</dt><dd>${T.lal?.puntos || '—'} puntos por franja</dd></dl>
+      <div class="callout" style="margin:0">Prueba de eficacia en la parcela del productor: no es un ensayo experimental. Para generalizar el resultado, repetila en varias chacras (se suman como “otras chacras”).</div></div>` : `<div class="card"><h3>Diseño</h3><dl class="kv"><dt>Diseño</dt><dd>Bloques completos al azar</dd><dt>Parcelas</dt><dd>${t} tratamientos × ${b} bloques = ${t * b}</dd>
       <dt>Parcela</dt><dd>${esc(parc)} · ${fmt(pa.area_m2, 1)} m² (útil ${fmt(pa.area_util_m2, 1)} m²)</dd><dt>gl del error</dt><dd>${gl}</dd>${T.cortes ? `<dt>Cortes</dt><dd>${T.cortes.length ? T.cortes.length + ' (' + T.cortes.map(c => fechaTxt(c.fecha)).join(', ') + ')' : 'Todavía sin cortes'}</dd>` : ''}</dl>
       <div><span class="chip ${gl >= 12 ? 'ok' : 'warn'}">${gl >= 12 ? '✓' : '!'}</span> ${gl >= 12 ? 'Cumple el mínimo recomendado de 12 gl' : 'Menos de 12 gl: conviene sumar bloques'}</div>
-      <div><span class="chip ${T.tratamientos.some(x => x.testigo) ? 'ok' : 'warn'}">${T.tratamientos.some(x => x.testigo) ? '✓' : '!'}</span> ${T.tratamientos.some(x => x.testigo) ? 'Incluye testigo' : 'Falta definir el testigo'}</div></div></div>
+      <div><span class="chip ${T.tratamientos.some(x => x.testigo) ? 'ok' : 'warn'}">${T.tratamientos.some(x => x.testigo) ? '✓' : '!'}</span> ${T.tratamientos.some(x => x.testigo) ? 'Incluye testigo' : 'Falta definir el testigo'}</div></div>`}</div>
     <div class="card"><h3>Mediciones del ensayo</h3><div class="row">${vis(T).map(v => `<span class="chip ${v.origen === 'dron' ? 'dron' : v.propio ? 'hypo' : 'neu'}">${esc(v.nombre)}</span>`).join('')}</div>
       <p class="note" style="margin:0">Se definen en el paso “Mediciones”: cada una tiene su forma de medir.</p></div>
     <div class="card"><h3>Opciones del ensayo</h3>
-      <label class="opchk"><input type="checkbox" id="op-dron" ${T.dron ? 'checked' : ''} ${puede.diseno(T) ? '' : 'disabled'}><span><b>Usar imágenes de dron</b><br><span class="note">${T.dron ? 'Activado: se suman las mediciones del dron (índices por parcela). Se cargan desde un CSV de QGIS en “Carga de datos → Importar”.' : 'Desactivado: el ensayo se centra en las mediciones de campo y en las aplicaciones. Activalo si vas a volar el ensayo.'}</span></span></label></div>
+      <label class="opchk"><input type="checkbox" id="op-dron" ${T.dron ? 'checked' : ''} ${puede.diseno(T) ? '' : 'disabled'}><span><b>Usar imágenes multiespectrales del dron</b><br><span class="note">${T.dron ? 'Activado: se suman las mediciones del dron (índices por parcela). Se cargan desde un CSV de QGIS en “Carga de datos → Importar”.' : 'Desactivado: el ensayo se centra en las mediciones de campo y en las aplicaciones. Para una foto aérea común del dron no hace falta activarlo: se carga en el paso del croquis y se recorta por bloque.'}</span></span></label></div>
     <div class="card"><div class="row" style="justify-content:space-between"><h3>Fotos del ensayo</h3>${rolEn(T) !== 'lector' ? fotoBtn('ensayo') : ''}</div><div class="fotos" data-fotos="ensayo"></div></div>
     ${puede.diseno(T) ? `<div class="card"><h3>Acciones</h3><div class="row"><button class="btn" id="btn-duplicar">⧉ Duplicar ensayo</button>${rolEn(T) === 'dueño' ? '<button class="btn peligro" id="btn-borrar-ens">🗑 Eliminar ensayo</button>' : ''}</div>
       <p class="note" style="margin:0">Duplicar copia el diseño, los tratamientos, los productos y las mediciones, sin los datos cargados: sirve para repetir el ensayo en otro lugar o campaña.</p></div>` : ''}</section>`;
@@ -1118,7 +1591,8 @@ const mapa = (() => {
         ${ops.length ? `<div class="row note">${ops.map(u => `<span class="row" style="gap:4px"><span class="swatch" style="background:${u.color}"></span>${esc(u.nombre.split(' ')[0])}</span>`).join('')}</div>` : ''}
         ${T.dron ? (usaImg() ? `<label class="f">Ver otra imagen encima (JPG o PNG del mismo encuadre)<input type="file" id="archivo" accept="image/jpeg,image/png"></label>` : `<p class="note" style="margin:0">Valores del dron por parcela: exportá las parcelas a QGIS (Informe y exportar), calculá el índice con “Estadísticas de zona” y traé el CSV en <b>Carga de datos → Importar</b>. El ortomosaico se puede guardar como foto del ensayo.</p>`) : `<p class="note" style="margin:0">Este ensayo trabaja sin imágenes de dron.${puede.diseno(T) ? ' Se pueden activar en Planificación.' : ''}</p>`}
       </div>
-      <div class="card"><h3>Resumen</h3><dl class="kv"><dt>Parcelas</dt><dd>${T.parcelas.length}</dd><dt>Con pendientes</dt><dd>${T.parcelas.filter(p => pendientes(T, p).length).length}</dd><dt>Notas</dt><dd>${T.notas.length}</dd></dl></div></div></div></section>`;
+      <div class="card"><h3>Resumen</h3><dl class="kv"><dt>Parcelas</dt><dd>${T.parcelas.length}</dd><dt>Con pendientes</dt><dd>${T.parcelas.filter(p => pendientes(T, p).length).length}</dd><dt>Notas</dt><dd>${T.notas.length}</dd></dl></div></div></div>${cardFotoAerea(S.T, T)}</section>`;
+    P().onclick = e => clicFotoAerea(e, S.T, T); P().onchange = e => clicFotoAereaCambio(e, S.T, T); P().oninput = null; pintarFotoAerea(S.T, T);
     if (usaImg()) { await cargar();
       seg('#seg-modo', [['una', 'Una capa'], ['cortina', 'Lado a lado'], ['superponer', 'Superponer'], ['paneles', 'Dos paneles']], st.modo, v => { st.modo = v; montar($('#viewer-host')); });
       seg('#seg-zoom', [['ensayo', 'Ensayo'], ['completa', 'Imagen completa']], st.zoom, v => { st.zoom = v; dibujarTodo(); });
@@ -1138,6 +1612,7 @@ const mapa = (() => {
   return {render, redibujar: dibujarTodo, reset: () => { st.modo = 'una'; }, layout};
 })();
 RENDER.campo = T => {
+  if (esLal(T) && (!T.sitios || S.sitio !== 'todos')) return renderLal(T);
   if (!T.sitios) return mapa.render(T);
   if (S.sitio === 'todos') { P().innerHTML = `<section class="panel"><h2>Lugares del ensayo</h2><p class="lead">El mismo ensayo repetido en ${T.sitios.length} lugares. Cada lugar tiene su croquis sorteado y su operador. Elegí un lugar arriba (o “Ver croquis y datos”) para ver sus parcelas.</p>${tablaSitios(T)}</section>`;
     P().onclick = e => clicSitios(e, T); P().onchange = e => { if (cambioSitioOp(e, T)) RENDER.campo(T); }; P().oninput = null; return; }
@@ -1406,7 +1881,7 @@ function analCombinado(T) {
     <div class="callout"><b>Lectura automática.</b> ${a.txt}</div>`;
   P().onclick = null;
 }
-{ const as = RENDER.anal; RENDER.anal = T0 => { const T = S.T || T0; if (!T.sitios) return as(T); if (S.sitio && S.sitio !== 'todos') { as(vistaS(T)); const h = P().querySelector('h2'); if (h) h.textContent = `Análisis · ${nomSitio(T, S.sitio)}`; return; } analCombinado(T); }; }
+{ const as = RENDER.anal; RENDER.anal = T0 => { const T = S.T || T0; if (esLal(T)) return analLal(T); if (!T.sitios) return as(T); if (S.sitio && S.sitio !== 'todos') { as(vistaS(T)); const h = P().querySelector('h2'); if (h) h.textContent = `Análisis · ${nomSitio(T, S.sitio)}`; return; } analCombinado(T); }; }
 
 /* ---------- 8 exportar ---------- */
 function analizar(T, v) {
@@ -1439,7 +1914,18 @@ function bloquesRed(T, v, B, C) {
   B.push({nota: `Análisis combinado (lugares al azar; tratamientos probados contra la interacción tratamiento × lugar). Media ${fmt(R.media, dec)} ${v.unidad || ''} · CV ${fmt(R.cv, 1)} % · Fmax entre lugares ${fmt(R.fmax, 2)} · DMS de Tukey ${fmt(tk.hsd, dec)}`});
   return a;
 }
+function bloqueEquipo(T, B) {
+  const conEq = apsDe(T).filter(a => a.equipo || a.hora || a.adyuvante).sort((a, b) => a.fecha.localeCompare(b.fecha));
+  if (conEq.length) B.push({h2: 'Equipo de aplicación'}, {tabla: {cab: ['Fecha', 'Pulverizadora y boquilla', 'Presión', 'Velocidad', 'Volumen', 'Hora · viento', 'ΔT'], anchos: [1100, 3300, 900, 1000, 1000, 1400, 700], filas: conEq.map(a => [fechaTxt(a.fecha), a.equipo ? `${a.equipo.nombre}${a.equipo.boq ? ' · ' + a.equipo.boq : ''}${a.equipo.picos > 1 ? ` · ${a.equipo.picos} picos a ${a.equipo.sep} cm` : ''}${a.adyuvante ? ' · adyuvante: ' + a.adyuvante : ''}` : (a.adyuvante ? 'Adyuvante: ' + a.adyuvante : '—'), a.equipo?.presion != null ? fmt(a.equipo.presion, 1) + ' bar' : '', a.equipo?.vel != null ? fmt(a.equipo.vel, 1) + ' km/h' : '', a.caldo ? fmt(a.caldo, 0) + ' L/ha' : '', [a.hora, a.vientoDir ? 'del ' + a.vientoDir : ''].filter(Boolean).join(' · '), deltaT(a.cond?.t, a.cond?.hr) != null ? fmt(deltaT(a.cond.t, a.cond.hr), 1) + ' °C' : ''])}});
+}
+function bloquesCalidad(T, B) {
+  const PPw = (T.papeles || []).filter(x => !T.__vista || !x.parcela || T.parcelas.some(p => p.parcela == x.parcela));
+  if (PPw.length) { B.push({h2: 'Calidad de aplicación (papel hidrosensible)'}, {p: `Se colocaron tarjetas de papel hidrosensible antes de aplicar y se leyeron con la cámara del celular en la app: la cobertura de cada metro lineal es la superficie manchada sobre el total de papel de ese metro; las manchas de gotas pegadas se cuentan como varias gotas; el diámetro de gota se estima desde la mancha con el factor de expansión del papel (d = 0,95·s^0,91, DepositScan). Gotas chicas: menos de ${CLASES.chica} µm; grandes: ${CLASES.grande} µm o más. ${PPw.length} tarjetas en total.`});
+    [...new Set(PPw.map(x => String(x.aplicacion)))].forEach(id => { const a = T.aplicaciones.find(x => String(x.id) === id), R = resumenCalidad(T, PPw.filter(x => String(x.aplicacion) === id));
+      B.push({h3: a ? `${fechaTxt(a.fecha)} · ${a.tipo}${a.estadio ? ' · ' + a.estadio : ''}` : 'Aplicación'}, {tabla: {cab: ['Trat.', 'Posición', 'Metros', 'Cobertura (%)', 'Gotas/cm²', 'DMV (µm)', 'Chicas / medianas / grandes (%)', 'Densidad'], num: [2, 3, 4, 5], anchos: [700, 1500, 800, 1100, 1000, 1000, 1900, 1100], filas: R.map(r => [r.tr, r.pos, r.n, fmt(r.cob, 1), fmt(r.dens, 0), fmt(r.dmv, 0), r.pct.map(v => fmt(v, 0)).join(' / '), r.ev[1]])}}); }); }
+}
 async function bloquesInforme(T) {
+  if (esLal(T)) return bloquesLal(T);
   const vars = vis(T).filter(v => v.tipo !== 'texto'), C = colTrat(T), autor = USERS[T.owner]?.nombre || '', pa = T.parcela, B = [];
   B.push({titulo: T.titulo}, {nota: `${T.id} · ${RUBROS[T.rubro].nombre} · ${T.cultivo} · ${T.lugar} · campaña ${T.campana || '—'} · responsable: ${autor} · informe generado el ${new Date().toLocaleDateString('es-PY')}`});
   if (T.ejemplo) B.push({nota: 'Ensayo de ejemplo con datos hipotéticos.'});
@@ -1448,15 +1934,12 @@ async function bloquesInforme(T) {
   B.push({h1: '2. Materiales y métodos'}, {p: `${esRed(T) ? `Ensayo en red, repetido en ${T.sitios.length} lugares (${T.sitios.map(x => x.nombre + (x.lugar ? ' – ' + x.lugar : '')).join('; ')}). En cada lugar, diseño` : 'Diseño'} en bloques completos al azar con ${T.tratamientos.length} tratamientos y ${T.bloques} repeticiones (${T.parcelas.length} parcelas${esRed(T) ? ' en total' : ''}). Parcela: ${pa.texto || ''} (${fmt(pa.area_m2, 1)} m², útil ${fmt(pa.area_util_m2, 1)} m²). Tipo de ensayo: ${T.tipo}.${esRed(T) ? ' Los lugares se analizaron en conjunto con un ANAVA combinado (lugares al azar, bloques dentro de lugares) y cada lugar por separado.' : ''}${T.cortes?.length ? ` Se realizaron ${T.cortes.length} cortes de evaluación (${T.cortes.map(c => fechaTxt(c.fecha) + ', ' + c.dias + ' días').join('; ')}) después del corte de uniformización del ${fechaTxt(T.uniformizacion)}.` : ''}`});
   B.push({h2: 'Tratamientos'}, {tabla: {cab: ['Trat.', 'Descripción', 'Producto', 'Reg. SENAVE', 'Dosis'], anchos: [800, 2800, 2600, 1200, 1700], filas: T.tratamientos.flatMap(t => (t.productos.length ? t.productos : [null]).map((p, i) => [i ? '' : t.cod, i ? '' : t.nombre + (t.testigo ? ' (testigo)' : ''), p ? p.prod + (p.momento === 'secuencial' ? ' (secuencial)' : '') : '—', p?.reg || '', p ? `${fmt(p.dosis, 2)} ${p.unidad}` : ''])) }});
   B.push({h2: 'Variables y métodos de medición'}, {tabla: {cab: ['Variable', 'Unidad', 'Cómo se midió', 'Momento'], anchos: [2200, 1100, 4400, 1400], filas: vis(T).filter(v => !v.corte || v.corte === 1).map(v => [v.corte ? v.nombre.replace(/ · corte \d+$/, '') + ' (en cada corte)' : v.nombre, v.unidad || '', v.metodo + (v.sub > 1 ? ` (${v.sub} submuestras por parcela)` : ''), v.corte ? 'Cada corte' : v.momento || ''])}});
+  (await fotoAereaBloques(T.__vista ? Object.getPrototypeOf(T) : T, T)).forEach(x => B.push(x));
   if (esRed(T)) B.push({h2: 'Lugares'}, {tabla: {cab: ['Lugar', 'Ubicación', 'Operador', 'Parcelas', 'Avance'], num: [3, 4], anchos: [1800, 3000, 2000, 1000, 1000], filas: T.sitios.map(x => { const ps = T.parcelas.filter(p => p.sitio === x.id); return [x.nombre, x.lugar || '', (x.ops || []).map(u => USERS[u]?.nombre || u).join(', '), ps.length, Math.round(avance(T, ps) * 100) + ' %']; })}});
   if (apsDe(T).length) B.push({h2: 'Aplicaciones y labores'}, {tabla: {cab: ['Fecha', ...(esRed(T) ? ['Lugar'] : []), 'Tipo', 'A qué', 'Producto / dosis', 'Momento', 'Condiciones', 'Estado'], anchos: esRed(T) ? [1050, 1000, 1300, 1000, 1750, 1150, 1150, 950] : [1180, 1450, 1150, 1950, 1300, 1300, 1050], filas: [...apsDe(T)].sort((a, b) => a.fecha.localeCompare(b.fecha)).map(a => [fechaTxt(a.fecha), ...(esRed(T) ? [!a.sitio || a.sitio === 'todos' ? 'Todos' : nomSitio(T, a.sitio)] : []), a.tipo, aQue(a), a.producto ? a.producto + (a.dosis ? ' · ' + a.dosis : '') : a.tipo === 'Aplicación de tratamientos' ? `Según tratamiento · caldo ${a.caldo || T.caldo || '—'} L/ha` : '', a.estadio || '', condTxt(a.cond), estadoApl(a)[1]])}});
-  const conEq = apsDe(T).filter(a => a.equipo || a.hora || a.adyuvante).sort((a, b) => a.fecha.localeCompare(b.fecha));
-  if (conEq.length) B.push({h2: 'Equipo de aplicación'}, {tabla: {cab: ['Fecha', 'Pulverizadora y boquilla', 'Presión', 'Velocidad', 'Volumen', 'Hora · viento', 'ΔT'], anchos: [1100, 3300, 900, 1000, 1000, 1400, 700], filas: conEq.map(a => [fechaTxt(a.fecha), a.equipo ? `${a.equipo.nombre}${a.equipo.boq ? ' · ' + a.equipo.boq : ''}${a.equipo.picos > 1 ? ` · ${a.equipo.picos} picos a ${a.equipo.sep} cm` : ''}${a.adyuvante ? ' · adyuvante: ' + a.adyuvante : ''}` : (a.adyuvante ? 'Adyuvante: ' + a.adyuvante : '—'), a.equipo?.presion != null ? fmt(a.equipo.presion, 1) + ' bar' : '', a.equipo?.vel != null ? fmt(a.equipo.vel, 1) + ' km/h' : '', a.caldo ? fmt(a.caldo, 0) + ' L/ha' : '', [a.hora, a.vientoDir ? 'del ' + a.vientoDir : ''].filter(Boolean).join(' · '), deltaT(a.cond?.t, a.cond?.hr) != null ? fmt(deltaT(a.cond.t, a.cond.hr), 1) + ' °C' : ''])}});
+  bloqueEquipo(T, B);
   B.push({h1: '3. Resultados'});
-  const PPw = (T.papeles || []).filter(x => !T.__vista || !x.parcela || T.parcelas.some(p => p.parcela == x.parcela));
-  if (PPw.length) { B.push({h2: 'Calidad de aplicación (papel hidrosensible)'}, {p: `Se colocaron tarjetas de papel hidrosensible antes de aplicar y se leyeron con la cámara del celular en la app: la cobertura de cada metro lineal es la superficie manchada sobre el total de papel de ese metro; las manchas de gotas pegadas se cuentan como varias gotas; el diámetro de gota se estima desde la mancha con el factor de expansión del papel (d = 0,95·s^0,91, DepositScan). Gotas chicas: menos de ${CLASES.chica} µm; grandes: ${CLASES.grande} µm o más. ${PPw.length} tarjetas en total.`});
-    [...new Set(PPw.map(x => String(x.aplicacion)))].forEach(id => { const a = T.aplicaciones.find(x => String(x.id) === id), R = resumenCalidad(T, PPw.filter(x => String(x.aplicacion) === id));
-      B.push({h3: a ? `${fechaTxt(a.fecha)} · ${a.tipo}${a.estadio ? ' · ' + a.estadio : ''}` : 'Aplicación'}, {tabla: {cab: ['Trat.', 'Posición', 'Metros', 'Cobertura (%)', 'Gotas/cm²', 'DMV (µm)', 'Chicas / medianas / grandes (%)', 'Densidad'], num: [2, 3, 4, 5], anchos: [700, 1500, 800, 1100, 1000, 1000, 1900, 1100], filas: R.map(r => [r.tr, r.pos, r.n, fmt(r.cob, 1), fmt(r.dens, 0), fmt(r.dmv, 0), r.pct.map(v => fmt(v, 0)).join(' / '), r.ev[1]])}}); }); }
+  bloquesCalidad(T, B);
   if (T.cortes?.length >= 2) { const D = mediasCorte(T);
     B.push({h2: 'Producción de forraje por corte (kg MS/ha)'}, {tabla: {cab: ['Trat.', ...T.cortes.map(c => `Corte ${c.n}`), 'Total'], num: [...T.cortes.map((_, i) => i + 1), T.cortes.length + 1], filas: D.map(d => [d.t.cod, ...d.m.map(x => fmt(x, 0)), fmt(d.m.every(x => x != null) ? d.m.reduce((a, x) => a + x, 0) : null, 0)])}}); }
   for (const v of vars) {
@@ -1491,7 +1974,7 @@ async function imprimirInforme(T) {
     if (b.titulo) body += `<h1 class="t">${h(b.titulo)}</h1>`; else if (b.h1) body += `<h2>${h(b.h1)}</h2>`; else if (b.h2) body += `<h3>${h(b.h2)}</h3>`; else if (b.h3) body += `<h4>${h(b.h3)}</h4>`;
     else if (b.p != null) body += `<p>${r(b.p)}</p>`; else if (b.nota) body += `<p class="n">${h(b.nota)}</p>`;
     else if (b.tabla) body += `<table><thead><tr>${b.tabla.cab.map(c => `<th>${h(c)}</th>`).join('')}</tr></thead><tbody>${b.tabla.filas.map(f => `<tr>${f.map((c, i) => `<td${b.tabla.num?.includes(i) ? ' class="num"' : ''}>${h(c ?? '')}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
-    else if (b.img) body += `<img src="${await blobAData(new Blob([b.img], {type: 'image/png'}))}" alt="">`;
+    else if (b.img) body += `<img src="${await blobAData(new Blob([b.img], {type: b.jpg ? 'image/jpeg' : 'image/png'}))}" alt="">`;
   }
   w.document.open(); w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>${h(T.titulo)}</title><style>
     body{font:11pt/1.45 Calibri,Arial,sans-serif;color:#18221c;max-width:180mm;margin:12mm auto;padding:0 6mm} h1.t{color:#1f6b52;font-size:20pt;margin:0 0 4px} h2{color:#1f6b52;font-size:14pt;margin:18px 0 6px;break-after:avoid} h3{font-size:12pt;margin:14px 0 6px;break-after:avoid}
@@ -1520,7 +2003,12 @@ async function exportarExcel(T) {
       a.orden.forEach((k, i) => res.push([v.nombre, k, tratNom(T, k), ...T.sitios.map(x => a.R.porSitio[x.id]?.[k] != null ? +a.R.porSitio[x.id][k].toFixed(4) : ''), +a.R.medias[k].toFixed(4), a.R.pT < 0.05 ? a.tk.letras[k] : '', i ? '' : +a.R.tabla[2].F.toFixed(3), i ? '' : +a.R.pT.toFixed(5), i ? '' : +a.R.pLT.toFixed(5), i ? '' : +a.R.cv.toFixed(2), i ? '' : +a.R.media.toFixed(4)])); });
   } else vars.filter(v => v.tipo !== 'texto').forEach(v => { const a = analizar(T, v); if (!a.ok) return res.push([v.nombre, '', a.sinVar ? 'Sin variación' : `Faltan ${a.falta.length} parcelas`]);
     a.orden.forEach((k, i) => res.push([v.nombre, k, tratNom(T, k), +a.R.medias[k].toFixed(4), a.ptr < 0.05 ? a.tk.letras[k] : '', a.vsT(k), i ? '' : +a.R.tabla[1].F.toFixed(3), i ? '' : +a.ptr.toFixed(5), i ? '' : +a.R.cv.toFixed(2), i ? '' : +a.R.media.toFixed(4)])); });
-  hojas.push({nombre: 'Resultados', filas: res});
+  if (esLal(T)) { const {A, B, C} = ladosLal(T); res.length = 0;
+    res.push(['Medición', 'Unidad', `${A.cod} · ${A.nombre}`, `${B.cod} · ${B.nombre}`, ...(C ? [`${C.cod} · testigo`] : []), `Diferencia ${A.cod} − ${B.cod}`, 'Diferencia (%)', 'Resultado', 'Prueba', 'p', ...(C ? [`Eficacia ${A.cod} (%)`, `Eficacia ${B.cod} (%)`] : []), 'Umbral (kg/ha)', 'Margen (USD/ha)', 'Lectura']);
+    vars.filter(v => v.tipo !== 'texto').forEach(v => { const R = compLal(T, v), r = x => x == null ? '' : +(+x).toFixed(4);
+      res.push([v.nombre, v.unidad || '', r(R.a?.media), r(R.b?.media), ...(C ? [r(R.c?.media)] : []), r(R.dif), r(R.pct), R.ok ? (R.igual ? 'Igual' : R.mejorA ? 'Mejor ' + A.cod : 'Mejor ' + B.cod) : 'Faltan datos', R.prueba ? (R.prueba.tipo === 'pareada' ? 't pareada' : 'Welch (puntos, orientativo)') : '', r(R.prueba?.p), ...(C ? [r(R.efA), r(R.efB)] : []), r(R.umbral), r(R.margen), R.txt || '']); });
+    if (T.parcelas.some(p => p.geo)) hojas.push({nombre: 'Franjas', filas: [['Franja', 'Lado', 'Producto', 'Superficie (m²)', 'Lat 1', 'Lon 1', 'Lat 2', 'Lon 2', 'Lat 3', 'Lon 3', 'Lat 4', 'Lon 4'], ...[...T.parcelas].sort((a, b) => a.parcela - b.parcela).map(p => [etiq(T, p), p.trat, prodTxt(ladoDe(T, p.trat)), p.geo ? Math.round(areaM2(p.geo)) : '', ...(p.geo ? p.geo.slice(0, 4).flatMap(([lo, la]) => [+la.toFixed(7), +lo.toFixed(7)]) : [])])]}); }
+  hojas.push({nombre: esLal(T) ? 'Comparación' : 'Resultados', filas: res});
   const usadas = PULV.filter(q => apsDe(T).some(a => a.equipo?.id === q.id));
   if (usadas.length) hojas.push({nombre: 'Pulverizadoras', filas: [['Nombre', 'Tipo', 'Marca o modelo', 'Tanque (L)', 'Picos', 'Separación (cm)', 'Altura de barra (cm)', 'Ancho de trabajo (m)', 'Boquilla', 'Tamaño ISO', 'Presión (bar)', 'Velocidad (km/h)', 'Caudal por pico (L/min)', 'CV entre picos (%)', 'Volumen (L/ha)', 'Fecha de calibración', 'Caudales medidos (L/min)', 'Observaciones'],
     ...usadas.map(q => { const c = calcPulv(q); return [q.nombre, q.tipo, q.marca || '', q.tanque ?? '', c.picos, q.sep ?? '', q.altura ?? '', c.ancho != null ? +c.ancho.toFixed(2) : '', boqTxt(q), q.boqISO || '', q.presion ?? '', q.vel ?? '', c.q != null ? +c.q.toFixed(3) : '', c.cv != null ? +c.cv.toFixed(1) : '', c.vol != null ? Math.round(c.vol) : '', fechaTxt(q.fechaCal), (q.caudales || []).join('; '), q.obs || '']; })]});
@@ -1572,9 +2060,9 @@ async function exportarEnsayo(T) {
 }
 RENDER.exp = T0 => {
   const T = vistaS(T0), red = !!T0.sitios, sg = red ? (T0.sitios.find(x => x.id === (T.__vista || S.geoSitio)) || T0.sitios[0]) : null; if (red) S.geoSitio = sg.id;
-  const conGeo = red ? T0.sitios.every(x => x.geo?.lat != null) : T.parcelas.every(p => p.geo), g = (red ? sg.geo : T.geo) || {}, pa = T.parcela, ed = puede.diseno(T0), hayGeo = red ? T0.sitios.some(x => x.geo?.lat != null) : conGeo || g.lat != null;
+  const conGeo = red ? T0.sitios.every(x => x.geo?.lat != null) : T.parcelas.every(p => p.geo), g = (red ? sg.geo : T.geo) || {}, pa = T.parcela, ed = puede.diseno(T0), hayGeo = esLal(T0) ? T.parcelas.some(p => p.geo) : red ? T0.sitios.some(x => x.geo?.lat != null) : conGeo || g.lat != null;
   const anchoDef = g.ancho ?? (pa.hileras ? +(pa.hileras * pa.dist).toFixed(2) : pa.ancho || (pa.columnas ? pa.columnas * pa.e2 : '')), largoDef = g.largo ?? (pa.largo || (pa.filas ? pa.filas * pa.e1 : ''));
-  const listo = vis(T).filter(v => v.tipo !== 'texto').filter(v => (esRed(T) ? combinar(T, v) : analizar(T, v)).ok).length;
+  const listo = vis(T).filter(v => v.tipo !== 'texto').filter(v => (esLal(T) ? compLal(T, v) : esRed(T) ? combinar(T, v) : analizar(T, v)).ok).length;
   const card = (id, t, d, btns) => `<div class="card" id="${id}"><h3>${t}</h3><p class="note" style="margin:0">${d}</p><div class="row">${btns}</div></div>`;
   P().innerHTML = `<section class="panel"><h2>Informe y exportar${T.__vista ? ' · ' + esc(nomSitio(T0, T.__vista)) : ''}</h2><p class="lead">Los archivos se generan en este equipo, sin internet, y se guardan en la carpeta de descargas. ${listo} ${listo === 1 ? 'medición' : 'mediciones'} con todos los datos para analizar${esRed(T) ? ' en al menos 2 lugares' : ''}.</p>
     ${red ? `<div class="callout">${T.__vista ? `Estás exportando solo <b>${esc(nomSitio(T0, T.__vista))}</b>. Para el informe de toda la red (análisis combinado y cada lugar), elegí <b>Todos</b> arriba.` : `Estás exportando <b>toda la red</b> (${T0.sitios.length} lugares): el Word trae el análisis combinado y cada lugar por separado; Excel, CSV y QGIS llevan la columna <b>Lugar</b>. Para un solo lugar, elegilo arriba.`}</div>` : ''}
@@ -1583,7 +2071,7 @@ RENDER.exp = T0 => {
     ${card('ex-excel', 'Planilla Excel', 'Hojas: Ensayo, Tratamientos, Datos (una fila por parcela), Submuestras, Métodos, Aplicaciones, Notas, Historial y Resultados.', '<button class="btn primary" data-x="excel">Descargar Excel (.xlsx)</button>')}
     ${card('ex-csv', 'CSV para InfoStat o R', 'Una fila por parcela con parcela, bloque, tratamiento y cada medición (códigos cortos de columna).', '<button class="btn" data-x="csv">CSV (punto decimal)</button><button class="btn" data-x="csv-coma">CSV para Excel (coma decimal)</button>')}
     <div class="card" id="ex-qgis"><h3>QGIS y Google Earth</h3><p class="note" style="margin:0">Parcelas como polígonos con todos sus datos y notas; en QGIS se abre con colores por tratamiento y etiquetas.</p>
-      ${conGeo && !red ? '<p class="note" style="margin:0">Este ensayo ya tiene las parcelas ubicadas.</p>' : !(ed || (red && sg.ops?.includes(S.user.id))) ? `<p class="note" style="margin:0">${red ? T0.sitios.map(x => `${esc(x.nombre)}: ${x.geo?.lat != null ? 'ubicado' : 'sin ubicar'}`).join(' · ') : g.lat != null ? 'Ubicación cargada.' : 'Todavía no se cargó la ubicación del ensayo (la carga el responsable).'}</p>` : `<form id="f-geo" style="display:grid;gap:8px"><b style="font-size:.9rem">Ubicación ${red ? 'de cada lugar' : 'del ensayo'}</b>
+      ${esLal(T0) ? `<p class="note" style="margin:0">${T.parcelas.every(p => p.geo) ? 'Las franjas ya están ubicadas con el GPS.' : 'Ubicá las franjas con el GPS en “Ubicación y franjas”.'}</p>` : conGeo && !red ? '<p class="note" style="margin:0">Este ensayo ya tiene las parcelas ubicadas.</p>' : !(ed || (red && sg.ops?.includes(S.user.id))) ? `<p class="note" style="margin:0">${red ? T0.sitios.map(x => `${esc(x.nombre)}: ${x.geo?.lat != null ? 'ubicado' : 'sin ubicar'}`).join(' · ') : g.lat != null ? 'Ubicación cargada.' : 'Todavía no se cargó la ubicación del ensayo (la carga el responsable).'}</p>` : `<form id="f-geo" style="display:grid;gap:8px"><b style="font-size:.9rem">Ubicación ${red ? 'de cada lugar' : 'del ensayo'}</b>
         ${red ? `<label class="f">Lugar<select name="sitio" ${T.__vista ? 'disabled' : ''}>${T0.sitios.map(x => `<option value="${x.id}" ${x.id === sg.id ? 'selected' : ''}>${esc(x.nombre)}${x.geo?.lat != null ? ' ✓' : ' (sin ubicar)'}</option>`).join('')}</select></label>` : ''}
         <div class="grid3"><label class="f">Latitud esquina parcela 101${red ? ' del lugar' : ''}<input type="number" step="any" name="lat" value="${g.lat ?? ''}" placeholder="-27.1234"></label><label class="f">Longitud<input type="number" step="any" name="lon" value="${g.lon ?? ''}" placeholder="-55.5678"></label>
         <label class="f">Rumbo de los bloques (°)<input type="number" step="any" name="rumbo" value="${g.rumbo ?? 90}" title="Dirección en la que avanza el bloque 1 (de la 101 a la 102), en grados desde el norte"></label>
@@ -1725,7 +2213,7 @@ async function enviarPaquete(T, uid) {
   const ids = new Set([T.owner, uid, yo.id, ...Object.values(T.asig), ...Object.keys(T.trabajo || {}), ...Object.keys(T.compartido || {}), ...(T.sitios || []).flatMap(x => x.ops || [])]);
   const perfiles = Object.fromEntries([...ids].filter(id => USERS[id]).map(id => [id, USERS[id]])), equipos = T.equipo && EQUIPOS[T.equipo] ? {[T.equipo]: EQUIPOS[T.equipo]} : {};
   let imagenes = [];
-  { const mias = (await DB.imagenesDe(T.id).catch(() => [])).filter(i => deOp ? i.autor === yo.id : i.tipo === 'papel'); imagenes = await Promise.all(mias.map(async i => ({...i, blob: undefined, data: await blobAData(i.blob)}))); }
+  { const mias = (await DB.imagenesDe(T.id).catch(() => [])).filter(i => deOp ? i.autor === yo.id : i.tipo === 'papel' || i.tipo === 'aerea'); imagenes = await Promise.all(mias.map(async i => ({...i, blob: undefined, data: await blobAData(i.blob)}))); }
   const js = {app: 'Ensayos de Campo', version: 2, tipo: 'paquete', de: yo.id, para: uid, fecha: new Date().toISOString(), ensayos: [T], config: {perfiles, equipos, custom: [], pulv: PULV}, imagenes};
   const nombre = `${nombreArchivo(T.id)}_${deOp ? 'datos_de_' + nombreArchivo(yo.nombre.split(' ')[0]) : 'para_' + nombreArchivo(u?.nombre.split(' ')[0] || 'equipo')}.json`;
   const archivo = new File([JSON.stringify(js)], nombre, {type: 'application/json'});
@@ -1806,8 +2294,8 @@ function abrirDrawer(pn) {
   const refN = () => notaNivel === 'parcela' ? pn : notaNivel === 'bloque' ? refBloque(T, p) : p.trat;
   const notasDe = () => T.notas.filter(n => n.nivel === notaNivel && String(n.ref) === String(refN()));
   const d = $('#drawer');
-  d.innerHTML = `<header><div class="row" style="justify-content:space-between"><h2>Parcela ${T.sitios ? pn % 1000 : pn}${T.sitios ? ` <span class="chip acc">${esc(nomSitio(T, p.sitio))}</span>` : ''}</h2><button class="btn small" id="dr-cerrar" aria-label="Cerrar">✕ Cerrar</button></div>
-    <div class="row note"><span><span class="swatch" style="background:${C[p.trat]}"></span> <b style="color:var(--ink)">${p.trat}</b> · ${esc(tratNom(T, p.trat))}</span><span>Bloque ${p.bloque}</span>${a ? `<span class="row" style="gap:5px">${avatar(a)}${esc(a.nombre)}</span>` : '<span>Sin asignar</span>'}</div>
+  d.innerHTML = `<header><div class="row" style="justify-content:space-between"><h2>${esLal(T) ? 'Franja' : 'Parcela'} ${T.sitios ? pn % 1000 : pn}${T.sitios ? ` <span class="chip acc">${esc(nomSitio(T, p.sitio))}</span>` : ''}</h2><button class="btn small" id="dr-cerrar" aria-label="Cerrar">✕ Cerrar</button></div>
+    <div class="row note"><span><span class="swatch" style="background:${C[p.trat]}"></span> <b style="color:var(--ink)">${p.trat}</b> · ${esc(tratNom(T, p.trat))}</span><span>${esLal(T) ? "Par" : "Bloque"} ${p.bloque}</span>${a ? `<span class="row" style="gap:5px">${avatar(a)}${esc(a.nombre)}</span>` : '<span>Sin asignar</span>'}</div>
     ${(() => { const hechas = (T.aplicaciones || []).filter(a => a.estado === 'realizada' && aplicaA(a, p.trat) && a.fecha <= HOY && (!p.sitio || !a.sitio || a.sitio === 'todos' || a.sitio === p.sitio)).sort((x, y) => y.fecha.localeCompare(x.fecha));
       const tr = hechas.find(a => a.tipo === 'Aplicación de tratamientos'), lab = hechas.find(a => a.tipo !== 'Aplicación de tratamientos');
       const t = T.tratamientos.find(x => x.cod === p.trat);
@@ -1819,12 +2307,15 @@ function abrirDrawer(pn) {
     ${!ed ? `<div class="chip neu" style="justify-self:start">${rolEn(T) === 'lector' ? 'Solo lectura' : 'Parcela no asignada a vos: solo lectura'}</div>` : ''}</header>
     <div class="body"><div style="display:grid;gap:6px"><h3>Resultados</h3>${T.cortes?.length ? '<div class="seg" id="seg-corte-dr"></div>' : ''}</div>${filtroCorte(T, vis(T)).map(medida).join('') || '<p class="note">El ensayo no tiene mediciones definidas.</p>'}
       <div style="display:grid;gap:8px"><div class="row" style="justify-content:space-between"><h3>Fotos de la parcela</h3>${rolEn(T) !== 'lector' ? fotoBtn(pn) : ''}</div><div class="fotos" data-fotos="${pn}"></div></div>
+      <div data-fa-p="${pn}" hidden style="display:grid;gap:6px"></div>
       <div style="display:grid;gap:8px"><h3>Notas</h3><div class="seg" id="seg-nota"></div><div id="notas-list"></div>
         ${puede.nota(T, notaNivel, refN()) ? `<textarea id="nota-txt" data-voz placeholder="Escribí una nota para ${notaNivel === 'parcela' ? 'esta parcela' : notaNivel === 'bloque' ? 'todo el bloque ' + p.bloque : 'el tratamiento ' + p.trat + ' (todas sus parcelas)'}"></textarea><button class="btn small" id="nota-add" style="justify-self:start">Agregar nota</button>` : '<p class="note" style="margin:0">No podés agregar notas en este nivel.</p>'}</div></div>
     <footer><span class="note" id="dr-msg">${ed ? 'Los cambios quedan en el historial.' : ''}</span>${ed ? '<button class="btn primary" id="dr-guardar">Guardar resultados</button>' : ''}</footer>`;
-  seg('#seg-nota', [['parcela', `Parcela ${T.sitios ? pn % 1000 : pn}`], ['tratamiento', `Tratamiento ${p.trat}`], ['bloque', `Bloque ${p.bloque}`]], notaNivel, v => { notaNivel = v; abrirDrawer(pn); });
+  seg('#seg-nota', [['parcela', `${esLal(T) ? 'Franja' : 'Parcela'} ${T.sitios ? pn % 1000 : pn}`], ['tratamiento', `${esLal(T) ? 'Lado' : 'Tratamiento'} ${p.trat}`], ['bloque', `${esLal(T) ? 'Par' : 'Bloque'} ${p.bloque}`]], notaNivel, v => { notaNivel = v; abrirDrawer(pn); });
   $('#notas-list').innerHTML = listaNotas(T, notasDe());
   segCorte('#seg-corte-dr', T, () => abrirDrawer(pn)); pintarFotos(T, pn); vozEn(d);
+  recorteParcela(T, pn).then(r => { const h = d.querySelector(`[data-fa-p="${pn}"]`); if (!r || !h) return; h.hidden = false;
+    h.innerHTML = `<h3>Foto aérea de la ${esLal(T) ? 'franja' : 'parcela'}</h3><img src="${r.url}" alt="Recorte de la foto aérea" style="width:100%;max-height:320px;object-fit:contain;border-radius:8px;background:#222">`; }).catch(e => console.warn(e));
   d.onchange = e => { if (e.target.dataset.fotoIn != null) subirFotos(e.target, T, pn); };
   d.hidden = false; $('#scrim').hidden = false;
   d.oninput = e => { const ev = e.target.dataset.e; if (ev) { const v = T.variables.find(x => x.id === ev), sb = leerEntrada(d, v), r = calcEntrada(T, v, sb);
@@ -2119,6 +2610,14 @@ const TOUR = [
     go: () => { varAnal = null; enEjemplo('anal', PA_()); }, el: () => $('#g-cortes')},
   {g: 'Otros rubros y roles', t: 'Lo que ve un operador', d: 'Ana es operadora: al entrar ve “Mis tareas”, solo con sus parcelas y lo que le falta medir, y las abre directo con “Controlar”.',
     go: () => { cerrarDrawer(); comoUsuario('ana', 'agricola'); irInicio(); }, el: () => cardDe($('#s-inicio [data-abrir="DEMO-AG-02"]'))},
+  {g: 'Lado a lado y dron', t: 'Lado a lado en la chacra del productor', d: 'Además del ensayo experimental, se puede crear un lado a lado: el producto que se quiere probar contra el que usa el productor (y si se quiere una franja testigo), en macroparcelas o microparcelas dentro de su lote. No es un ensayo experimental, sirve para probar la eficacia a campo.',
+    go: () => { if (!LAL_()) return; cerrarDrawer(); comoUsuario('marta', 'agricola'); irInicio(); }, el: () => cardDe($('#s-inicio [data-abrir="DEMO-LAL-01"]')), si: () => !!LAL_()},
+  {g: 'Lado a lado y dron', t: 'Franjas desde el GPS', d: 'Las franjas se generan desde tu ubicación (parado en la esquina de inicio, con el rumbo y las medidas), caminando y marcando las 4 esquinas, o tocando las esquinas sobre el mapa satelital. La app dibuja el área y la divide en franjas iguales, con su superficie.',
+    go: () => { if (!LAL_()) return; enEjemplo('campo', LAL_()); }, el: () => cardDe($('#lal-gps')) || $('#lal-mapa'), si: () => !!LAL_()},
+  {g: 'Lado a lado y dron', t: 'Comparación directa', d: 'Cada medición del producto probado frente al del productor: diferencia y porcentaje, quién fue mejor, la eficacia respecto del testigo y, en rendimiento, si la diferencia paga el costo extra del producto. El informe en Word trae esta comparación con gráficos y una conclusión.',
+    go: () => { if (!LAL_()) return; varLal = 'rend_kg'; enEjemplo('anal', LAL_()); }, el: () => $('#panel .card'), si: () => !!LAL_()},
+  {g: 'Lado a lado y dron', t: 'Foto aérea del dron por bloque', d: 'No hace falta un dron multiespectral: se carga una foto común tomada desde arriba, se marcan las 4 esquinas del ensayo y, con las medidas del croquis, la app recorta la imagen de cada bloque (o de cada franja). Queda como foto general del ensayo, en el control de cada parcela y en el informe.',
+    go: () => { enEjemplo('campo'); setTimeout(() => $('#card-aerea')?.scrollIntoView({block: 'center'}), 50); }, el: () => $('#card-aerea')},
   {g: 'Varios lugares', t: 'Un ensayo en varios lugares', d: 'El mismo ensayo se puede repetir en distintos puntos del país: cada lugar tiene su croquis sorteado, su operador y su avance. Este ejemplo, una red de cultivares de soja, está en Hohenau, Naranjal y San Pedro, con un operador en cada lugar. Se suman lugares desde Equipo o al crear el ensayo.',
     go: () => { if (!RED_()) return; S.sitio = 'todos'; enEjemplo('equipo', RED_()); }, el: () => cardDe(conTexto('#panel h3', 'Lugares del ensayo')) || $('#panel .sitios'), si: () => !!RED_()},
   {g: 'Varios lugares', t: 'Elegir el lugar', d: 'Arriba se elige qué lugar mirar: “Todos” muestra la red completa y cada lugar muestra su croquis, sus datos y sus aplicaciones. El operador entra directo a su lugar (marcado con ★).',
