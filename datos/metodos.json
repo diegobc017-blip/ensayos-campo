@@ -8,10 +8,71 @@
    "dec": 0,
    "sub": 1,
    "min": 0,
-   "max": 9000,
-   "metodo": "Cosechar las hileras centrales sin cabeceras (área útil), trillar, pesar el grano y medir la humedad. Rendimiento a 13 % de humedad: kg/ha = peso (kg) × (100 − H) ÷ 87 × 10 000 ÷ área cosechada (m²).",
+   "max": 20000,
+   "metodo": "Cosechar el área útil (hileras centrales sin cabeceras), trillar, limpiar, pesar el grano (precisión 1 g) y medir la humedad (medidor calibrado o estufa 105 °C 24 h). Corregir a la humedad base del cultivo: P corregido = P × (100 − H medida) ÷ (100 − H base). kg/ha = P corregido (kg) × 10 000 ÷ área cosechada (m²). El informe debe decir 'kg/ha al X % de humedad'.",
+   "momento": "Cosecha (soja R8; maíz con grano ≤ 20–25 % de humedad; trigo Z92)",
+   "cultivos": [
+    "Soja",
+    "Maíz",
+    "Trigo",
+    "Girasol",
+    "Canola",
+    "Arroz",
+    "Sésamo",
+    "Chía",
+    "Sorgo",
+    "Poroto",
+    "Maní",
+    "Avena"
+   ],
+   "tipos": [
+    "Cultivares (RNCC/VCU)",
+    "Eficacia de fungicida",
+    "Eficacia de insecticida",
+    "Eficacia de herbicida",
+    "Fertilización (dosis-respuesta)",
+    "Inoculante / bioinsumo",
+    "Tratamiento de semillas",
+    "Densidad, espaciamiento y época de siembra",
+    "Cultivos de cobertura / abonos verdes",
+    "Lado a lado (franjas)"
+   ],
+   "entrada": "rend",
    "ref": "SENAVE NOR-DPUV-111; 04_ensayos_agricolas §1.1",
-   "entrada": "rend13"
+   "fuente": "Proyecto: ensayos_de_campo/08_normativa_paraguay.md (NOR-DPUV-111 y Res. 414/2020 leídas en senave.gov.py el 29-30/09/2026) ; https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/993530/1/EFICIENCIADEFUNGICIDASNOCONTROLEDAFERRUGEMASIATICA.pdf ; https://revistas.uni.edu.py/index.php/rseisa/article/download/366/472/3003"
+  },
+  {
+   "id": "humedad_cosecha",
+   "nombre": "Humedad del grano a cosecha",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 5,
+   "max": 40,
+   "metodo": "Medir la humedad de una muestra del grano cosechado de cada parcela con medidor calibrado (o estufa 105 °C 24 h). Se usa para corregir el rendimiento y, en maíz, es variable exigida por SENAVE (indica precocidad de secado).",
+   "momento": "Cosecha",
+   "cultivos": [
+    "Soja",
+    "Maíz",
+    "Trigo",
+    "Girasol",
+    "Canola",
+    "Arroz",
+    "Sésamo",
+    "Chía",
+    "Sorgo",
+    "Poroto",
+    "Maní",
+    "Avena"
+   ],
+   "tipos": [
+    "Cultivares (RNCC/VCU)",
+    "Lado a lado (franjas)",
+    "Fertilización (dosis-respuesta)"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/08_normativa_paraguay.md (NOR-DPUV-111 y Res. 414/2020 leídas en senave.gov.py el 29-30/09/2026)"
   },
   {
    "id": "pmg",
@@ -20,10 +81,35 @@
    "tipo": "numero",
    "dec": 1,
    "sub": 8,
-   "min": 50,
-   "max": 450,
-   "metodo": "8 repeticiones de 100 granos por parcela, pesar cada una y multiplicar el promedio por 10 (ISTA).",
-   "ref": "04 §1.2"
+   "min": 0.5,
+   "max": 1000,
+   "metodo": "8 repeticiones de 100 granos puros por parcela; pesar cada una, promediar y multiplicar por 10. Si el CV entre repeticiones supera 4 % (6 % en semillas con glumas) contar 8 repeticiones más. Corregir a la humedad base. Usar 2 decimales en chía, sésamo y canola (PMG 1–5 g).",
+   "momento": "Después de cosecha",
+   "cultivos": [
+    "Soja",
+    "Maíz",
+    "Trigo",
+    "Girasol",
+    "Canola",
+    "Arroz",
+    "Sésamo",
+    "Chía",
+    "Sorgo",
+    "Poroto",
+    "Maní",
+    "Avena"
+   ],
+   "tipos": [
+    "Cultivares (RNCC/VCU)",
+    "Eficacia de fungicida",
+    "Eficacia de insecticida",
+    "Fertilización (dosis-respuesta)",
+    "Inoculante / bioinsumo",
+    "Densidad, espaciamiento y época de siembra",
+    "Lado a lado (franjas)"
+   ],
+   "ref": "04 §1.2",
+   "fuente": "https://wikisda.agricultura.gov.br/pt-br/Laborat%C3%B3rios/Metodologia/Sementes/RAS_2025/RAS_cap_9_PesodeMilSementes"
   },
   {
    "id": "plantas_m",
@@ -33,9 +119,78 @@
    "dec": 1,
    "sub": 2,
    "min": 0,
-   "max": 60,
-   "metodo": "Contar plantas en 2 tramos de 1 m en las hileras centrales; se promedia.",
-   "ref": "01 §5.3"
+   "max": 120,
+   "metodo": "Contar plantas en 2 tramos de 1 m (o 2 m en maíz, girasol y algodón) dentro de las hileras útiles y promediar. La app convierte a pl/ha = pl/m × 10 000 ÷ distancia entre hileras (m). En trigo, avena y arroz conviene informar también pl/m².",
+   "momento": "Stand inicial en V2–V3 (o Z12–Z13) y stand final antes de cosecha",
+   "tipos": [
+    "Cultivares (RNCC/VCU)",
+    "Eficacia de fungicida",
+    "Eficacia de insecticida",
+    "Eficacia de herbicida",
+    "Fertilización (dosis-respuesta)",
+    "Inoculante / bioinsumo",
+    "Tratamiento de semillas",
+    "Densidad, espaciamiento y época de siembra",
+    "Cultivos de cobertura / abonos verdes",
+    "Lado a lado (franjas)"
+   ],
+   "ref": "01 §5.3",
+   "fuente": "Proyecto: ensayos_de_campo/04_ensayos_agricolas.md"
+  },
+  {
+   "id": "emerg_pct",
+   "nombre": "Emergencia a campo",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 0,
+   "sub": 2,
+   "min": 0,
+   "max": 100,
+   "metodo": "Plántulas emergidas en 2 tramos marcados de 1 m ÷ semillas sembradas en esos tramos × 100. Para el IVE contar todos los días en los mismos tramos hasta que el número se estabilice.",
+   "momento": "7–14 días después de la siembra",
+   "tipos": [
+    "Tratamiento de semillas",
+    "Inoculante / bioinsumo",
+    "Cultivares (RNCC/VCU)"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/04_ensayos_agricolas.md"
+  },
+  {
+   "id": "dias_flor",
+   "nombre": "Días a floración (50 %)",
+   "unidad": "días",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": 20,
+   "max": 150,
+   "metodo": "Días desde la siembra (o emergencia, declararlo) hasta que el 50 % de las plantas del área útil están en floración: soja R1; maíz floración masculina (antesis) y femenina (estigmas visibles) por separado; trigo Z61; girasol R5.1; arroz 50 % de panojas emergidas.",
+   "momento": "Recorridas cada 2–3 días durante la floración",
+   "tipos": [
+    "Cultivares (RNCC/VCU)",
+    "Densidad, espaciamiento y época de siembra"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/08_normativa_paraguay.md (NOR-DPUV-111 y Res. 414/2020 leídas en senave.gov.py el 29-30/09/2026)"
+  },
+  {
+   "id": "dias_madurez",
+   "nombre": "Días a madurez fisiológica",
+   "unidad": "días",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": 60,
+   "max": 200,
+   "metodo": "Días desde la siembra hasta madurez fisiológica del 50 % de las plantas: soja R7; maíz capa negra (R6); trigo Z87; girasol R9. Define el grupo de madurez o ciclo (SENAVE maíz: súper precoz < 125 d, precoz 126–135 d, normal > 136 d).",
+   "momento": "Fin de ciclo",
+   "tipos": [
+    "Cultivares (RNCC/VCU)",
+    "Densidad, espaciamiento y época de siembra"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/08_normativa_paraguay.md (NOR-DPUV-111 y Res. 414/2020 leídas en senave.gov.py el 29-30/09/2026)"
   },
   {
    "id": "altura_cm",
@@ -45,9 +200,207 @@
    "dec": 0,
    "sub": 10,
    "min": 0,
-   "max": 350,
-   "metodo": "Medir 10 plantas consecutivas desde el suelo hasta el ápice (maíz: hasta la panoja).",
-   "ref": "04 §1.3"
+   "max": 500,
+   "metodo": "Medir 10 plantas consecutivas del área útil desde el suelo hasta: soja, el último nudo del tallo principal; maíz y sorgo, la inserción de la panoja; trigo y avena, el ápice de la espiga sin aristas; girasol, la inserción del capítulo.",
+   "momento": "Madurez fisiológica (R7/R6/Z87); en herbicidas, a 21–28 DAA para ver selectividad",
+   "tipos": [
+    "Cultivares (RNCC/VCU)",
+    "Fertilización (dosis-respuesta)",
+    "Densidad, espaciamiento y época de siembra",
+    "Eficacia de herbicida"
+   ],
+   "ref": "04 §1.3",
+   "fuente": "https://revistascientificas.unves.edu.py/index.php/rcunves/article/download/34/42/128 ; Proyecto: ensayos_de_campo/04_ensayos_agricolas.md"
+  },
+  {
+   "id": "alt_insercion",
+   "nombre": "Altura de inserción (1.ª vaina / mazorca)",
+   "unidad": "cm",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 10,
+   "min": 0,
+   "max": 200,
+   "metodo": "En las mismas 10 plantas de la altura: soja, poroto y sésamo desde el suelo hasta la primera vaina o cápsula (riesgo de pérdida en cosecha si < 10–12 cm); maíz, hasta el nudo de inserción de la mazorca superior.",
+   "momento": "Madurez fisiológica",
+   "cultivos": [
+    "Soja",
+    "Maíz",
+    "Sésamo",
+    "Poroto",
+    "Sorgo"
+   ],
+   "tipos": [
+    "Cultivares (RNCC/VCU)",
+    "Densidad, espaciamiento y época de siembra"
+   ],
+   "ref": "",
+   "fuente": "https://revistascientificas.unves.edu.py/index.php/rcunves/article/download/34/42/128 ; Proyecto: ensayos_de_campo/08_normativa_paraguay.md (NOR-DPUV-111 y Res. 414/2020 leídas en senave.gov.py el 29-30/09/2026)"
+  },
+  {
+   "id": "vuelco",
+   "nombre": "Plantas volcadas (vuelco/acame)",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Contar en el área útil las plantas con el tallo inclinado más de 45° desde la vertical o caídas, y dividir por el total de plantas × 100. (Alternativa en soja y trigo: escala 1 = todas erectas … 5 = todas volcadas.)",
+   "momento": "Antes de la cosecha",
+   "tipos": [
+    "Cultivares (RNCC/VCU)",
+    "Densidad, espaciamiento y época de siembra"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/08_normativa_paraguay.md (NOR-DPUV-111 y Res. 414/2020 leídas en senave.gov.py el 29-30/09/2026)"
+  },
+  {
+   "id": "quebrado",
+   "nombre": "Plantas quebradas bajo la mazorca",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Contar en el área útil las plantas con el tallo quebrado por debajo de la mazorca (o del capítulo/panoja) ÷ total de plantas × 100.",
+   "momento": "Antes de la cosecha",
+   "cultivos": [
+    "Maíz",
+    "Sorgo",
+    "Girasol"
+   ],
+   "tipos": [
+    "Cultivares (RNCC/VCU)"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/08_normativa_paraguay.md (NOR-DPUV-111 y Res. 414/2020 leídas en senave.gov.py el 29-30/09/2026)"
+  },
+  {
+   "id": "maz_podridas",
+   "nombre": "Mazorcas podridas",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Del total de mazorcas cosechadas del área útil, contar las que tienen ≥ 10 % de los granos podridos (definición SENAVE) ÷ total × 100. Anotar la causa si se reconoce (Fusarium, Diplodia, Gibberella).",
+   "momento": "Cosecha",
+   "cultivos": [
+    "Maíz"
+   ],
+   "tipos": [
+    "Cultivares (RNCC/VCU)",
+    "Eficacia de fungicida"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/08_normativa_paraguay.md (NOR-DPUV-111 y Res. 414/2020 leídas en senave.gov.py el 29-30/09/2026)"
+  },
+  {
+   "id": "chala",
+   "nombre": "Cobertura de chala",
+   "unidad": "nota 1–5",
+   "tipo": "escala",
+   "dec": 0,
+   "sub": 1,
+   "min": 1,
+   "max": 5,
+   "metodo": "Nota visual del cierre de las chalas sobre la punta de la mazorca en el área útil (definición SENAVE).",
+   "momento": "Madurez fisiológica (R6)",
+   "escala": [
+    "1 Buen cierre, punta totalmente cubierta",
+    "2 Cierre bueno, punta apenas visible",
+    "3 Punta cubierta justo",
+    "4 Punta descubierta",
+    "5 Mal cierre, punta expuesta"
+   ],
+   "escMin": 1,
+   "cultivos": [
+    "Maíz"
+   ],
+   "tipos": [
+    "Cultivares (RNCC/VCU)"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/08_normativa_paraguay.md (NOR-DPUV-111 y Res. 414/2020 leídas en senave.gov.py el 29-30/09/2026)"
+  },
+  {
+   "id": "vainas_pl",
+   "nombre": "Vainas (o cápsulas/silicuas) por planta",
+   "unidad": "n/pl",
+   "tipo": "conteo",
+   "dec": 1,
+   "sub": 10,
+   "min": 0,
+   "max": 300,
+   "metodo": "Contar todas las vainas con al menos un grano en 10 plantas consecutivas del área útil. Con plantas/m², granos/vaina y PMG estima el rendimiento por componentes.",
+   "momento": "R7–R8",
+   "cultivos": [
+    "Soja",
+    "Poroto",
+    "Maní",
+    "Sésamo",
+    "Canola",
+    "Chía"
+   ],
+   "tipos": [
+    "Densidad, espaciamiento y época de siembra",
+    "Cultivares (RNCC/VCU)"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/04_ensayos_agricolas.md"
+  },
+  {
+   "id": "espigas_m2",
+   "nombre": "Espigas (o panojas) por m²",
+   "unidad": "n/m²",
+   "tipo": "conteo",
+   "dec": 0,
+   "sub": 2,
+   "min": 0,
+   "max": 1000,
+   "metodo": "Contar las espigas o panojas con granos en 2 tramos de 1 m lineal de hileras útiles; espigas/m² = espigas/m ÷ distancia entre hileras (m).",
+   "momento": "Madurez (Z85–Z92)",
+   "cultivos": [
+    "Trigo",
+    "Avena",
+    "Arroz"
+   ],
+   "tipos": [
+    "Densidad, espaciamiento y época de siembra",
+    "Fertilización (dosis-respuesta)",
+    "Cultivares (RNCC/VCU)"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/04_ensayos_agricolas.md"
+  },
+  {
+   "id": "peso_hl",
+   "nombre": "Peso hectolítrico",
+   "unidad": "kg/hL",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 2,
+   "min": 40,
+   "max": 90,
+   "metodo": "Balanza hectolítrica (Schopper o de ¼ L) con grano limpio; 2 lecturas por parcela, a la humedad base (SENAVE maíz: al 13 %).",
+   "momento": "Después de cosecha",
+   "cultivos": [
+    "Trigo",
+    "Maíz",
+    "Avena",
+    "Sorgo",
+    "Arroz"
+   ],
+   "tipos": [
+    "Cultivares (RNCC/VCU)",
+    "Eficacia de fungicida",
+    "Fertilización (dosis-respuesta)"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/08_normativa_paraguay.md (NOR-DPUV-111 y Res. 414/2020 leídas en senave.gov.py el 29-30/09/2026) ; https://www.engormix.com/agricultura/trigo-cebada-enfermedades-plagas/eficacia-control-quimico-enfermedades_a30171/"
   },
   {
    "id": "sev_roya",
@@ -58,8 +411,158 @@
    "sub": 10,
    "min": 0,
    "max": 100,
-   "metodo": "10 folíolos del tercio medio por parcela; % de área afectada con la escala diagramática de Godoy et al. (2006).",
-   "ref": "04 §4.4"
+   "metodo": "Tomar 10 folíolos centrales de trifolios por parcela (del tercio inferior y medio mientras la enfermedad sube; en R5–R6 de los tres tercios) y asignar el % de área con lesiones comparando con la escala diagramática de Godoy et al. (2006). Si se evalúan tercios por separado, cargar el promedio de la planta. Escala: Escala diagramática Godoy et al. (2006): 0,6 – 2 – 7 – 18 – 42 – 78,5 % de área foliar afectada.",
+   "momento": "0 DAA y 7, 14, 21 DAA de cada aplicación, o en R1, R3, R5.1–R5.3 y R6",
+   "cultivos": [
+    "Soja"
+   ],
+   "tipos": [
+    "Eficacia de fungicida",
+    "Cultivares (RNCC/VCU)"
+   ],
+   "ref": "04 §4.4",
+   "fuente": "https://www.scielo.br/j/fb/a/7zsWfRPH6xXNGHjsS4ZSNwN/?lang=en ; https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/993530/1/EFICIENCIADEFUNGICIDASNOCONTROLEDAFERRUGEMASIATICA.pdf"
+  },
+  {
+   "id": "sev_foliar",
+   "nombre": "Severidad de mancha foliar (enfermedad indicada)",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 10,
+   "min": 0,
+   "max": 100,
+   "metodo": "Anotar la enfermedad en la observación. % de área foliar afectada con escala diagramática en 10 hojas por parcela: soja (mancha anillada, Cercospora, Septoria) 10 folíolos del tercio medio-inferior; maíz (tizón, mancha blanca, mancha gris) hoja de la espiga y ± 1 en 5 plantas; trigo y avena (mancha amarilla, helmintosporiosis) hoja bandera y hoja bandera − 1 en 10 tallos; girasol, canola, algodón (ramularia), sésamo: 10 hojas del tercio medio. Escala: Escalas diagramáticas por patosistema (p. ej. maíz: Bleicher et al. 1988 para tizón; mancha blanca: Malagi et al. 2011). Alternativa en cultivares: escala 1–9 (1 = sin síntomas, 9 = muy afectado).",
+   "momento": "0, 7, 14, 21 DAA o en el estado de máxima expresión (soja R5–R6; maíz R2–R5; trigo Z71–Z83)",
+   "cultivos": [
+    "Soja",
+    "Maíz",
+    "Trigo",
+    "Avena",
+    "Girasol",
+    "Canola",
+    "Algodón",
+    "Sésamo",
+    "Arroz",
+    "Sorgo",
+    "Poroto",
+    "Maní"
+   ],
+   "tipos": [
+    "Eficacia de fungicida",
+    "Cultivares (RNCC/VCU)"
+   ],
+   "ref": "",
+   "fuente": "https://www.engormix.com/agricultura/enfermedad-plaga-maiz/control-quimico-enfermedades-maiz_a54982/ ; Proyecto: ensayos_de_campo/04_ensayos_agricolas.md"
+  },
+  {
+   "id": "sev_roya_peterson",
+   "nombre": "Severidad de roya (cereales)",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 0,
+   "sub": 10,
+   "min": 0,
+   "max": 100,
+   "metodo": "Roya de la hoja del trigo y la avena, roya polysora y roya común del maíz: % de área con pústulas según la escala de Cobb modificada (Peterson et al., 1948) en hoja bandera y hoja bandera − 1 de 10 tallos (trigo) o en la hoja de la espiga ± 1 de 5–10 plantas (maíz). En cultivares, anotar además el tipo de reacción (R, MR, MS, S). Escala: Cobb modificada (Peterson et al., 1948), 0–100 %, con tipo de reacción R / MR / MS / S.",
+   "momento": "Trigo Z39–Z83; maíz VT–R5; 7, 14, 21 DAA en eficacia",
+   "cultivos": [
+    "Trigo",
+    "Avena",
+    "Maíz",
+    "Sorgo"
+   ],
+   "tipos": [
+    "Eficacia de fungicida",
+    "Cultivares (RNCC/VCU)"
+   ],
+   "ref": "",
+   "fuente": "https://www.engormix.com/agricultura/trigo-cebada-enfermedades-plagas/eficacia-control-quimico-enfermedades_a30171/ ; https://www.engormix.com/agricultura/enfermedad-plaga-maiz/control-quimico-enfermedades-maiz_a54982/"
+  },
+  {
+   "id": "incidencia",
+   "nombre": "Incidencia de enfermedad",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Órganos o plantas con síntomas ÷ evaluados × 100 (indicar la enfermedad y el órgano). Usar 50 plantas o 100 órganos del área útil. Ej.: antracnosis de la soja en vainas y tallos (R5–R6); podredumbres de tallo en maíz (plantas con tallo blando, prueba de presión en R6); Sclerotinia en girasol y canola.",
+   "momento": "Según la enfermedad",
+   "tipos": [
+    "Eficacia de fungicida",
+    "Cultivares (RNCC/VCU)",
+    "Tratamiento de semillas"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/04_ensayos_agricolas.md"
+  },
+  {
+   "id": "fusariosis",
+   "nombre": "Índice de fusariosis de la espiga",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "En al menos 50 espigas al azar del área útil (n mínimo no verificado; habitual 50–100): incidencia = espigas con espiguillas blanqueadas ÷ total × 100; severidad = % promedio de espiguillas afectadas en las espigas enfermas. Índice = incidencia × severidad ÷ 100.",
+   "momento": "Grano lechoso a pastoso (Z75–Z85)",
+   "cultivos": [
+    "Trigo",
+    "Avena"
+   ],
+   "tipos": [
+    "Eficacia de fungicida",
+    "Cultivares (RNCC/VCU)"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/04_ensayos_agricolas.md"
+  },
+  {
+   "id": "brusone",
+   "nombre": "Brusone en espigas/panojas",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Pyricularia oryzae. Contar en ≥ 50 espigas (o panojas) del área útil las que están blanqueadas total o parcialmente desde el punto de infección del raquis; informar incidencia (%) y, si se puede, severidad (% de la espiga por encima de la lesión).",
+   "momento": "Trigo Z75–Z85; arroz desde emergencia de panoja hasta grano pastoso",
+   "cultivos": [
+    "Trigo",
+    "Arroz"
+   ],
+   "tipos": [
+    "Eficacia de fungicida",
+    "Cultivares (RNCC/VCU)"
+   ],
+   "ref": "",
+   "fuente": "https://repositorio.conacyt.gov.py/handle/20.500.14066/2575"
+  },
+  {
+   "id": "achaparr",
+   "nombre": "Plantas con achaparramiento",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Contar en las hileras útiles las plantas con síntomas de achaparramiento (estrías cloróticas en la base de las hojas, enrojecimiento, entrenudos cortos, proliferación de espigas) ÷ total de plantas × 100.",
+   "momento": "R1–R3 (síntomas visibles después de la floración)",
+   "cultivos": [
+    "Maíz"
+   ],
+   "tipos": [
+    "Eficacia de insecticida",
+    "Cultivares (RNCC/VCU)",
+    "Tratamiento de semillas"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/08_normativa_paraguay.md (NOR-DPUV-111 y Res. 414/2020 leídas en senave.gov.py el 29-30/09/2026) (enfermedad exigida en NOR-DPUV-111)"
   },
   {
    "id": "defol",
@@ -70,20 +573,206 @@
    "sub": 1,
    "min": 0,
    "max": 100,
-   "metodo": "Estimación visual del % de hojas caídas en el área útil, con escala de referencia por fotos.",
-   "ref": "04 §4.4"
+   "metodo": "Estimación visual del % de hojas caídas o perdidas en el área útil, con fotos de referencia. En insecticidas (orugas) se estima el área foliar comida en 10 plantas; en fungicidas, la caída de hojas en R6–R7 (el testigo de roya suele llegar a 90–100 % antes).",
+   "momento": "Insecticida: 7 y 14 DAA; fungicida: R6–R7",
+   "cultivos": [
+    "Soja",
+    "Poroto",
+    "Algodón",
+    "Girasol"
+   ],
+   "tipos": [
+    "Eficacia de fungicida",
+    "Eficacia de insecticida"
+   ],
+   "ref": "04 §4.4",
+   "fuente": "Proyecto: ensayos_de_campo/04_ensayos_agricolas.md (escala de fotos: no verificada)"
   },
   {
    "id": "chinches",
-   "nombre": "Chinches por metro (paño vertical)",
+   "nombre": "Chinches por metro (paño)",
    "unidad": "n/m",
    "tipo": "conteo",
    "dec": 1,
    "sub": 2,
    "min": 0,
    "max": 50,
-   "metodo": "Paño vertical de 1 m en 2 puntos por parcela; contar adultos y ninfas > 0,5 cm.",
-   "ref": "04 §4.3"
+   "metodo": "Paño de batida de 1 m entre dos hileras (o paño vertical en hileras a ≤ 0,5 m), sacudiendo las plantas sobre el paño; contar adultos y ninfas de 3.er estadio en adelante (> 0,5 cm) por especie (Euschistus, Piezodorus, Dichelops). 2 a 4 puntos por parcela.",
+   "momento": "Previo (0 DAA) y 2, 7, 10, 14 DAA; desde R3 (umbral regional: 2/m grano, 1/m semilla)",
+   "cultivos": [
+    "Soja"
+   ],
+   "tipos": [
+    "Eficacia de insecticida"
+   ],
+   "ref": "04 §4.3",
+   "fuente": "Proyecto: ensayos_de_campo/04_ensayos_agricolas.md"
+  },
+  {
+   "id": "orugas",
+   "nombre": "Orugas por metro (paño)",
+   "unidad": "n/m",
+   "tipo": "conteo",
+   "dec": 1,
+   "sub": 2,
+   "min": 0,
+   "max": 100,
+   "metodo": "Paño de batida de 1 m, 2 a 4 puntos por parcela; contar orugas vivas por especie (Anticarsia, Chrysodeixis, Rachiplusia, Helicoverpa, Spodoptera) separando chicas (< 1,5 cm) y grandes (≥ 1,5 cm).",
+   "momento": "Previo y 2, 4, 7, 10 DAA",
+   "cultivos": [
+    "Soja",
+    "Poroto",
+    "Girasol",
+    "Algodón"
+   ],
+   "tipos": [
+    "Eficacia de insecticida"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/04_ensayos_agricolas.md"
+  },
+  {
+   "id": "dano_cogollero",
+   "nombre": "Daño de cogollero (escala de Davis)",
+   "unidad": "nota 0–9",
+   "tipo": "escala",
+   "dec": 1,
+   "sub": 10,
+   "min": 0,
+   "max": 9,
+   "metodo": "Spodoptera frugiperda. Nota de daño foliar en 10 plantas por parcela con la escala visual de Davis et al. (1992); además se puede cargar el % de plantas con daño fresco y larvas vivas por planta.",
+   "momento": "V2–V8 (en el estudio consultado, V4); previo y 3, 7, 14 DAA",
+   "escala": [
+    "0 Sin daño",
+    "1 Punteado (pinholes)",
+    "2 Punteado y lesiones circulares pequeñas",
+    "3 Lesiones alargadas pequeñas en algunas hojas",
+    "4 Lesiones alargadas en varias hojas",
+    "5 Lesiones grandes en varias hojas",
+    "6 Lesiones grandes y algunas porciones comidas",
+    "7 Muchas hojas con porciones comidas",
+    "8 Daño en casi todas las hojas",
+    "9 Cogollo casi destruido"
+   ],
+   "escMin": 0,
+   "cultivos": [
+    "Maíz",
+    "Sorgo"
+   ],
+   "tipos": [
+    "Eficacia de insecticida",
+    "Tratamiento de semillas",
+    "Cultivares (RNCC/VCU)"
+   ],
+   "ref": "",
+   "fuente": "https://www.engormix.com/agricultura/enfermedad-plaga-maiz/evaluacion-dano-causado-cogollero_a32494/"
+  },
+  {
+   "id": "chicharrita",
+   "nombre": "Chicharritas (Dalbulus maidis) por planta",
+   "unidad": "n/pl",
+   "tipo": "conteo",
+   "dec": 1,
+   "sub": 10,
+   "min": 0,
+   "max": 50,
+   "metodo": "Revisar el cogollo y las hojas de 10 plantas por parcela temprano en la mañana (la chicharrita vuela con calor) y contar adultos y ninfas; complementar con trampas adhesivas amarillas en el ensayo.",
+   "momento": "VE–V8, cada 3–4 días o previo y 3, 7, 14 DAA",
+   "cultivos": [
+    "Maíz"
+   ],
+   "tipos": [
+    "Eficacia de insecticida",
+    "Tratamiento de semillas"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/04_ensayos_agricolas.md (n de plantas: orientativo, no verificado)"
+  },
+  {
+   "id": "pulgones",
+   "nombre": "Pulgones por macollo o planta",
+   "unidad": "n/macollo",
+   "tipo": "conteo",
+   "dec": 1,
+   "sub": 20,
+   "min": 0,
+   "max": 500,
+   "metodo": "Contar pulgones vivos (por especie si se puede) en 20 macollos (trigo, avena) o 20 plantas/hojas (sorgo, canola, algodón) al azar del área útil; anotar también el % de macollos con pulgones.",
+   "momento": "Previo y 3, 7, 14 DAA",
+   "cultivos": [
+    "Trigo",
+    "Avena",
+    "Sorgo",
+    "Canola",
+    "Algodón"
+   ],
+   "tipos": [
+    "Eficacia de insecticida",
+    "Tratamiento de semillas"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/04_ensayos_agricolas.md (n de macollos: orientativo, no verificado)"
+  },
+  {
+   "id": "picudo",
+   "nombre": "Pimpollos dañados por picudo",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Anthonomus grandis. Revisar ≥ 50 pimpollos (uno por planta, del tercio superior) en el área útil y contar los que tienen perforación de alimentación u oviposición ÷ total × 100.",
+   "momento": "Desde pimpollo (B1) hasta apertura de capullos; previo y 3, 7, 10 DAA",
+   "cultivos": [
+    "Algodón"
+   ],
+   "tipos": [
+    "Eficacia de insecticida"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/04_ensayos_agricolas.md (umbral regional 5–10 %; n de pimpollos orientativo)"
+  },
+  {
+   "id": "diatraea",
+   "nombre": "Intensidad de infestación de barrenador",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Diatraea saccharalis. Partir longitudinalmente 20 tallos por parcela y contar entrenudos barrenados ÷ entrenudos totales × 100.",
+   "momento": "Cosecha",
+   "cultivos": [
+    "Caña de azúcar",
+    "Maíz",
+    "Sorgo"
+   ],
+   "tipos": [
+    "Eficacia de insecticida",
+    "Cultivares (RNCC/VCU)"
+   ],
+   "ref": "",
+   "fuente": "Método clásico de intensidad de infestación (no verificado en fuente en línea en esta revisión)"
+  },
+  {
+   "id": "insectos_vivos",
+   "nombre": "Insectos o ácaros vivos (especie indicada)",
+   "unidad": "n/unidad",
+   "tipo": "conteo",
+   "dec": 1,
+   "sub": 10,
+   "min": 0,
+   "max": 1000,
+   "metodo": "Conteo genérico para plagas sin variable propia (mosca blanca, trips, ácaros, gusanos de suelo, Helicoverpa en espiga): indicar especie, estadio y unidad de muestreo (hoja, folíolo, planta, metro) y mantenerla en todo el ensayo.",
+   "momento": "Previo y 1–3, 7, 14 DAA",
+   "tipos": [
+    "Eficacia de insecticida",
+    "Tratamiento de semillas"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/04_ensayos_agricolas.md"
   },
   {
    "id": "alam",
@@ -94,31 +783,291 @@
    "sub": 1,
    "min": 0,
    "max": 100,
-   "metodo": "Evaluación visual 0–100 % frente al testigo enmalezado (0–40 pobre … 91–100 excelente).",
-   "ref": "04 §4.5"
+   "metodo": "Evaluación visual del control por especie de maleza (0 % = igual al testigo enmalezado; 100 % = muerte total), comparando cada parcela con el testigo enmalezado del mismo bloque. Cargar una nota por especie predominante. Escala: ALAM (1974): 0–40 ninguno o pobre; 41–60 regular; 61–70 suficiente; 71–80 bueno; 81–90 muy bueno; 91–100 excelente.",
+   "momento": "7, 14, 21, 28 DAA; preemergentes también 35, 45 y 60 DAA (residualidad)",
+   "tipos": [
+    "Eficacia de herbicida",
+    "Cultivos de cobertura / abonos verdes"
+   ],
+   "ref": "04 §4.5",
+   "fuente": "Proyecto: ensayos_de_campo/04_ensayos_agricolas.md (escala ALAM citada de fuente secundaria; original no consultado)"
   },
   {
    "id": "ewrc",
-   "nombre": "Fitotoxicidad EWRC",
+   "nombre": "Fitotoxicidad al cultivo (EWRC)",
    "unidad": "nota 1–9",
    "tipo": "escala",
    "dec": 0,
    "sub": 1,
    "min": 1,
    "max": 9,
-   "metodo": "Nota visual de daño al cultivo: 1 sin daño … 4 límite aceptable … 9 muerte.",
-   "ref": "04 §4.5",
+   "metodo": "Nota visual del daño al cultivo (clorosis, necrosis, enanismo, deformación) frente al testigo sin aplicar. No confundir con la escala EWRC de control de malezas, que va al revés (1 = control total).",
+   "momento": "7, 14 y 21 DAA (también en ensayos de fungicida, insecticida y tratamiento de semillas)",
    "escala": [
     "1 Sin daño",
     "2 Muy leve",
     "3 Leve",
-    "4 Sin efecto en rendimiento",
+    "4 Sin efecto en el rendimiento (límite aceptable)",
     "5 Medio",
     "6 Elevado",
     "7 Muy elevado",
     "8 Severo",
     "9 Muerte"
-   ]
+   ],
+   "escMin": 1,
+   "tipos": [
+    "Eficacia de herbicida",
+    "Eficacia de fungicida",
+    "Eficacia de insecticida",
+    "Tratamiento de semillas",
+    "Fertilización (dosis-respuesta)"
+   ],
+   "ref": "04 §4.5",
+   "fuente": "https://digital.cic.gba.gob.ar/bitstreams/19969ed2-720a-4f44-94a8-4657a5800c70/download"
+  },
+  {
+   "id": "dens_malezas",
+   "nombre": "Densidad de malezas",
+   "unidad": "pl/m²",
+   "tipo": "conteo",
+   "dec": 0,
+   "sub": 2,
+   "min": 0,
+   "max": 2000,
+   "metodo": "Contar plantas por especie dentro de 2 marcos de 0,25 m² (0,5 × 0,5 m) lanzados al azar en el área útil; pl/m² = conteo ÷ 0,25. Fijar los marcos con estacas si se repite en el tiempo.",
+   "momento": "Antes de aplicar y 14, 28 DAA (o a la siembra del cultivo siguiente en coberturas)",
+   "tipos": [
+    "Eficacia de herbicida",
+    "Cultivos de cobertura / abonos verdes"
+   ],
+   "ref": "",
+   "fuente": "https://rd.uffs.edu.br/bitstream/prefix/6089/1/COPATTI.pdf"
+  },
+  {
+   "id": "biomasa_malezas",
+   "nombre": "Biomasa seca de malezas",
+   "unidad": "g/m²",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 2,
+   "min": 0,
+   "max": 2000,
+   "metodo": "Cortar a ras del suelo las malezas de 2 marcos de 0,25 m², secar en estufa a 60–65 °C hasta peso constante (≈ 72 h), pesar y llevar a g/m².",
+   "momento": "28–45 DAA o al cierre del entresurco",
+   "tipos": [
+    "Eficacia de herbicida",
+    "Cultivos de cobertura / abonos verdes"
+   ],
+   "ref": "",
+   "fuente": "https://rd.uffs.edu.br/bitstream/prefix/6089/1/COPATTI.pdf"
+  },
+  {
+   "id": "nod_num",
+   "nombre": "Nódulos por planta",
+   "unidad": "n/pl",
+   "tipo": "conteo",
+   "dec": 1,
+   "sub": 10,
+   "min": 0,
+   "max": 300,
+   "metodo": "Sacar con pala 10 plantas por parcela con el bloque de suelo (sin arrancarlas), lavar las raíces sobre tamiz y contar los nódulos; separar los de la raíz principal (corona) y de las secundarias. Cortar algunos: interior rojo o rosado = activo, blanco = inmaduro, verde o marrón = inactivo.",
+   "momento": "V4–R1 (soja)",
+   "cultivos": [
+    "Soja",
+    "Poroto",
+    "Maní",
+    "Abonos verdes y coberturas"
+   ],
+   "tipos": [
+    "Inoculante / bioinsumo",
+    "Tratamiento de semillas"
+   ],
+   "ref": "",
+   "fuente": "https://www.cropscience.bayer.us/articles/bayer/evaluation-of-soybean-nodulation ; Proyecto: ensayos_de_campo/04_ensayos_agricolas.md"
+  },
+  {
+   "id": "nod_ms",
+   "nombre": "Masa seca de nódulos",
+   "unidad": "mg/pl",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 2000,
+   "metodo": "Secar los nódulos de las 10 plantas a 60–65 °C hasta peso constante, pesar en balanza de 0,001 g y dividir por 10.",
+   "momento": "V4–R1",
+   "cultivos": [
+    "Soja",
+    "Poroto",
+    "Maní"
+   ],
+   "tipos": [
+    "Inoculante / bioinsumo"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/04_ensayos_agricolas.md"
+  },
+  {
+   "id": "biomasa_ms",
+   "nombre": "Biomasa aérea seca",
+   "unidad": "kg MS/ha",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 2,
+   "min": 0,
+   "max": 30000,
+   "metodo": "Cortar a ras del suelo las plantas de 2 marcos de 0,25–1 m² (o 1 m lineal de hilera) del área útil, secar a 60–65 °C hasta peso constante y llevar a kg/ha. En abonos verdes es la variable de rendimiento.",
+   "momento": "Floración (R2 en soja; plena floración en coberturas)",
+   "tipos": [
+    "Cultivos de cobertura / abonos verdes",
+    "Fertilización (dosis-respuesta)",
+    "Inoculante / bioinsumo"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/04_ensayos_agricolas.md"
+  },
+  {
+   "id": "spad",
+   "nombre": "Índice de clorofila (SPAD)",
+   "unidad": "SPAD",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 10,
+   "min": 0,
+   "max": 80,
+   "metodo": "Clorofilómetro en la hoja diagnóstica (soja: folíolo central del 3.er trifolio desde el ápice; maíz: hoja de la espiga o última hoja expandida; trigo: hoja bandera), 10 plantas por parcela, a mitad del limbo evitando la nervadura.",
+   "momento": "Estado diagnóstico (soja R2; maíz V8–R1; trigo Z39–Z45)",
+   "cultivos": [
+    "Soja",
+    "Maíz",
+    "Trigo",
+    "Arroz",
+    "Sorgo",
+    "Avena"
+   ],
+   "tipos": [
+    "Fertilización (dosis-respuesta)",
+    "Inoculante / bioinsumo"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/04_ensayos_agricolas.md"
+  },
+  {
+   "id": "aceite_pct",
+   "nombre": "Contenido de aceite",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 10,
+   "max": 65,
+   "metodo": "Muestra de grano limpio de cada parcela analizada por NIR calibrado o extracción (Soxhlet) en laboratorio; informar en base seca o a la humedad base (declararlo).",
+   "momento": "Después de cosecha",
+   "cultivos": [
+    "Soja",
+    "Girasol",
+    "Canola",
+    "Sésamo",
+    "Chía",
+    "Maní"
+   ],
+   "tipos": [
+    "Cultivares (RNCC/VCU)",
+    "Fertilización (dosis-respuesta)"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/04_ensayos_agricolas.md"
+  },
+  {
+   "id": "proteina_pct",
+   "nombre": "Contenido de proteína",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 5,
+   "max": 50,
+   "metodo": "NIR calibrado o N Kjeldahl/Dumas × factor (6,25 en soja; 5,7 en trigo) sobre muestra de grano de cada parcela; declarar la base (seca o humedad base).",
+   "momento": "Después de cosecha",
+   "cultivos": [
+    "Soja",
+    "Trigo",
+    "Poroto",
+    "Maíz"
+   ],
+   "tipos": [
+    "Cultivares (RNCC/VCU)",
+    "Fertilización (dosis-respuesta)",
+    "Inoculante / bioinsumo"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/04_ensayos_agricolas.md"
+  },
+  {
+   "id": "rend_fibra",
+   "nombre": "Rendimiento al desmote (% de fibra)",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 20,
+   "max": 50,
+   "metodo": "Cosechar 20 capullos del tercio medio por parcela (criterio SENAVE), desmotar en desmotadora de laboratorio y calcular fibra ÷ algodón en bruto × 100. El rendimiento de algodón en bruto (kg/ha) se carga en rend_kg con base 'sin corrección'.",
+   "momento": "Cosecha",
+   "cultivos": [
+    "Algodón"
+   ],
+   "tipos": [
+    "Cultivares (RNCC/VCU)",
+    "Fertilización (dosis-respuesta)"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/04_ensayos_agricolas.md"
+  },
+  {
+   "id": "tch",
+   "nombre": "Toneladas de caña por hectárea (TCH)",
+   "unidad": "t/ha",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 250,
+   "metodo": "Cortar y pesar todos los tallos limpios (despuntados y sin hojas) de los surcos útiles; t/ha = peso (kg) ÷ área útil (m²) × 10. Tomar 10 tallos para Brix/Pol en el laboratorio del ingenio (cargar como observación).",
+   "momento": "Cosecha de cada corte (caña planta y socas)",
+   "cultivos": [
+    "Caña de azúcar"
+   ],
+   "tipos": [
+    "Cultivares (RNCC/VCU)",
+    "Fertilización (dosis-respuesta)",
+    "Eficacia de herbicida",
+    "Eficacia de insecticida"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/08_normativa_paraguay.md (NOR-DPUV-111 y Res. 414/2020 leídas en senave.gov.py el 29-30/09/2026) (parcela 5 × 8 m de la Res. 414/2020)"
+  },
+  {
+   "id": "rend_raiz",
+   "nombre": "Rendimiento de raíces frescas",
+   "unidad": "t/ha",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 80,
+   "metodo": "Arrancar las plantas útiles, separar las raíces tuberosas comerciales, pesarlas y llevar a t/ha. Materia seca o almidón por balanza hidrostática (5 kg de raíces) como observación.",
+   "momento": "Cosecha (8–12 meses después de plantar)",
+   "cultivos": [
+    "Mandioca"
+   ],
+   "tipos": [
+    "Cultivares (RNCC/VCU)",
+    "Fertilización (dosis-respuesta)",
+    "Densidad, espaciamiento y época de siembra"
+   ],
+   "ref": "",
+   "fuente": "Práctica habitual (no verificada en fuente en línea en esta revisión)"
   },
   {
    "id": "ndvi",
@@ -179,15 +1128,30 @@
  "horticola": [
   {
    "id": "rendimiento",
-   "nombre": "Rendimiento",
+   "nombre": "Rendimiento total",
    "unidad": "t/ha",
    "tipo": "numero",
    "dec": 2,
    "sub": 1,
    "min": 0,
-   "max": 150,
-   "metodo": "Suma de todas las cosechas de las plantas útiles; kg/planta × plantas/ha / 1000.",
-   "ref": "05 §3.1"
+   "max": 300,
+   "metodo": "Pesar en cada cosecha todo lo cosechado en las plantas útiles (o en el área útil) y sumar todas las cosechas. t/ha = kg del área útil ÷ m² útiles × 10; por planta: kg/planta × plantas/ha ÷ 1000. Declarar en la ficha si el área es la cultivada (canteros + pasillos internos) o la total del invernadero. Frutales: kg/planta y llevar a t/ha con el marco.",
+   "momento": "En cada cosecha; se analiza el total acumulado (y la curva de cosechas)",
+   "tipos": [
+    "Cultivares / híbridos",
+    "Eficacia de fungicidas",
+    "Eficacia de insecticidas y acaricidas",
+    "Eficacia de herbicidas",
+    "Control de nematodos",
+    "Fertilización y bioestimulantes",
+    "Fertirriego",
+    "Cobertura del suelo",
+    "Densidad, marco y conducción",
+    "Injerto y portainjertos",
+    "Ambiente protegido"
+   ],
+   "ref": "05 §3.1",
+   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md §3.1"
   },
   {
    "id": "rend_com",
@@ -197,69 +1161,24 @@
    "dec": 2,
    "sub": 1,
    "min": 0,
-   "max": 150,
-   "metodo": "Solo frutos de categorías comercializables según calibre y defectos.",
-   "ref": "05 §3.1"
-  },
-  {
-   "id": "severidad",
-   "nombre": "Severidad de enfermedad 21 DDA",
-   "unidad": "%",
-   "tipo": "porcentaje",
-   "dec": 1,
-   "sub": 10,
-   "min": 0,
-   "max": 100,
-   "metodo": "10 hojas del tercio medio por parcela, % de área afectada con escala diagramática; a los 21 días de la aplicación.",
-   "ref": "05 §3.5"
-  },
-  {
-   "id": "incidencia",
-   "nombre": "Incidencia",
-   "unidad": "%",
-   "tipo": "porcentaje",
-   "dec": 1,
-   "sub": 1,
-   "min": 0,
-   "max": 100,
-   "metodo": "Plantas con síntomas / plantas evaluadas × 100 (todas las plantas útiles).",
-   "ref": "05 §3.5"
-  },
-  {
-   "id": "frutos_pl",
-   "nombre": "Frutos por planta",
-   "unidad": "n",
-   "tipo": "conteo",
-   "dec": 1,
-   "sub": 10,
-   "min": 0,
    "max": 300,
-   "metodo": "Contar frutos cosechados en 10 plantas útiles.",
-   "ref": "05 §3.1"
-  },
-  {
-   "id": "brix",
-   "nombre": "Sólidos solubles",
-   "unidad": "°Brix",
-   "tipo": "numero",
-   "dec": 1,
-   "sub": 5,
-   "min": 0,
-   "max": 30,
-   "metodo": "Refractómetro con jugo de 5 frutos maduros por parcela.",
-   "ref": "05 §3.2"
-  },
-  {
-   "id": "firmeza",
-   "nombre": "Firmeza",
-   "unidad": "N",
-   "tipo": "numero",
-   "dec": 1,
-   "sub": 5,
-   "min": 0,
-   "max": 120,
-   "metodo": "Penetrómetro con puntero de 8 mm en 5 frutos, en dos caras opuestas.",
-   "ref": "05 §3.2"
+   "metodo": "Solo lo comercializable según la norma declarada en la ficha: tomate por calibre y defectos de la Res. GMC 26/17; cebolla por calibre (P.Res. 06/19) sin dobles, florecidos ni podridos; papa sin verdeo, rajado ni podredumbre y con calibre comercial (≥ 34 mm o el que pida el comprador); hortalizas de hoja como se venden. Se pesa por separado en cada cosecha y se suma.",
+   "momento": "En cada cosecha; se analiza el total acumulado",
+   "tipos": [
+    "Cultivares / híbridos",
+    "Eficacia de fungicidas",
+    "Eficacia de insecticidas y acaricidas",
+    "Eficacia de herbicidas",
+    "Control de nematodos",
+    "Fertilización y bioestimulantes",
+    "Fertirriego",
+    "Cobertura del suelo",
+    "Densidad, marco y conducción",
+    "Injerto y portainjertos",
+    "Ambiente protegido"
+   ],
+   "ref": "05 §3.1",
+   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md §3.1; MERCOSUR/GMC/RES. N.º 26/17, RTM de identidad y calidad de tomate: https://faolex.fao.org/docs/pdf/mrc172644.pdf; MERCOSUR SGT 3, P.RES. N.º 06/19 (proyecto de RTM de cebolla): https://www2.aladi.org/nsfaladi/normasTecnicas.nsf/09267198f1324b64032574960062343c/42c6b2631c1ff7a5032585b9005ad13b/$FILE/Proy%20Cebollas.pdf"
   },
   {
    "id": "descarte",
@@ -270,8 +1189,1065 @@
    "sub": 1,
    "min": 0,
    "max": 100,
-   "metodo": "Peso de frutos no comerciales / peso total × 100, anotando la causa.",
-   "ref": "05 §3.1"
+   "metodo": "Peso de lo no comercial ÷ peso total cosechado × 100, sumando todas las cosechas. Anotar la causa principal en cada cosecha: podredumbre apical, rajado, daño de plaga, enfermedad, deforme, bajo calibre, quemado de sol, bulbo doble o florecido, raíz bifurcada.",
+   "momento": "En cada cosecha; se analiza el acumulado",
+   "tipos": [
+    "Cultivares / híbridos",
+    "Eficacia de fungicidas",
+    "Eficacia de insecticidas y acaricidas",
+    "Eficacia de herbicidas",
+    "Control de nematodos",
+    "Fertilización y bioestimulantes",
+    "Fertirriego",
+    "Cobertura del suelo",
+    "Densidad, marco y conducción",
+    "Injerto y portainjertos",
+    "Ambiente protegido",
+    "Poscosecha"
+   ],
+   "ref": "05 §3.1",
+   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md §3.1"
+  },
+  {
+   "id": "frutos_pl",
+   "nombre": "Frutos por planta",
+   "unidad": "n/planta",
+   "tipo": "conteo",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 500,
+   "metodo": "Contar todos los frutos cosechados de las plantas útiles, en todas las cosechas, y dividir por el número de plantas útiles vivas. Frutilla y zapallito: sumar las cosechas semanales. Cítricos y mburucuyá: frutos por planta en la cosecha.",
+   "momento": "En cada cosecha; se analiza el total",
+   "cultivos": [
+    "Tomate",
+    "Locote",
+    "Frutilla",
+    "Melón",
+    "Sandía",
+    "Zapallo / zapallito",
+    "Pepino",
+    "Cítricos",
+    "Mburucuyá"
+   ],
+   "tipos": [
+    "Cultivares / híbridos",
+    "Fertilización y bioestimulantes",
+    "Fertirriego",
+    "Densidad, marco y conducción",
+    "Injerto y portainjertos",
+    "Ambiente protegido",
+    "Cobertura del suelo",
+    "Eficacia de insecticidas y acaricidas"
+   ],
+   "ref": "05 §3.1",
+   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md §3.1; Tanaka Aguirre F.C. (2021), cultivares de frutilla en Encarnación, Itapúa (UNI): https://revistas.uni.edu.py/index.php/rseisa/article/download/292/276/552"
+  },
+  {
+   "id": "peso_fruto",
+   "nombre": "Peso medio de fruto",
+   "unidad": "g",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 60000,
+   "metodo": "Peso total cosechado ÷ número de frutos de las mismas plantas útiles (por cosecha o del total). Melón, sandía y zapallo: pesar cada fruto y promediar. Banana: peso del racimo; piña: peso del fruto con corona (anotar si es sin corona).",
+   "momento": "En cada cosecha (o en 2–3 cosechas intermedias)",
+   "cultivos": [
+    "Tomate",
+    "Locote",
+    "Frutilla",
+    "Melón",
+    "Sandía",
+    "Zapallo / zapallito",
+    "Pepino",
+    "Cítricos",
+    "Banana",
+    "Piña",
+    "Mburucuyá"
+   ],
+   "tipos": [
+    "Cultivares / híbridos",
+    "Fertilización y bioestimulantes",
+    "Fertirriego",
+    "Densidad, marco y conducción",
+    "Injerto y portainjertos",
+    "Ambiente protegido",
+    "Cobertura del suelo",
+    "Poscosecha"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md §3.1"
+  },
+  {
+   "id": "diam_fruto",
+   "nombre": "Diámetro de fruto o tubérculo",
+   "unidad": "mm",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 10,
+   "min": 5,
+   "max": 400,
+   "metodo": "Mayor diámetro transversal (ecuatorial) con calibre de corredera o anillos calibradores, en 10 frutos comerciales tomados al azar de una cosecha intermedia (papa: 20 tubérculos de la cosecha). La app asigna el calibre: tomate (Res. GMC 26/17) 1: < 35 mm (solo cherry); 2: 35–< 50; 3: 50–< 70; 4: 70–< 100; 5: ≥ 100 mm. Papa (referencia CEAGESP): < 34 mm; 34–42; 43–70; > 70 mm.",
+   "momento": "En 1–3 cosechas intermedias",
+   "cultivos": [
+    "Tomate",
+    "Locote",
+    "Cítricos",
+    "Melón",
+    "Sandía",
+    "Pepino",
+    "Papa"
+   ],
+   "tipos": [
+    "Cultivares / híbridos",
+    "Fertilización y bioestimulantes",
+    "Fertirriego",
+    "Densidad, marco y conducción",
+    "Injerto y portainjertos"
+   ],
+   "ref": "",
+   "fuente": "MERCOSUR/GMC/RES. N.º 26/17, RTM de identidad y calidad de tomate: https://faolex.fao.org/docs/pdf/mrc172644.pdf; CEAGESP, classificação de batata: https://ceagesp.gov.br/wp-content/uploads/2020/05/batata-2.pdf"
+  },
+  {
+   "id": "dias_cosecha",
+   "nombre": "Días a cosecha (precocidad)",
+   "unidad": "días",
+   "tipo": "conteo",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 400,
+   "metodo": "Días desde el trasplante (o la siembra directa, declarar) hasta la primera cosecha comercial de la parcela. Cebolla: días hasta que el 50 % de las plantas útiles tiene el tallo caído. Para comparar precocidad usar además la calculadora de % del rendimiento en las primeras 4 cosechas.",
+   "momento": "Fecha de la primera cosecha (cebolla: recorridas cada 3–4 días al final del ciclo)",
+   "cultivos": [
+    "Tomate",
+    "Locote",
+    "Frutilla",
+    "Melón",
+    "Sandía",
+    "Zapallo / zapallito",
+    "Pepino",
+    "Cebolla",
+    "Lechuga",
+    "Repollo"
+   ],
+   "tipos": [
+    "Cultivares / híbridos",
+    "Ambiente protegido",
+    "Cobertura del suelo",
+    "Injerto y portainjertos",
+    "Plantines"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md §3.1; Tanaka Aguirre F.C. (2021), cultivares de frutilla en Encarnación, Itapúa (UNI): https://revistas.uni.edu.py/index.php/rseisa/article/download/292/276/552"
+  },
+  {
+   "id": "brix",
+   "nombre": "Sólidos solubles",
+   "unidad": "°Brix",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 5,
+   "min": 0,
+   "max": 30,
+   "metodo": "Refractómetro (con compensación de temperatura, calibrado con agua destilada a 0) en 5 frutos maduros por parcela. Tomate, frutilla: jugo del fruto entero exprimido. Melón: pulpa del centro de la sección ecuatorial. Sandía: centro y cerca de la cáscara (anotar los dos). Cítricos y mburucuyá: jugo filtrado. Escala: Referencia de comercialización UE para melón: ≥ 8 °Brix (≥ 10 en Charentais).",
+   "momento": "En 1–2 cosechas intermedias, frutos en el mismo estado de madurez",
+   "cultivos": [
+    "Tomate",
+    "Locote",
+    "Frutilla",
+    "Melón",
+    "Sandía",
+    "Zapallo / zapallito",
+    "Cítricos",
+    "Piña",
+    "Mburucuyá",
+    "Banana"
+   ],
+   "tipos": [
+    "Cultivares / híbridos",
+    "Fertilización y bioestimulantes",
+    "Fertirriego",
+    "Injerto y portainjertos",
+    "Ambiente protegido",
+    "Poscosecha"
+   ],
+   "ref": "05 §3.2",
+   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md §3.2; Reglamento (CE) 1615/2001, norma de comercialización de melones: https://faolex.fao.org/docs/pdf/eur36621.pdf"
+  },
+  {
+   "id": "acidez",
+   "nombre": "Acidez titulable",
+   "unidad": "% ác. cítrico",
+   "tipo": "numero",
+   "dec": 2,
+   "sub": 1,
+   "min": 0,
+   "max": 6,
+   "metodo": "Titular 10 g de jugo (muestra compuesta de 5 frutos) diluidos en agua con NaOH 0,1 N hasta pH 8,1. AT % = V(ml) × 0,1 × 0,064 × 100 ÷ g de muestra (ácido cítrico; málico: 0,067). Con °Brix se calcula el ratio SST/AT.",
+   "momento": "Mismos frutos que el °Brix",
+   "cultivos": [
+    "Tomate",
+    "Frutilla",
+    "Cítricos",
+    "Mburucuyá",
+    "Piña"
+   ],
+   "tipos": [
+    "Cultivares / híbridos",
+    "Fertilización y bioestimulantes",
+    "Fertirriego",
+    "Poscosecha"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md §3.2"
+  },
+  {
+   "id": "firmeza",
+   "nombre": "Firmeza",
+   "unidad": "N",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 5,
+   "min": 0,
+   "max": 120,
+   "metodo": "Penetrómetro en 5 frutos, 2 lecturas en caras opuestas de la zona ecuatorial. Tomate: con piel; melón: sacando un disco de cáscara. Declarar el diámetro del puntero (8 mm el habitual; frutilla suele medirse con puntero más chico) y no comparar valores con punteros distintos. 1 kgf ≈ 9,8 N.",
+   "momento": "Mismos frutos que el °Brix; en poscosecha, en cada fecha de evaluación",
+   "cultivos": [
+    "Tomate",
+    "Locote",
+    "Frutilla",
+    "Melón",
+    "Sandía"
+   ],
+   "tipos": [
+    "Cultivares / híbridos",
+    "Fertilización y bioestimulantes",
+    "Poscosecha"
+   ],
+   "ref": "05 §3.2",
+   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md §3.2; Infoagro, firmeza o dureza de frutos: https://www.infoagro.com/documentos/firmeza_o_dureza_frutos.asp (puntero de frutilla: no verificado)"
+  },
+  {
+   "id": "espesor_pulpa",
+   "nombre": "Espesor de pulpa, pericarpio o cáscara",
+   "unidad": "mm",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 5,
+   "min": 0,
+   "max": 80,
+   "metodo": "Calibre de corredera en 5 frutos cortados por la mitad en la zona ecuatorial. Melón: de la cáscara a la cavidad de semillas. Locote: espesor de la pared (pericarpio). Sandía: espesor de la cáscara (corteza), que conviene que sea delgada.",
+   "momento": "Mismos frutos que el °Brix",
+   "cultivos": [
+    "Melón",
+    "Sandía",
+    "Locote",
+    "Zapallo / zapallito"
+   ],
+   "tipos": [
+    "Cultivares / híbridos",
+    "Fertilización y bioestimulantes"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md §5"
+  },
+  {
+   "id": "peso_cabeza",
+   "nombre": "Peso de cabeza",
+   "unidad": "g",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 10,
+   "min": 0,
+   "max": 5000,
+   "metodo": "Cortar al ras del suelo 10 plantas útiles, sacar las hojas externas dañadas o no comerciales (dejar la cabeza como se vende) y pesar cada una.",
+   "momento": "A cosecha (punto comercial del testigo)",
+   "cultivos": [
+    "Lechuga",
+    "Repollo"
+   ],
+   "tipos": [
+    "Cultivares / híbridos",
+    "Fertilización y bioestimulantes",
+    "Fertirriego",
+    "Cobertura del suelo",
+    "Densidad, marco y conducción",
+    "Ambiente protegido",
+    "Eficacia de insecticidas y acaricidas"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md §3.1"
+  },
+  {
+   "id": "tipburn",
+   "nombre": "Quemado de bordes (tipburn)",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Plantas útiles con al menos una hoja con necrosis de borde ÷ plantas evaluadas × 100. En repollo y lechuga de cabeza revisar también las hojas internas cortando la cabeza. Opcional: severidad media con escala 0–5. Escala: Severidad 0 = sin síntomas … 5 = muy severo (Moosavi-Nezhad y Meng, 2025).",
+   "momento": "A cosecha (y 7 días antes si el ensayo es de calcio o clima)",
+   "cultivos": [
+    "Lechuga",
+    "Repollo"
+   ],
+   "tipos": [
+    "Cultivares / híbridos",
+    "Fertilización y bioestimulantes",
+    "Fertirriego",
+    "Ambiente protegido"
+   ],
+   "ref": "",
+   "fuente": "Moosavi-Nezhad y Meng (2025), Frontiers in Plant Science 10.3389/fpls.2025.1701667: https://public-pages-files-2025.frontiersin.org/journals/plant-science/articles/10.3389/fpls.2025.1701667/text"
+  },
+  {
+   "id": "espigado",
+   "nombre": "Espigado o florecido",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Plantas útiles que emitieron tallo floral ÷ plantas útiles × 100. Lechuga: alargamiento del tallo (pierde la cabeza). Cebolla: bulbos con tallo floral o cuello grueso (defecto grave en la norma). Zanahoria y repollo: plantas con tallo floral.",
+   "momento": "A cosecha (en lechuga, también en la recorrida previa)",
+   "cultivos": [
+    "Lechuga",
+    "Cebolla",
+    "Zanahoria",
+    "Repollo"
+   ],
+   "tipos": [
+    "Cultivares / híbridos",
+    "Densidad, marco y conducción",
+    "Ambiente protegido",
+    "Cobertura del suelo"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md §5; MERCOSUR SGT 3, P.RES. N.º 06/19 (proyecto de RTM de cebolla): https://www2.aladi.org/nsfaladi/normasTecnicas.nsf/09267198f1324b64032574960062343c/42c6b2631c1ff7a5032585b9005ad13b/$FILE/Proy%20Cebollas.pdf"
+  },
+  {
+   "id": "diam_bulbo",
+   "nombre": "Diámetro de bulbo",
+   "unidad": "mm",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 10,
+   "min": 5,
+   "max": 130,
+   "metodo": "Diámetro ecuatorial con calibre de corredera en 10 bulbos útiles al azar, después del curado. La app asigna el calibre MERCOSUR (P.Res. 06/19): mini < 25 mm; 1: 25–40; 2: > 40–< 55; 3: 55–< 75; 4: 75–< 90; 5: ≥ 90. Para seguir la bulbificación a campo: relación diámetro de bulbo / diámetro de cuello.",
+   "momento": "A cosecha (después del curado)",
+   "cultivos": [
+    "Cebolla"
+   ],
+   "tipos": [
+    "Cultivares / híbridos",
+    "Fertilización y bioestimulantes",
+    "Fertirriego",
+    "Eficacia de herbicidas",
+    "Densidad, marco y conducción"
+   ],
+   "ref": "",
+   "fuente": "MERCOSUR SGT 3, P.RES. N.º 06/19 (proyecto de RTM de cebolla): https://www2.aladi.org/nsfaladi/normasTecnicas.nsf/09267198f1324b64032574960062343c/42c6b2631c1ff7a5032585b9005ad13b/$FILE/Proy%20Cebollas.pdf; Venialgo Chávez R.N. (2017), dos cultivares de cebolla bajo dos métodos de siembra, Itapúa (UNI): https://revistas.uni.edu.py/index.php/rseisa/en/article/view/174"
+  },
+  {
+   "id": "bulbos_dobles",
+   "nombre": "Bulbos dobles",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Bulbos divididos (dos o más bulbos con una sola túnica externa) ÷ bulbos cosechados en el área útil × 100.",
+   "momento": "A cosecha",
+   "cultivos": [
+    "Cebolla"
+   ],
+   "tipos": [
+    "Cultivares / híbridos",
+    "Densidad, marco y conducción",
+    "Fertilización y bioestimulantes"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md (la P.Res. 06/19 no lista los dobles como defecto; contarlos como no comerciales)"
+  },
+  {
+   "id": "long_raiz",
+   "nombre": "Longitud de raíz",
+   "unidad": "cm",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 10,
+   "min": 0,
+   "max": 40,
+   "metodo": "Desde el hombro hasta la punta, con regla, en 10 raíces comerciales al azar del muestreo. Anotar aparte el diámetro de hombro si se pide.",
+   "momento": "A cosecha",
+   "cultivos": [
+    "Zanahoria"
+   ],
+   "tipos": [
+    "Cultivares / híbridos",
+    "Densidad, marco y conducción",
+    "Fertilización y bioestimulantes",
+    "Control de nematodos"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md §5"
+  },
+  {
+   "id": "raices_defect",
+   "nombre": "Raíces o tubérculos defectuosos",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Número de raíces o tubérculos con defectos (rajados, bifurcados, hombro verde, verdeo, daño de insectos de suelo, agallas) ÷ total cosechado en el área útil × 100. Anotar la causa principal.",
+   "momento": "A cosecha",
+   "cultivos": [
+    "Zanahoria",
+    "Papa",
+    "Batata",
+    "Mandioca de mesa"
+   ],
+   "tipos": [
+    "Cultivares / híbridos",
+    "Control de nematodos",
+    "Fertilización y bioestimulantes",
+    "Densidad, marco y conducción",
+    "Eficacia de insecticidas y acaricidas"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md §3.1"
+  },
+  {
+   "id": "tuberculos_pl",
+   "nombre": "Tubérculos o raíces por planta",
+   "unidad": "n/planta",
+   "tipo": "conteo",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 60,
+   "metodo": "Contar los tubérculos (papa) o raíces tuberosas (batata, mandioca) de todas las plantas útiles y dividir por las plantas cosechadas. Separar en comerciales y no comerciales con la norma declarada (papa: calibre por diámetro).",
+   "momento": "A cosecha",
+   "cultivos": [
+    "Papa",
+    "Batata",
+    "Mandioca de mesa"
+   ],
+   "tipos": [
+    "Cultivares / híbridos",
+    "Densidad, marco y conducción",
+    "Fertilización y bioestimulantes"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md §3.1; CEAGESP, classificação de batata: https://ceagesp.gov.br/wp-content/uploads/2020/05/batata-2.pdf"
+  },
+  {
+   "id": "severidad",
+   "nombre": "Severidad de enfermedad",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 10,
+   "min": 0,
+   "max": 100,
+   "metodo": "Porcentaje de área afectada con escala diagramática del patógeno. Por defecto: 10 hojas (folíolos) del tercio medio de plantas útiles distintas. Tizón tardío (tomate y papa): % de follaje afectado de toda la planta o de la parcela útil. Tizón temprano (Alternaria): hojas del tercio inferior y medio. Oídio y mildiu en cucurbitáceas: hojas maduras del tercio medio. Botrytis en frutilla o tomate: % de frutos afectados (cargar en incidencia). Con 3 o más fechas la app calcula la AACPE.",
+   "momento": "Antes de la 1.ª aplicación (0 DAA) y cada 7 días (tizón tardío cada 5–7) hasta 14–21 días después de la última aplicación",
+   "tipos": [
+    "Eficacia de fungicidas",
+    "Cultivares / híbridos",
+    "Injerto y portainjertos",
+    "Ambiente protegido",
+    "Fertilización y bioestimulantes"
+   ],
+   "ref": "05 §3.5",
+   "fuente": "EPPO PP1 (lista de normas): https://pp1.eppo.int/standards/all (PP1/002, PP1/263, PP1/057, PP1/065); CIP, Estimación del nivel de susceptibilidad a Phytophthora infestans: https://cipotato.org/wp-content/uploads/Documentacion%20PDF/Estimacion%20del%20nivel%20de%20susceptibilidad%20a%20Phytophthora%20infestans.pdf"
+  },
+  {
+   "id": "incidencia",
+   "nombre": "Incidencia",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Plantas (u órganos: frutos, hojas) con síntomas ÷ evaluados × 100, en todas las plantas útiles. Para marchitez (Ralstonia, Fusarium, Phytophthora capsici) contar plantas muertas o marchitas acumuladas; para Botrytis o antracnosis en fruto, frutos afectados en la cosecha.",
+   "momento": "Mismas fechas que la severidad; marchitez cada 7–14 días; frutos en cada cosecha",
+   "tipos": [
+    "Eficacia de fungicidas",
+    "Cultivares / híbridos",
+    "Injerto y portainjertos",
+    "Ambiente protegido",
+    "Control de nematodos",
+    "Poscosecha"
+   ],
+   "ref": "05 §3.5",
+   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md §3.5"
+  },
+  {
+   "id": "virosis",
+   "nombre": "Plantas con virosis",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Plantas útiles con síntomas de virosis (mosaico, amarillamiento, enrulado, bronceado, anillos) ÷ plantas útiles × 100. Marcar las plantas para no recontar. Confirmar el virus (ELISA o PCR) en una muestra de plantas.",
+   "momento": "Cada 7–14 días desde el trasplante; el análisis principal es a los 60 días o a 1.ª cosecha",
+   "cultivos": [
+    "Tomate",
+    "Locote",
+    "Melón",
+    "Sandía",
+    "Zapallo / zapallito",
+    "Pepino",
+    "Papa",
+    "Lechuga",
+    "Mburucuyá"
+   ],
+   "tipos": [
+    "Eficacia de insecticidas y acaricidas",
+    "Cultivares / híbridos",
+    "Ambiente protegido",
+    "Injerto y portainjertos",
+    "Cobertura del suelo"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md §3.5"
+  },
+  {
+   "id": "mosca_blanca",
+   "nombre": "Mosca blanca (adultos)",
+   "unidad": "adultos/hoja",
+   "tipo": "conteo",
+   "dec": 1,
+   "sub": 10,
+   "min": 0,
+   "max": 500,
+   "metodo": "Temprano a la mañana, dar vuelta con cuidado una hoja totalmente expandida del tercio superior en 10 plantas útiles y contar los adultos del envés. Alternativa: ninfas por folíolo del tercio medio o inferior con lupa (10 folíolos). Escala: Referencia INTA: > 5 adultos por hoja del tercio superior indica aumento de la población.",
+   "momento": "Antes de aplicar (precuento) y 3, 7 y 14 días después de cada aplicación",
+   "cultivos": [
+    "Tomate",
+    "Locote",
+    "Melón",
+    "Sandía",
+    "Zapallo / zapallito",
+    "Pepino",
+    "Papa",
+    "Mandioca de mesa"
+   ],
+   "tipos": [
+    "Eficacia de insecticidas y acaricidas",
+    "Cultivares / híbridos",
+    "Ambiente protegido"
+   ],
+   "ref": "",
+   "fuente": "Cáceres S., INTA EEA Bella Vista, Guía de identificación y manejo de plagas del tomate: https://repositorio.inta.gob.ar/xmlui/bitstream/handle/20.500.12123/8591/INTA_EEABellaVista_Libros_CaceresS_GuiaIdentificaci%C3%B3nManejoPlagasTomate.pdf; EPPO PP1 (lista de normas): https://pp1.eppo.int/standards/all (PP1/036)"
+  },
+  {
+   "id": "tuta_foliolos",
+   "nombre": "Folíolos minados por Tuta absoluta",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 10,
+   "min": 0,
+   "max": 100,
+   "metodo": "En 10 plantas útiles, revisar una hoja del tercio medio-superior por planta: folíolos con minas con larva viva ÷ folíolos revisados × 100. Alternativa: larvas vivas por planta.",
+   "momento": "Precuento y 3, 7 y 14 días después de cada aplicación",
+   "cultivos": [
+    "Tomate"
+   ],
+   "tipos": [
+    "Eficacia de insecticidas y acaricidas",
+    "Cultivares / híbridos"
+   ],
+   "ref": "",
+   "fuente": "EPPO PP1 (lista de normas): https://pp1.eppo.int/standards/all (PP1/275, texto completo no consultado); Cáceres S., INTA EEA Bella Vista, Guía de identificación y manejo de plagas del tomate: https://repositorio.inta.gob.ar/xmlui/bitstream/handle/20.500.12123/8591/INTA_EEABellaVista_Libros_CaceresS_GuiaIdentificaci%C3%B3nManejoPlagasTomate.pdf"
+  },
+  {
+   "id": "frutos_danados",
+   "nombre": "Frutos dañados por plagas",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Frutos con daño de insectos (Tuta absoluta, Neoleucinodes, Helicoverpa, Diaphania en cucurbitáceas, trips en frutilla) ÷ frutos cosechados de las plantas útiles × 100, por cosecha.",
+   "momento": "En cada cosecha; se analiza el acumulado",
+   "cultivos": [
+    "Tomate",
+    "Locote",
+    "Melón",
+    "Sandía",
+    "Zapallo / zapallito",
+    "Pepino",
+    "Frutilla"
+   ],
+   "tipos": [
+    "Eficacia de insecticidas y acaricidas",
+    "Cultivares / híbridos"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md §3.5"
+  },
+  {
+   "id": "trips",
+   "nombre": "Trips",
+   "unidad": "n/unidad",
+   "tipo": "conteo",
+   "dec": 1,
+   "sub": 10,
+   "min": 0,
+   "max": 500,
+   "metodo": "Cebolla: contar ninfas y adultos en el cuello y entre las hojas de 10 plantas útiles (n/planta). Tomate, locote y frutilla: golpear 10 flores sobre una superficie blanca o bandeja y contar (n/flor). Declarar la unidad en la ficha.",
+   "momento": "Precuento y 3, 7 y 14 días después de cada aplicación",
+   "cultivos": [
+    "Cebolla",
+    "Tomate",
+    "Locote",
+    "Frutilla",
+    "Melón",
+    "Sandía",
+    "Pepino",
+    "Lechuga"
+   ],
+   "tipos": [
+    "Eficacia de insecticidas y acaricidas",
+    "Cultivares / híbridos"
+   ],
+   "ref": "",
+   "fuente": "EPPO PP1 (lista de normas): https://pp1.eppo.int/standards/all (PP1/085); Cáceres S., INTA EEA Bella Vista, Guía de identificación y manejo de plagas del tomate: https://repositorio.inta.gob.ar/xmlui/bitstream/handle/20.500.12123/8591/INTA_EEABellaVista_Libros_CaceresS_GuiaIdentificaci%C3%B3nManejoPlagasTomate.pdf"
+  },
+  {
+   "id": "acaros",
+   "nombre": "Ácaros (formas móviles)",
+   "unidad": "n/folíolo",
+   "tipo": "conteo",
+   "dec": 1,
+   "sub": 10,
+   "min": 0,
+   "max": 500,
+   "metodo": "Con lupa de 10–20×, contar ninfas y adultos en el envés de 10 folíolos del tercio medio (frutilla: folíolo central de una hoja madura) de plantas útiles distintas. Arañuela (Tetranychus urticae), ácaro blanco del locote (Polyphagotarsonemus latus). El ácaro del bronceado del tomate se evalúa mejor como % de plantas con bronceado (en incidencia).",
+   "momento": "Precuento y 3, 7, 14 y 21 días después de cada aplicación",
+   "cultivos": [
+    "Frutilla",
+    "Tomate",
+    "Locote",
+    "Melón",
+    "Sandía",
+    "Pepino",
+    "Cítricos"
+   ],
+   "tipos": [
+    "Eficacia de insecticidas y acaricidas",
+    "Cultivares / híbridos"
+   ],
+   "ref": "",
+   "fuente": "EPPO PP1 (lista de normas): https://pp1.eppo.int/standards/all (PP1/037); Cáceres S., INTA EEA Bella Vista, Guía de identificación y manejo de plagas del tomate: https://repositorio.inta.gob.ar/xmlui/bitstream/handle/20.500.12123/8591/INTA_EEABellaVista_Libros_CaceresS_GuiaIdentificaci%C3%B3nManejoPlagasTomate.pdf"
+  },
+  {
+   "id": "agallas",
+   "nombre": "Índice de agallas de nematodos",
+   "unidad": "0–5",
+   "tipo": "escala",
+   "dec": 1,
+   "sub": 5,
+   "min": 0,
+   "max": 5,
+   "metodo": "Arrancar 5 plantas útiles con el sistema radical, lavar y puntuar cada raíz con la escala 0–5 de Taylor y Sasser. Complementar con análisis nematológico de suelo al inicio (Pi) y al final (Pf).",
+   "momento": "Al final del ciclo (o 45–60 días después del trasplante en ensayos cortos)",
+   "escala": [
+    "0 Sin agallas",
+    "1 1–2 agallas",
+    "2 3–10 agallas",
+    "3 11–30 agallas",
+    "4 31–100 agallas",
+    "5 Más de 100 agallas por raíz"
+   ],
+   "escMin": 0,
+   "cultivos": [
+    "Tomate",
+    "Locote",
+    "Zanahoria",
+    "Lechuga",
+    "Melón",
+    "Sandía",
+    "Pepino",
+    "Papa",
+    "Batata",
+    "Frutilla"
+   ],
+   "tipos": [
+    "Control de nematodos",
+    "Injerto y portainjertos",
+    "Cultivares / híbridos"
+   ],
+   "ref": "",
+   "fuente": "EPPO PP1 (lista de normas): https://pp1.eppo.int/standards/all (PP1/321, PP1/322); escala de Taylor y Sasser (1978): no verificado en línea"
+  },
+  {
+   "id": "fitotox",
+   "nombre": "Fitotoxicidad",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Daño visual de la parcela comparado con el testigo sin aplicar (0 = sin daño, 100 = planta muerta), anotando el tipo: clorosis, necrosis, deformación, enanismo, manchas en fruto.",
+   "momento": "3, 7 y 14 días después de cada aplicación",
+   "tipos": [
+    "Eficacia de fungicidas",
+    "Eficacia de insecticidas y acaricidas",
+    "Eficacia de herbicidas",
+    "Control de nematodos",
+    "Fertilización y bioestimulantes",
+    "Fertirriego"
+   ],
+   "ref": "",
+   "fuente": "EPPO PP1 (lista de normas): https://pp1.eppo.int/standards/all (PP1/135)"
+  },
+  {
+   "id": "lamina",
+   "nombre": "Lámina aplicada",
+   "unidad": "mm",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 1500,
+   "metodo": "Sumar el agua aplicada por tratamiento: volumen del gotero testigo (L/planta) × plantas/m², o caudalímetro del sector ÷ m². 1 L/m² = 1 mm. Registrar al menos una vez por semana.",
+   "momento": "Diario o semanal; se analiza el acumulado del ciclo",
+   "tipos": [
+    "Fertirriego",
+    "Cobertura del suelo",
+    "Ambiente protegido"
+   ],
+   "ref": "",
+   "fuente": "Vida Rural 168 (2003), control del drenaje en cultivo sin suelo: https://www.mapa.gob.es/ministerio/pags/biblioteca/revistas/pdf_vrural/Vrural_2003_168_30_33.pdf"
+  },
+  {
+   "id": "drenaje_pct",
+   "nombre": "Porcentaje de drenaje",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Cultivo en sustrato o maceta: volumen recogido en la bandeja de drenaje de una unidad de cultivo ÷ volumen aportado a esa unidad (gotero testigo) × 100. Anotar a la misma hora. Escala: El objetivo depende de la calidad del agua, el sustrato, el clima y la fase del cultivo; la fuente cita valores superiores al 30 %.",
+   "momento": "Diario o 2–3 veces por semana",
+   "tipos": [
+    "Fertirriego",
+    "Sustratos"
+   ],
+   "ref": "",
+   "fuente": "Vida Rural 168 (2003), control del drenaje en cultivo sin suelo: https://www.mapa.gob.es/ministerio/pags/biblioteca/revistas/pdf_vrural/Vrural_2003_168_30_33.pdf"
+  },
+  {
+   "id": "ce_drenaje",
+   "nombre": "CE del drenaje o de la solución del suelo",
+   "unidad": "dS/m",
+   "tipo": "numero",
+   "dec": 2,
+   "sub": 1,
+   "min": 0,
+   "max": 15,
+   "metodo": "Conductímetro calibrado. Sustrato: CE del agua de la bandeja de drenaje. Suelo: solución extraída con sonda de succión instalada a 15–30 cm, cerca del gotero. Anotar también el pH y la CE de la solución de aporte para comparar.",
+   "momento": "Semanal (en sustrato, 2–3 veces por semana)",
+   "tipos": [
+    "Fertirriego",
+    "Sustratos",
+    "Fertilización y bioestimulantes"
+   ],
+   "ref": "",
+   "fuente": "Vida Rural 168 (2003), control del drenaje en cultivo sin suelo: https://www.mapa.gob.es/ministerio/pags/biblioteca/revistas/pdf_vrural/Vrural_2003_168_30_33.pdf; Cajamar, uso de sondas de succión para el manejo del N: https://publicacionescajamar.es/wp-content/uploads/2023/03/uso-de-sondas-de-succion-para-el-manejo.pdf"
+  },
+  {
+   "id": "sust_pt",
+   "nombre": "Porosidad total del sustrato",
+   "unidad": "% v/v",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 3,
+   "min": 0,
+   "max": 100,
+   "metodo": "Llenar 3 cilindros de volumen conocido con el sustrato, saturar 24 h y drenar; porosidad total = (agua retenida + aire) ÷ volumen. Método de referencia: mesa de tensión (De Boodt) en laboratorio; si se puede, pedir también agua fácilmente disponible y densidad aparente. Escala: Referencia de sustrato ideal (Abad et al., 1993): porosidad total > 85 %.",
+   "momento": "Al inicio del ensayo (sustrato tal como se usa)",
+   "tipos": [
+    "Sustratos",
+    "Plantines"
+   ],
+   "ref": "",
+   "fuente": "Agronomía Costarricense (UCR), propiedades físicas de fibra de coco, cita a Abad et al. (1993): https://www.revistas.ucr.ac.cr/index.php/agrocost/article/view/52044/52194; Método 1:5 v/v y mesa de tensión (IN SDA 17/2007, Brasil), en Horticultura Brasileira: https://www.redalyc.org/pdf/908/90822247009.pdf"
+  },
+  {
+   "id": "sust_ca",
+   "nombre": "Capacidad de aireación del sustrato",
+   "unidad": "% v/v",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 3,
+   "min": 0,
+   "max": 100,
+   "metodo": "Volumen de agua que drena libremente del cilindro saturado ÷ volumen del cilindro × 100 (aire a 1 kPa / 10 cm de columna de agua en mesa de tensión). Escala: Rango de referencia citado en la fuente: 15–30 % (Abad et al., 1993; Ansorena, 1994).",
+   "momento": "Al inicio del ensayo",
+   "tipos": [
+    "Sustratos",
+    "Plantines"
+   ],
+   "ref": "",
+   "fuente": "Agronomía Costarricense (UCR), propiedades físicas de fibra de coco, cita a Abad et al. (1993): https://www.revistas.ucr.ac.cr/index.php/agrocost/article/view/52044/52194"
+  },
+  {
+   "id": "sust_ph",
+   "nombre": "pH del sustrato",
+   "unidad": "pH",
+   "tipo": "numero",
+   "dec": 2,
+   "sub": 3,
+   "min": 3,
+   "max": 9,
+   "metodo": "Extracto 1:5 v/v (60 ml de sustrato + 300 ml de agua destilada, agitar 1 h, a 25 °C) y leer con pHmetro calibrado.",
+   "momento": "Al inicio y al final del ensayo",
+   "tipos": [
+    "Sustratos",
+    "Plantines"
+   ],
+   "ref": "",
+   "fuente": "Método 1:5 v/v y mesa de tensión (IN SDA 17/2007, Brasil), en Horticultura Brasileira: https://www.redalyc.org/pdf/908/90822247009.pdf"
+  },
+  {
+   "id": "sust_ce",
+   "nombre": "CE del sustrato",
+   "unidad": "dS/m",
+   "tipo": "numero",
+   "dec": 2,
+   "sub": 3,
+   "min": 0,
+   "max": 10,
+   "metodo": "Mismo extracto 1:5 v/v que el pH, con conductímetro a 25 °C. Declarar el método: los valores de 1:5 no se comparan con los del extracto de saturación.",
+   "momento": "Al inicio y al final del ensayo",
+   "tipos": [
+    "Sustratos",
+    "Plantines"
+   ],
+   "ref": "",
+   "fuente": "Método 1:5 v/v y mesa de tensión (IN SDA 17/2007, Brasil), en Horticultura Brasileira: https://www.redalyc.org/pdf/908/90822247009.pdf"
+  },
+  {
+   "id": "temp_suelo",
+   "nombre": "Temperatura del suelo",
+   "unidad": "°C",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 60,
+   "metodo": "Termómetro de suelo o sensor con registrador a 10 cm de profundidad, en la línea de plantas, en el centro de la parcela. Si es manual, leer a las 8 y a las 14 h.",
+   "momento": "Semanal (manual) o continua (registrador) durante las primeras 6–8 semanas",
+   "tipos": [
+    "Cobertura del suelo",
+    "Ambiente protegido"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md (método no verificado con norma)"
+  },
+  {
+   "id": "malezas_cob",
+   "nombre": "Cobertura de malezas",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 0,
+   "sub": 2,
+   "min": 0,
+   "max": 100,
+   "metodo": "Estimación visual del % de suelo cubierto por malezas en 2 marcos de 0,25 m² por parcela (en la entrelínea y en la línea de plantas); opcional: cortar, secar y pesar.",
+   "momento": "15, 30 y 45 días después del trasplante o de la aplicación, y antes de la cosecha",
+   "tipos": [
+    "Cobertura del suelo",
+    "Eficacia de herbicidas"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md (método no verificado con norma)"
+  },
+  {
+   "id": "perdida_peso",
+   "nombre": "Pérdida de peso en poscosecha",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 2,
+   "sub": 5,
+   "min": 0,
+   "max": 100,
+   "metodo": "Pesar los mismos 3–5 frutos (o cabezas, bulbos) identificados al día 0 y en cada fecha: % = (peso inicial − peso a la fecha) ÷ peso inicial × 100. Anotar temperatura y HR del almacenamiento.",
+   "momento": "Día 0 y cada 2–3 días (cebolla: cada 15 días) hasta el final de la vida en estante",
+   "cultivos": [
+    "Tomate",
+    "Locote",
+    "Frutilla",
+    "Melón",
+    "Sandía",
+    "Cebolla",
+    "Papa",
+    "Lechuga",
+    "Zanahoria",
+    "Cítricos",
+    "Banana",
+    "Piña",
+    "Mburucuyá",
+    "Batata",
+    "Zapallo / zapallito",
+    "Pepino",
+    "Repollo",
+    "Mandioca de mesa"
+   ],
+   "tipos": [
+    "Poscosecha"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md §3.2"
+  },
+  {
+   "id": "vida_estante",
+   "nombre": "Vida en estante",
+   "unidad": "días",
+   "tipo": "conteo",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 180,
+   "metodo": "Días desde la cosecha hasta que la unidad experimental pierde condición comercial según el criterio fijado en la ficha (p. ej. más del 50 % de los frutos con podredumbre, arrugado o ablandamiento; en cebolla, brotado o podredumbre).",
+   "momento": "Revisión diaria (cebolla y papa: semanal)",
+   "tipos": [
+    "Poscosecha",
+    "Cultivares / híbridos"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md §3.2"
+  },
+  {
+   "id": "emergencia",
+   "nombre": "Emergencia",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Plántulas emergidas ÷ semillas sembradas × 100 en toda la bandeja o unidad (celdas con plántula visible).",
+   "momento": "Conteo diario hasta que se estabiliza (normalmente 7–14 días después de la siembra)",
+   "tipos": [
+    "Plantines",
+    "Sustratos"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md §3.4"
+  },
+  {
+   "id": "altura_pl",
+   "nombre": "Altura de plantín",
+   "unidad": "cm",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 10,
+   "min": 0,
+   "max": 60,
+   "metodo": "Regla desde el cuello (nivel del sustrato) hasta el ápice, en 10 plantines del centro de la bandeja (sin las 2 filas de borde).",
+   "momento": "Al momento del trasplante (y semanal si se sigue el crecimiento)",
+   "tipos": [
+    "Plantines",
+    "Sustratos",
+    "Injerto y portainjertos"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md §3.4"
+  },
+  {
+   "id": "diam_cuello",
+   "nombre": "Diámetro de cuello",
+   "unidad": "mm",
+   "tipo": "numero",
+   "dec": 2,
+   "sub": 10,
+   "min": 0,
+   "max": 20,
+   "metodo": "Calibre digital a la altura del cuello en los mismos 10 plantines de la altura.",
+   "momento": "Al momento del trasplante",
+   "tipos": [
+    "Plantines",
+    "Sustratos",
+    "Injerto y portainjertos"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md §3.4"
+  },
+  {
+   "id": "ps_aereo",
+   "nombre": "Peso seco aéreo",
+   "unidad": "g/planta",
+   "tipo": "numero",
+   "dec": 3,
+   "sub": 10,
+   "min": 0,
+   "max": 50,
+   "metodo": "Cortar a nivel del cuello los 10 plantines medidos, secar en estufa a 65–70 °C hasta peso constante y pesar; dividir por el número de plantines.",
+   "momento": "Al momento del trasplante",
+   "tipos": [
+    "Plantines",
+    "Sustratos"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md §3.4"
+  },
+  {
+   "id": "ps_raiz",
+   "nombre": "Peso seco de raíz",
+   "unidad": "g/planta",
+   "tipo": "numero",
+   "dec": 3,
+   "sub": 10,
+   "min": 0,
+   "max": 20,
+   "metodo": "Lavar el cepellón de los mismos plantines sobre tamiz, secar las raíces en estufa a 65–70 °C hasta peso constante y pesar.",
+   "momento": "Al momento del trasplante",
+   "tipos": [
+    "Plantines",
+    "Sustratos"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md §3.4"
+  },
+  {
+   "id": "iqd",
+   "nombre": "Índice de calidad de Dickson",
+   "unidad": "índice",
+   "tipo": "numero",
+   "dec": 3,
+   "sub": 1,
+   "min": 0,
+   "max": 10,
+   "metodo": "Lo calcula la app por parcela: IQD = PST ÷ (H/D + PSA/PSR), con PST = peso seco total (g), H = altura (cm), D = diámetro de cuello (mm), PSA y PSR = peso seco aéreo y de raíz (g). Mayor valor = plantín de mejor calidad.",
+   "momento": "Al momento del trasplante",
+   "tipos": [
+    "Plantines",
+    "Sustratos"
+   ],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md §3.4 (Dickson et al., 1960)"
   },
   {
    "id": "ndvi",
@@ -365,8 +2341,44 @@
    "sub": 1,
    "min": 0,
    "max": 100,
-   "metodo": "Árboles vivos / árboles plantados en la parcela × 100.",
-   "ref": "06 §3"
+   "metodo": "Contar árboles vivos y plantados en el área útil (en parcela de un árbol, por tratamiento). Sobrevivencia = vivos / plantados × 100. Anotar aparte los replantes (solo hasta 30–60 días) y no mezclarlos con los originales.",
+   "momento": "30–90 días (prendimiento), 6, 12, 24 meses y anual",
+   "tipos": [
+    "Clones (ensayo clonal)",
+    "Especies y procedencias",
+    "Progenies",
+    "Espaciamiento / densidad",
+    "Fertilización",
+    "Preparación de suelo y control de malezas",
+    "Control de hormigas cortadoras",
+    "Plagas y enfermedades (termitas, chinche, roya)",
+    "Establecimiento y sobrevivencia post-plantación",
+    "Vivero: calidad de plantines",
+    "Silvopastoril (componente arbóreo)"
+   ],
+   "ref": "06 §3",
+   "fuente": "Guía 06 §3; Decreto 9425/95 (prendimiento ≥ 80 %): https://faolex.fao.org/docs/pdf/par17513.pdf"
+  },
+  {
+   "id": "dac",
+   "nombre": "Diámetro a la altura del cuello (DAC)",
+   "unidad": "mm",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 25,
+   "min": 0,
+   "max": 200,
+   "metodo": "Calibre o forcípula al ras del suelo (o a 5 cm, siempre a la misma altura marcada), dos lecturas perpendiculares y se promedian. Para plantas que aún no llegan a 1,30 m.",
+   "momento": "6 y 12 meses (nativas: hasta que la mayoría pase 1,30 m)",
+   "tipos": [
+    "Clones (ensayo clonal)",
+    "Especies y procedencias",
+    "Fertilización",
+    "Preparación de suelo y control de malezas",
+    "Establecimiento y sobrevivencia post-plantación"
+   ],
+   "ref": "",
+   "fuente": "Guía 06 §3; https://agrocienciauruguay.uy/index.php/agrociencia/article/view/1275"
   },
   {
    "id": "dap",
@@ -374,11 +2386,23 @@
    "unidad": "cm",
    "tipo": "numero",
    "dec": 1,
-   "sub": 9,
+   "sub": 25,
    "min": 0,
    "max": 120,
-   "metodo": "Diámetro a 1,30 m con cinta diamétrica en los árboles útiles (sin borde); en pendiente, desde el lado de arriba.",
-   "ref": "06 §3"
+   "metodo": "Diámetro a 1,30 m con cinta diamétrica (o CAP / π) en todos los árboles útiles vivos; marcar el punto de 1,30 m con pintura para remedir siempre en el mismo lugar. En pendiente, desde el lado de arriba. Bifurcado por debajo de 1,30 m: medir cada fuste y registrar el diámetro equivalente √(Σ DAP²). Con defecto a 1,30 m, medir justo arriba.",
+   "momento": "Desde que la mayoría supera ~2 m de altura (12–24 meses en eucalipto) y luego anual",
+   "tipos": [
+    "Clones (ensayo clonal)",
+    "Especies y procedencias",
+    "Progenies",
+    "Espaciamiento / densidad",
+    "Fertilización",
+    "Preparación de suelo y control de malezas",
+    "Raleo, poda y manejo de rebrote",
+    "Silvopastoril (componente arbóreo)"
+   ],
+   "ref": "06 §3",
+   "fuente": "Guía 06 §3"
   },
   {
    "id": "altura_m",
@@ -386,54 +2410,804 @@
    "unidad": "m",
    "tipo": "numero",
    "dec": 1,
-   "sub": 9,
+   "sub": 25,
    "min": 0,
    "max": 60,
-   "metodo": "Hipsómetro (Vertex, Suunto) en los árboles útiles o submuestra + relación hipsométrica.",
-   "ref": "06 §3"
+   "metodo": "Hasta ~12 m con vara telescópica; después con hipsómetro (Vertex, Suunto, Blume-Leiss). Hasta 24–36 meses medir todos los útiles; luego una submuestra (≥ 30 % de los útiles, cubriendo todas las clases de diámetro, más los dominantes) y estimar el resto con relación hipsométrica ajustada por tratamiento.",
+   "momento": "6, 12, 24 meses y anual",
+   "tipos": [
+    "Clones (ensayo clonal)",
+    "Especies y procedencias",
+    "Progenies",
+    "Espaciamiento / densidad",
+    "Fertilización",
+    "Preparación de suelo y control de malezas",
+    "Plagas y enfermedades (termitas, chinche, roya)",
+    "Establecimiento y sobrevivencia post-plantación",
+    "Raleo, poda y manejo de rebrote",
+    "Silvopastoril (componente arbóreo)"
+   ],
+   "ref": "06 §3",
+   "fuente": "Guía 06 §3"
   },
   {
-   "id": "forma",
-   "nombre": "Forma del fuste",
-   "unidad": "nota 1–5",
-   "tipo": "escala",
-   "dec": 0,
-   "sub": 9,
-   "min": 1,
-   "max": 5,
-   "metodo": "Nota visual por árbol: 1 recto … 5 muy tortuoso; se promedia por parcela.",
-   "ref": "06 §3",
-   "escala": [
-    "1 Recto",
-    "2 Levemente curvo",
-    "3 Curvo",
-    "4 Muy curvo",
-    "5 Tortuoso"
-   ]
+   "id": "altura_com",
+   "nombre": "Altura comercial",
+   "unidad": "m",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 6,
+   "min": 0,
+   "max": 50,
+   "metodo": "Con hipsómetro, desde el suelo hasta el punto donde el fuste llega al diámetro mínimo comercial definido en la ficha (p. ej. 6–8 cm para leña o celulosa; mayor para aserrío). Submuestra de árboles medianos.",
+   "momento": "Pre-raleo y turno",
+   "tipos": [
+    "Clones (ensayo clonal)",
+    "Raleo, poda y manejo de rebrote"
+   ],
+   "ref": "",
+   "fuente": "Guía 06 §3; diámetros mínimos: ejemplo orientativo, no verificado"
+  },
+  {
+   "id": "altura_dom",
+   "nombre": "Altura dominante (Assmann)",
+   "unidad": "m",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 6,
+   "min": 0,
+   "max": 60,
+   "metodo": "Media de la altura de los árboles más gruesos equivalentes a 100 árb/ha: n = área de la parcela (m²) / 100 (p. ej. 6 en 600 m²). Base del índice de sitio.",
+   "momento": "Anual desde 24 meses",
+   "tipos": [
+    "Clones (ensayo clonal)",
+    "Espaciamiento / densidad",
+    "Raleo, poda y manejo de rebrote"
+   ],
+   "ref": "",
+   "fuente": "Guía 06 §3.1"
+  },
+  {
+   "id": "area_basal",
+   "nombre": "Área basal",
+   "unidad": "m²/ha",
+   "tipo": "numero",
+   "dec": 2,
+   "sub": 1,
+   "min": 0,
+   "max": 80,
+   "metodo": "Se calcula: G = Σ 0,00007854 × DAP² (cm) de los árboles vivos útiles × 10 000 / área útil (m²).",
+   "momento": "Con cada medición de DAP",
+   "tipos": [
+    "Clones (ensayo clonal)",
+    "Especies y procedencias",
+    "Espaciamiento / densidad",
+    "Fertilización",
+    "Raleo, poda y manejo de rebrote"
+   ],
+   "ref": "",
+   "fuente": "Guía 06 §3.1"
+  },
+  {
+   "id": "vol_arbol",
+   "nombre": "Volumen individual",
+   "unidad": "m³/árbol",
+   "tipo": "numero",
+   "dec": 4,
+   "sub": 25,
+   "min": 0,
+   "max": 10,
+   "metodo": "Se calcula por árbol: v = 0,00007854 × DAP² × h × ff (ff de la especie, ver vol_ha) o con ecuación local (Schumacher-Hall). Variable de selección en progenies y clones.",
+   "momento": "Con cada medición de DAP y altura",
+   "tipos": [
+    "Clones (ensayo clonal)",
+    "Progenies",
+    "Espaciamiento / densidad"
+   ],
+   "ref": "",
+   "fuente": "Guía 06 §3.1; https://www.ipef.br/publicacoes/scientia/nr112/cap19.pdf"
   },
   {
    "id": "vol_ha",
-   "nombre": "Volumen",
+   "nombre": "Volumen por hectárea",
    "unidad": "m³/ha",
    "tipo": "numero",
    "dec": 1,
    "sub": 1,
    "min": 0,
    "max": 800,
-   "metodo": "Σ (π/4 · DAP² · altura · factor de forma 0,45) × árboles/ha. Se calcula desde DAP y altura.",
-   "ref": "06 §3.1"
+   "metodo": "Se calcula: V = Σ (0,00007854 × DAP² × h × ff) de los árboles vivos útiles × 10 000 / área útil (m²). ff (factor de forma artificial a 1,30 m, con corteza) configurable por especie: 0,45–0,50 para volumen total en eucalipto (0,46 hallado en urograndis); para volumen comercial ~0,54. Si existe, usar ecuación local ln v = b0 + b1·ln DAP + b2·ln h.",
+   "momento": "24 meses y anual",
+   "tipos": [
+    "Clones (ensayo clonal)",
+    "Especies y procedencias",
+    "Espaciamiento / densidad",
+    "Fertilización",
+    "Raleo, poda y manejo de rebrote",
+    "Silvopastoril (componente arbóreo)"
+   ],
+   "ref": "06 §3.1",
+   "fuente": "https://scientiaplena.emnuvens.com.br/sp/article/view/2427"
   },
   {
-   "id": "hormigas",
-   "nombre": "Daño por hormigas",
+   "id": "ima",
+   "nombre": "Incremento medio anual (IMA)",
+   "unidad": "m³/ha/año",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 80,
+   "metodo": "Se calcula: IMA = V/ha ÷ edad (años). Junto con el ICA = (V₂ − V₁)/(t₂ − t₁) define el turno técnico (cuando ICA = IMA).",
+   "momento": "Anual desde 24 meses",
+   "tipos": [
+    "Clones (ensayo clonal)",
+    "Especies y procedencias",
+    "Espaciamiento / densidad",
+    "Fertilización",
+    "Raleo, poda y manejo de rebrote",
+    "Silvopastoril (componente arbóreo)"
+   ],
+   "ref": "",
+   "fuente": "Guía 06 §3.1"
+  },
+  {
+   "id": "forma",
+   "nombre": "Rectitud del fuste",
+   "unidad": "nota 1–5",
+   "tipo": "escala",
+   "dec": 0,
+   "sub": 25,
+   "min": 1,
+   "max": 5,
+   "metodo": "Nota visual por árbol mirando el fuste desde dos lados a 90°, en la parte comercial; se promedia por parcela. La bifurcación se registra aparte. Ojo: muchas publicaciones usan la escala invertida (5 = recto); indicar siempre cuál se usó.",
+   "momento": "12, 24 meses y pre-raleo",
+   "escala": [
+    "1 Recto",
+    "2 Levemente curvo",
+    "3 Curvo",
+    "4 Muy curvo",
+    "5 Tortuoso"
+   ],
+   "escMin": 1,
+   "tipos": [
+    "Clones (ensayo clonal)",
+    "Especies y procedencias",
+    "Progenies"
+   ],
+   "ref": "06 §3",
+   "fuente": "Guía 06 §3; escala orientativa (no hay norma única)"
+  },
+  {
+   "id": "bifurcacion",
+   "nombre": "Árboles bifurcados",
    "unidad": "%",
    "tipo": "porcentaje",
    "dec": 1,
    "sub": 1,
    "min": 0,
    "max": 100,
-   "metodo": "Plantas con defoliación por hormigas cortadoras / plantas evaluadas × 100.",
-   "ref": "06 §1"
+   "metodo": "Por árbol: sí/no y en qué tercio ocurre (debajo de 1,30 m, primer tercio, más arriba). % = bifurcados / vivos útiles × 100.",
+   "momento": "12, 24 meses y pre-raleo",
+   "tipos": [
+    "Clones (ensayo clonal)",
+    "Especies y procedencias",
+    "Progenies"
+   ],
+   "ref": "",
+   "fuente": "https://www.ipef.br/publicacoes/scientia/nr112/cap19.pdf"
+  },
+  {
+   "id": "ramosidad",
+   "nombre": "Ramosidad",
+   "unidad": "nota 1–5",
+   "tipo": "escala",
+   "dec": 0,
+   "sub": 25,
+   "min": 1,
+   "max": 5,
+   "metodo": "Nota visual por árbol según grosor, número y ángulo de inserción de las ramas en el fuste comercial; se promedia por parcela.",
+   "momento": "24 meses y antes de la primera poda",
+   "escala": [
+    "1 Ramas finas, pocas y casi horizontales",
+    "2 Ramas finas",
+    "3 Intermedio",
+    "4 Ramas gruesas",
+    "5 Ramas gruesas, numerosas y en ángulo agudo"
+   ],
+   "escMin": 1,
+   "tipos": [
+    "Especies y procedencias",
+    "Progenies",
+    "Espaciamiento / densidad",
+    "Raleo, poda y manejo de rebrote"
+   ],
+   "ref": "",
+   "fuente": "Guía 06 §3; escala orientativa, no verificada en norma"
+  },
+  {
+   "id": "altura_poda",
+   "nombre": "Altura de poda",
+   "unidad": "m",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 9,
+   "min": 0,
+   "max": 20,
+   "metodo": "Con vara graduada, desde el suelo hasta la última rama cortada. Registrar también la altura total para calcular % de copa removida (en toona no superar el 50 % de la altura).",
+   "momento": "En cada poda",
+   "tipos": [
+    "Raleo, poda y manejo de rebrote",
+    "Silvopastoril (componente arbóreo)"
+   ],
+   "ref": "",
+   "fuente": "https://www.magyp.gob.ar/sitio/areas/desarrollo-foresto-industrial/silvicultura/_archivos/000000_Toona%20ciliata%20M.%20Roem.%20Familia%20Meliaceae.pdf"
+  },
+  {
+   "id": "copa_diam",
+   "nombre": "Diámetro de copa",
+   "unidad": "m",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 9,
+   "min": 0,
+   "max": 30,
+   "metodo": "Cinta: dos diámetros perpendiculares de la proyección de la copa (uno en la dirección de la fila) y se promedian. Área de copa = π/4 × dc².",
+   "momento": "Anual",
+   "tipos": [
+    "Espaciamiento / densidad",
+    "Raleo, poda y manejo de rebrote",
+    "Silvopastoril (componente arbóreo)"
+   ],
+   "ref": "",
+   "fuente": "Guía 06 §3; https://agrocienciauruguay.uy/index.php/agrociencia/article/view/1275"
+  },
+  {
+   "id": "densidad_madera",
+   "nombre": "Densidad básica de la madera",
+   "unidad": "g/cm³",
+   "tipo": "numero",
+   "dec": 3,
+   "sub": 3,
+   "min": 0.2,
+   "max": 1.2,
+   "metodo": "Tarugo con barreno de Pressler a 1,30 m (corteza a médula) o discos a 0, 25, 50, 75 y 100 % de la altura comercial, en árboles de DAP medio. Densidad básica = masa seca a 103 ± 2 °C / volumen saturado (inmersión o máximo contenido de humedad; NBR 11941).",
+   "momento": "Pre-raleo o turno",
+   "tipos": [
+    "Clones (ensayo clonal)",
+    "Especies y procedencias"
+   ],
+   "ref": "",
+   "fuente": "https://www.ipef.br/publicacoes/scientia/nr62/cap04.pdf"
+  },
+  {
+   "id": "biomasa_ha",
+   "nombre": "Biomasa seca",
+   "unidad": "t/ha",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 500,
+   "metodo": "Se calcula con ecuación alométrica de la especie (B = a·DAP^b) o, para el fuste, volumen × densidad básica. Carbono = biomasa × 0,47; CO₂e = C × 44/12.",
+   "momento": "Turno (ensayos de energía y carbono)",
+   "tipos": [
+    "Espaciamiento / densidad"
+   ],
+   "ref": "",
+   "fuente": "Guía 06 §3.1 (fracción de carbono IPCC)"
+  },
+  {
+   "id": "hormigas",
+   "nombre": "Plantas atacadas por hormigas",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "En la misma recorrida de sobrevivencia, contar plantas con corte de hojas o brotes por hormigas cortadoras (Atta, Acromyrmex) / plantas evaluadas × 100. Anotar aparte las plantas cortadas al ras (muertas).",
+   "momento": "Semanal el primer mes, 30–90 días, 6 y 12 meses",
+   "tipos": [
+    "Especies y procedencias",
+    "Control de hormigas cortadoras",
+    "Establecimiento y sobrevivencia post-plantación",
+    "Silvopastoril (componente arbóreo)"
+   ],
+   "ref": "06 §1",
+   "fuente": "https://www.infoteca.cnptia.embrapa.br/infoteca/bitstream/doc/1023168/1/CT354WilsonReis.pdf"
+  },
+  {
+   "id": "nidos_activos",
+   "nombre": "Nidos de hormigas activos",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Marcar y georreferenciar cada nido; en Atta medir el área de tierra suelta (largo × ancho, m²) para dosificar. Nido activo si hay corte, tránsito de obreras o tierra nueva. % activos = activos / tratados × 100; eficiencia = 100 − % activos (corregir con Abbott si los nidos testigo mueren).",
+   "momento": "3, 30, 90 y 150 días de la aplicación",
+   "tipos": [
+    "Control de hormigas cortadoras"
+   ],
+   "ref": "",
+   "fuente": "https://www.ipef.br/publicacoes/stecnica/nr48/ipef-sertec-48-063.pdf"
+  },
+  {
+   "id": "termitas",
+   "nombre": "Plantas muertas por termitas",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Revisar cada planta muerta o marchita: descalzar el cuello y la raíz y confirmar galerías o termitas (kupi'i). % = plantas con daño de termitas / plantadas × 100.",
+   "momento": "15, 30, 60 y 90 días de la plantación",
+   "cultivos": [
+    "Eucalyptus grandis",
+    "Eucalyptus urograndis (clones)",
+    "Otros clones híbridos de eucalipto",
+    "Eucalyptus camaldulensis",
+    "Eucalyptus dunnii",
+    "Pinus taeda",
+    "Pinus elliottii"
+   ],
+   "tipos": [
+    "Plagas y enfermedades (termitas, chinche, roya)",
+    "Establecimiento y sobrevivencia post-plantación"
+   ],
+   "ref": "",
+   "fuente": "Guía 06; método de diagnóstico por excavación: práctica usual, no verificado en norma"
+  },
+  {
+   "id": "roya_inc",
+   "nombre": "Incidencia de roya del eucalipto",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Plantas con pústulas amarillas de Austropuccinia psidii en brotes y hojas jóvenes / plantas evaluadas × 100.",
+   "momento": "Vivero y plantación hasta ~2 años, en épocas húmedas y templadas (época exacta para Paraguay: no verificada)",
+   "cultivos": [
+    "Eucalyptus grandis",
+    "Eucalyptus urograndis (clones)",
+    "Otros clones híbridos de eucalipto",
+    "Eucalyptus camaldulensis",
+    "Eucalyptus dunnii"
+   ],
+   "tipos": [
+    "Clones (ensayo clonal)",
+    "Plagas y enfermedades (termitas, chinche, roya)",
+    "Vivero: calidad de plantines"
+   ],
+   "ref": "",
+   "fuente": "Presencia en Paraguay: https://www.pestinfo.org/ISPIdata/public/countries/L188-158a"
+  },
+  {
+   "id": "roya_sev",
+   "nombre": "Severidad de roya (Junghans)",
+   "unidad": "clase S0–S3",
+   "tipo": "escala",
+   "dec": 0,
+   "sub": 25,
+   "min": 0,
+   "max": 3,
+   "metodo": "Clase por planta según el tamaño de las pústulas en los brotes; S0 y S1 = resistente, S2 y S3 = susceptible. Informar media de clase y % de plantas resistentes.",
+   "momento": "Igual que la incidencia",
+   "escala": [
+    "S0 Inmune o hipersensible (manchas/necrosis)",
+    "S1 Pústulas < 0,8 mm",
+    "S2 Pústulas 0,8–1,6 mm",
+    "S3 Pústulas > 1,6 mm"
+   ],
+   "escMin": 0,
+   "cultivos": [
+    "Eucalyptus grandis",
+    "Eucalyptus urograndis (clones)",
+    "Otros clones híbridos de eucalipto",
+    "Eucalyptus camaldulensis",
+    "Eucalyptus dunnii"
+   ],
+   "tipos": [
+    "Clones (ensayo clonal)",
+    "Progenies",
+    "Plagas y enfermedades (termitas, chinche, roya)"
+   ],
+   "ref": "",
+   "fuente": "Junghans et al. (2003), en https://www.redalyc.org/pdf/488/48831418.pdf"
+  },
+  {
+   "id": "chinche_trampa",
+   "nombre": "Chinche bronceada en trampas",
+   "unidad": "insectos/trampa",
+   "tipo": "conteo",
+   "dec": 0,
+   "sub": 5,
+   "min": 0,
+   "max": 10000,
+   "metodo": "Trampas adhesivas amarillas fijadas al tronco a ~1,1 m; 5 trampas por punto o parcela. Cambiar cada 15 días (cada 7 si se saturan) y contar adultos y ninfas de Thaumastocoris peregrinus.",
+   "momento": "Cada 15 días en la época de ataque",
+   "cultivos": [
+    "Eucalyptus grandis",
+    "Eucalyptus urograndis (clones)",
+    "Otros clones híbridos de eucalipto",
+    "Eucalyptus camaldulensis",
+    "Eucalyptus dunnii"
+   ],
+   "tipos": [
+    "Plagas y enfermedades (termitas, chinche, roya)"
+   ],
+   "ref": "",
+   "fuente": "https://www.infoteca.cnptia.embrapa.br/infoteca/bitstream/doc/1014681/1/CT337Leonardo.pdf"
+  },
+  {
+   "id": "chinche_dano",
+   "nombre": "Copa con bronceado por chinche",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 0,
+   "sub": 10,
+   "min": 0,
+   "max": 100,
+   "metodo": "Estimación visual por árbol del % de la copa con hojas bronceadas o plateadas por Thaumastocoris; se promedia por parcela.",
+   "momento": "Cuando hay ataque y a los 15–30 días de cada aplicación",
+   "cultivos": [
+    "Eucalyptus grandis",
+    "Eucalyptus urograndis (clones)",
+    "Otros clones híbridos de eucalipto",
+    "Eucalyptus camaldulensis",
+    "Eucalyptus dunnii"
+   ],
+   "tipos": [
+    "Clones (ensayo clonal)",
+    "Plagas y enfermedades (termitas, chinche, roya)"
+   ],
+   "ref": "",
+   "fuente": "Presente en Paraguay desde 2009 (https://gd.eppo.int/taxon/THMCPE/distribution/PY); método visual: no verificado, sin escala oficial"
+  },
+  {
+   "id": "helada",
+   "nombre": "Daño por helada",
+   "unidad": "nota 0–10",
+   "tipo": "escala",
+   "dec": 0,
+   "sub": 25,
+   "min": 0,
+   "max": 10,
+   "metodo": "Nota por árbol según % de follaje y de tallo dañado (escala invertida: 10 = sin daño). Registrar fecha y temperatura mínima de la helada; evaluar también la recuperación en la medición siguiente.",
+   "momento": "7–15 días después de cada helada (orientativo)",
+   "escala": [
+    "0 100 % del tallo dañado",
+    "1 75–99 % del tallo",
+    "2 50–74 % del tallo",
+    "3 25–49 % del tallo",
+    "4 < 25 % del tallo",
+    "5 100 % del follaje",
+    "6 75–99 % del follaje",
+    "7 50–74 % del follaje",
+    "8 25–49 % del follaje",
+    "9 < 25 % del follaje",
+    "10 Sin daño"
+   ],
+   "escMin": 0,
+   "cultivos": [
+    "Eucalyptus grandis",
+    "Eucalyptus urograndis (clones)",
+    "Otros clones híbridos de eucalipto",
+    "Eucalyptus camaldulensis",
+    "Eucalyptus dunnii",
+    "Paraíso gigante",
+    "Kiri",
+    "Grevillea",
+    "Toona",
+    "Cedro"
+   ],
+   "tipos": [
+    "Clones (ensayo clonal)",
+    "Especies y procedencias",
+    "Progenies",
+    "Establecimiento y sobrevivencia post-plantación"
+   ],
+   "ref": "",
+   "fuente": "Franklin y Meskimen (1983) adaptada por Higa: https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/280582/1/higa.pdf"
+  },
+  {
+   "id": "enfermedades_inc",
+   "nombre": "Plantas con cancro u otras enfermedades",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Plantas con síntomas (cancros en el tallo —p. ej. Teratosphaeria zuluensis—, muerte de ramas, manchas foliares, Fusarium en kiri) / evaluadas × 100. Anotar el agente presunto y enviar muestras a laboratorio para confirmar.",
+   "momento": "6, 12 meses y anual",
+   "tipos": [
+    "Clones (ensayo clonal)",
+    "Especies y procedencias",
+    "Plagas y enfermedades (termitas, chinche, roya)"
+   ],
+   "ref": "",
+   "fuente": "https://www.pestinfo.org/ISPIdata/public/countries/L188-158a"
+  },
+  {
+   "id": "hypsipyla",
+   "nombre": "Ataque del barrenador del brote",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Plantas con el brote terminal atacado por Hypsipyla grandella (galería, aserrín, excrementos o exudación) / plantas evaluadas × 100; anotar también el número de ataques acumulados por planta.",
+   "momento": "Cada 1–2 meses en la época lluviosa durante los 3 primeros años",
+   "cultivos": [
+    "Cedro",
+    "Toona"
+   ],
+   "tipos": [
+    "Plagas y enfermedades (termitas, chinche, roya)",
+    "Especies y procedencias"
+   ],
+   "ref": "",
+   "fuente": "Método adaptado de https://www.infoteca.cnptia.embrapa.br/infoteca/bitstream/doc/898052/1/CT280.pdf (caoba)"
+  },
+  {
+   "id": "def_boro",
+   "nombre": "Plantas con síntomas de deficiencia de boro",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Plantas con muerte de ápices (seca de punteros), brotación múltiple, rajaduras de corteza o exudación de goma / evaluadas × 100. Confirmar con análisis foliar.",
+   "momento": "Después de períodos secos y en cada medición anual",
+   "cultivos": [
+    "Eucalyptus grandis",
+    "Eucalyptus urograndis (clones)",
+    "Otros clones híbridos de eucalipto",
+    "Eucalyptus camaldulensis",
+    "Eucalyptus dunnii"
+   ],
+   "tipos": [
+    "Fertilización",
+    "Clones (ensayo clonal)"
+   ],
+   "ref": "",
+   "fuente": "https://www.agrolink.com.br/fertilizantes/nutrientes/boro_467225.html"
+  },
+  {
+   "id": "malezas_cob",
+   "nombre": "Cobertura de malezas en la línea",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 0,
+   "sub": 4,
+   "min": 0,
+   "max": 100,
+   "metodo": "Estimación visual del % de suelo cubierto por malezas en la franja de plantación (1 m a cada lado de la línea), en 4 puntos del área útil.",
+   "momento": "15, 30 y 60 días de cada aplicación o carpida",
+   "tipos": [
+    "Preparación de suelo y control de malezas"
+   ],
+   "ref": "",
+   "fuente": "Guía 06 §1; método visual orientativo"
+  },
+  {
+   "id": "fitotox",
+   "nombre": "Fitotoxicidad",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 0,
+   "sub": 9,
+   "min": 0,
+   "max": 100,
+   "metodo": "Nota visual por planta: 0 = sin síntomas, 100 = planta muerta (clorosis, necrosis, deformación de brotes por herbicida o deriva).",
+   "momento": "7, 15 y 30 días de la aplicación",
+   "tipos": [
+    "Preparación de suelo y control de malezas"
+   ],
+   "ref": "",
+   "fuente": "Escala porcentual usual en ensayos de herbicidas (no verificada para forestales)"
+  },
+  {
+   "id": "alt_plantin",
+   "nombre": "Altura del plantín",
+   "unidad": "cm",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 20,
+   "min": 0,
+   "max": 80,
+   "metodo": "Regla desde el nivel del sustrato hasta la yema apical. Referencia para eucalipto a la expedición: 15–30 cm.",
+   "momento": "Quincenal y a la expedición",
+   "tipos": [
+    "Vivero: calidad de plantines",
+    "Propagación clonal (miniestacas)"
+   ],
+   "ref": "",
+   "fuente": "Gomes et al. (1996), Sturion (2000) en https://www.redalyc.org/pdf/488/48813384004.pdf"
+  },
+  {
+   "id": "dc_plantin",
+   "nombre": "Diámetro de cuello del plantín",
+   "unidad": "mm",
+   "tipo": "numero",
+   "dec": 2,
+   "sub": 20,
+   "min": 0,
+   "max": 20,
+   "metodo": "Calibre digital (0,01 mm) a nivel del sustrato. Referencia para eucalipto a la expedición: ≥ 2–2,5 mm.",
+   "momento": "Quincenal y a la expedición",
+   "tipos": [
+    "Vivero: calidad de plantines",
+    "Propagación clonal (miniestacas)"
+   ],
+   "ref": "",
+   "fuente": "https://www.redalyc.org/pdf/488/48813384004.pdf"
+  },
+  {
+   "id": "rel_hd",
+   "nombre": "Relación altura/diámetro (H/D)",
+   "unidad": "cm/mm",
+   "tipo": "numero",
+   "dec": 2,
+   "sub": 1,
+   "min": 0,
+   "max": 30,
+   "metodo": "Se calcula: H (cm) / D (mm) con los promedios de la parcela. Valores bajos = plantín más robusto.",
+   "momento": "A la expedición",
+   "tipos": [
+    "Vivero: calidad de plantines"
+   ],
+   "ref": "",
+   "fuente": "Guía 06 §3.2; https://www.redalyc.org/pdf/488/48813384004.pdf"
+  },
+  {
+   "id": "ps_aerea",
+   "nombre": "Peso seco aéreo",
+   "unidad": "g/plantín",
+   "tipo": "numero",
+   "dec": 2,
+   "sub": 5,
+   "min": 0,
+   "max": 100,
+   "metodo": "Cortar a nivel del sustrato, secar en estufa a 65–70 °C hasta peso constante y pesar (balanza 0,01 g). Destructivo: plantines aparte de los que siguen en el ensayo.",
+   "momento": "A la expedición",
+   "tipos": [
+    "Vivero: calidad de plantines"
+   ],
+   "ref": "",
+   "fuente": "https://www.redalyc.org/pdf/744/74418613005.pdf"
+  },
+  {
+   "id": "ps_raiz",
+   "nombre": "Peso seco de raíz",
+   "unidad": "g/plantín",
+   "tipo": "numero",
+   "dec": 2,
+   "sub": 5,
+   "min": 0,
+   "max": 100,
+   "metodo": "Lavar el sustrato del sistema radicular sobre tamiz, secar en estufa a 65–70 °C hasta peso constante y pesar.",
+   "momento": "A la expedición",
+   "tipos": [
+    "Vivero: calidad de plantines"
+   ],
+   "ref": "",
+   "fuente": "https://www.redalyc.org/pdf/744/74418613005.pdf"
+  },
+  {
+   "id": "iqd",
+   "nombre": "Índice de calidad de Dickson",
+   "unidad": "índice",
+   "tipo": "numero",
+   "dec": 3,
+   "sub": 1,
+   "min": 0,
+   "max": 10,
+   "metodo": "Se calcula: IQD = PST (g) / [H (cm) / D (mm) + PSA (g) / PSR (g)], con PST = PSA + PSR. Mayor = mejor plantín.",
+   "momento": "A la expedición",
+   "tipos": [
+    "Vivero: calidad de plantines"
+   ],
+   "ref": "",
+   "fuente": "Dickson et al. (1960), en https://www.redalyc.org/pdf/744/74418613005.pdf"
+  },
+  {
+   "id": "cepellon",
+   "nombre": "Plantines con cepellón íntegro",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 0,
+   "sub": 20,
+   "min": 0,
+   "max": 100,
+   "metodo": "Extraer el plantín del tubete o bolsa y contar los que mantienen el cepellón entero (agregación de raíces) / evaluados × 100.",
+   "momento": "A la expedición",
+   "tipos": [
+    "Vivero: calidad de plantines"
+   ],
+   "ref": "",
+   "fuente": "Guía 06 §3.2; criterio visual no estandarizado"
+  },
+  {
+   "id": "enraiz",
+   "nombre": "Enraizamiento de miniestacas",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 12,
+   "min": 0,
+   "max": 100,
+   "metodo": "Miniestacas con raíces (o raíces visibles en el fondo del tubete) / miniestacas puestas × 100; a la salida del sombreado contar además el número de raíces por miniestaca.",
+   "momento": "Salida del invernadero (~30 días) y del sombreado (~40 días)",
+   "cultivos": [
+    "Eucalyptus grandis",
+    "Eucalyptus urograndis (clones)",
+    "Otros clones híbridos de eucalipto",
+    "Eucalyptus camaldulensis",
+    "Eucalyptus dunnii"
+   ],
+   "tipos": [
+    "Propagación clonal (miniestacas)"
+   ],
+   "ref": "",
+   "fuente": "https://www.redalyc.org/pdf/488/48819140006.pdf"
+  },
+  {
+   "id": "sobrev_mini",
+   "nombre": "Sobrevivencia de miniestacas",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 12,
+   "min": 0,
+   "max": 100,
+   "metodo": "Miniestacas vivas / puestas × 100.",
+   "momento": "Salida del invernadero (~30 días) y del sombreado (~40 días)",
+   "cultivos": [
+    "Eucalyptus grandis",
+    "Eucalyptus urograndis (clones)",
+    "Otros clones híbridos de eucalipto",
+    "Eucalyptus camaldulensis",
+    "Eucalyptus dunnii"
+   ],
+   "tipos": [
+    "Propagación clonal (miniestacas)"
+   ],
+   "ref": "",
+   "fuente": "https://www.redalyc.org/pdf/488/48819140006.pdf"
+  },
+  {
+   "id": "brotes_cepa",
+   "nombre": "Brotes por cepa",
+   "unidad": "brotes/cepa",
+   "tipo": "conteo",
+   "dec": 1,
+   "sub": 9,
+   "min": 0,
+   "max": 30,
+   "metodo": "Contar los brotes vivos por cepa después del corte (monte bajo de eucalipto) o del descepe (kiri), antes del desbrote; anotar cuántos se dejan.",
+   "momento": "3–6 meses después del corte (orientativo)",
+   "cultivos": [
+    "Eucalyptus grandis",
+    "Eucalyptus urograndis (clones)",
+    "Otros clones híbridos de eucalipto",
+    "Eucalyptus camaldulensis",
+    "Eucalyptus dunnii",
+    "Kiri"
+   ],
+   "tipos": [
+    "Raleo, poda y manejo de rebrote"
+   ],
+   "ref": "",
+   "fuente": "https://www.magyp.gob.ar/sitio/areas/desarrollo-foresto-industrial/silvicultura/_archivos2/Cultivo-del-genero-Paulownia-KIRI-en-Argentina.pdf"
   },
   {
    "id": "pulv_cob",
@@ -485,39 +3259,162 @@
    "unidad": "kg MS/ha",
    "tipo": "numero",
    "dec": 0,
+   "sub": 2,
+   "min": 0,
+   "max": 20000,
+   "metodo": "Cortar a la altura de corte de la especie todo el forraje dentro de un marco de 0,25 m² (2 marcos por parcela, al azar en el área útil) o cortar toda el área útil con motosegadora. Pesar en verde y secar una submuestra de ~300 g en estufa con aire forzado a 60–65 °C hasta peso constante (48–72 h). kg MS/ha = peso verde (g) ÷ área del marco (m²) × MS % ÷ 100 × 10. En Leucaena cosechar solo la fracción comestible (ver ms_comestible).",
+   "momento": "En cada corte, después del corte de uniformización; RNCC Brachiaria: cada 35 días en lluvias y 70 días en seca",
+   "tipos": [
+    "Cultivares / especies forrajeras",
+    "Fertilización de pasturas",
+    "Frecuencia y altura de corte",
+    "Verdeos de invierno",
+    "Introducción y adaptación (etapa A)",
+    "Establecimiento y densidad de siembra",
+    "Mezclas gramínea–leguminosa",
+    "Control de malezas en pasturas",
+    "Control de salivazo",
+    "Recuperación de pasturas degradadas",
+    "Diferimiento (heno en pie)",
+    "Silvopastoril"
+   ],
+   "porCorte": true,
+   "entrada": "ms",
+   "ref": "14 §4.1",
+   "fuente": "Guía del proyecto ensayos_de_campo/14_ensayos_pasturas.md; https://www.aprosemp.org.py/docs/normativas/5-Resolucion-SENAVE-414-Normas-minimas-para-ensayos-evaluacion-agronomica-calidad-variedades.pdf"
+  },
+  {
+   "id": "ms_pct",
+   "nombre": "Contenido de materia seca",
+   "unidad": "% del peso verde",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 8,
+   "max": 90,
+   "metodo": "Submuestra de ~300 g del forraje cortado: pesar en verde, secar a 60–65 °C con aire forzado hasta peso constante y pesar. MS % = peso seco ÷ peso verde × 100. Se carga sola si se usa la calculadora de MS.",
+   "momento": "En cada corte",
+   "tipos": [
+    "Cultivares / especies forrajeras",
+    "Fertilización de pasturas",
+    "Frecuencia y altura de corte",
+    "Verdeos de invierno",
+    "Diferimiento (heno en pie)",
+    "Silvopastoril"
+   ],
+   "porCorte": true,
+   "ref": "",
+   "fuente": "Guía del proyecto ensayos_de_campo/14_ensayos_pasturas.md"
+  },
+  {
+   "id": "ms_comestible",
+   "nombre": "Biomasa comestible de leñosa forrajera",
+   "unidad": "kg MS/ha",
+   "tipo": "numero",
+   "dec": 0,
    "sub": 1,
    "min": 0,
-   "max": 12000,
-   "entrada": "ms",
+   "max": 15000,
+   "metodo": "Uniformizar a 50–90 cm; en cada corte cosechar a mano hojas y tallos de menos de 6 mm de diámetro de las plantas del área útil; secar y llevar a kg MS/ha con la densidad de plantas.",
+   "momento": "Cada 60–90 días en lluvias",
+   "cultivos": [
+    "Leucaena"
+   ],
+   "tipos": [
+    "Mezclas gramínea–leguminosa",
+    "Silvopastoril",
+    "Cultivares / especies forrajeras"
+   ],
    "porCorte": true,
-   "metodo": "Cortar a la altura de corte todo el forraje dentro de un marco de 0,25 m² (2 marcos por parcela, al azar dentro del área útil). Pesar en verde, secar una submuestra de unos 300 g en estufa a 60–65 °C hasta peso constante (48–72 h). kg MS/ha = peso verde (g) ÷ área del marco (m²) × MS % ÷ 100 × 10.",
-   "ref": "14 §4.1"
+   "ref": "",
+   "fuente": "https://cienciaspecuarias.inifap.gob.mx/index.php/Pecuarias/article/download/709/707/729"
   },
   {
    "id": "altura_f",
-   "nombre": "Altura del forraje antes del corte",
+   "nombre": "Altura del forraje antes del corte o pastoreo",
    "unidad": "cm",
    "tipo": "numero",
    "dec": 1,
    "sub": 10,
    "min": 0,
-   "max": 250,
+   "max": 400,
+   "metodo": "Regla graduada o bastón medidor: 10 lecturas por parcela (50 por potrero) en el área útil, desde el suelo hasta la curvatura de las hojas más altas, sin contar panojas. Sirve como criterio de entrada (p. ej. Marandu 35 cm, Mombaça 90 cm, Tanzânia 70 cm).",
+   "momento": "Justo antes de cada corte o al entrar los animales",
+   "tipos": [
+    "Cultivares / especies forrajeras",
+    "Fertilización de pasturas",
+    "Frecuencia y altura de corte",
+    "Verdeos de invierno",
+    "Introducción y adaptación (etapa A)",
+    "Pastoreo y producción animal",
+    "Silvopastoril",
+    "Diferimiento (heno en pie)"
+   ],
    "porCorte": true,
-   "metodo": "Regla graduada o bastón medidor: 10 lecturas por parcela en el área útil, desde el suelo hasta la curvatura de las hojas más altas (sin contar panojas), justo antes de cortar.",
-   "ref": "14 §4.2"
+   "ref": "14 §4.2",
+   "fuente": "https://www.idrparana.pr.gov.br/system/files/publico/pesquisa/publicacoes/folder/fld-forrageiras-perenes/folder-forrageiras.pdf"
+  },
+  {
+   "id": "altura_post",
+   "nombre": "Altura del remanente después del corte o pastoreo",
+   "unidad": "cm",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 10,
+   "min": 0,
+   "max": 100,
+   "metodo": "Mismo método que la altura antes del corte, al salir los animales o después de cortar. Comparar con la altura de salida objetivo (Marandu 15 cm; Mombaça 45–50; Tanzânia 35–40; Tifton 85 12–15).",
+   "momento": "Al salir los animales / después del corte",
+   "tipos": [
+    "Frecuencia y altura de corte",
+    "Pastoreo y producción animal"
+   ],
+   "porCorte": true,
+   "ref": "",
+   "fuente": "https://www.idrparana.pr.gov.br/system/files/publico/pesquisa/publicacoes/folder/fld-forrageiras-perenes/folder-forrageiras.pdf"
   },
   {
    "id": "hoja",
-   "nombre": "Proporción de hojas",
+   "nombre": "Proporción de lámina foliar",
    "unidad": "% de la MS",
    "tipo": "porcentaje",
    "dec": 1,
    "sub": 1,
    "min": 0,
    "max": 100,
+   "metodo": "Separar a mano una submuestra del corte (~200 g verdes) en lámina foliar, tallo + vaina y material muerto; secar cada fracción y expresar la lámina como % del peso seco total. La relación hoja:tallo se calcula con la calculadora.",
+   "momento": "En cada corte (o al menos uno de lluvias y uno de seca)",
+   "tipos": [
+    "Cultivares / especies forrajeras",
+    "Fertilización de pasturas",
+    "Frecuencia y altura de corte",
+    "Verdeos de invierno",
+    "Diferimiento (heno en pie)",
+    "Silvopastoril"
+   ],
    "porCorte": true,
-   "metodo": "Separar a mano una submuestra del corte en lámina foliar, tallo + vaina y material muerto; secar cada fracción y expresar la lámina como % del peso seco total.",
-   "ref": "14 §4.3"
+   "ref": "14 §4.3",
+   "fuente": "Guía del proyecto ensayos_de_campo/14_ensayos_pasturas.md; https://www.aprosemp.org.py/docs/normativas/5-Resolucion-SENAVE-414-Normas-minimas-para-ensayos-evaluacion-agronomica-calidad-variedades.pdf (relación hoja/tallo exigida en el anexo Brachiaria)"
+  },
+  {
+   "id": "muerto",
+   "nombre": "Proporción de material muerto",
+   "unidad": "% de la MS",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "De la misma separación que la proporción de lámina: peso seco del material muerto ÷ peso seco total × 100.",
+   "momento": "En cada corte en que se separen fracciones",
+   "tipos": [
+    "Cultivares / especies forrajeras",
+    "Frecuencia y altura de corte",
+    "Diferimiento (heno en pie)"
+   ],
+   "porCorte": true,
+   "ref": "",
+   "fuente": "Guía del proyecto ensayos_de_campo/14_ensayos_pasturas.md"
   },
   {
    "id": "pb",
@@ -527,9 +3424,22 @@
    "dec": 1,
    "sub": 1,
    "min": 2,
-   "max": 30,
-   "metodo": "Nitrógeno Kjeldahl × 6,25 (o NIRS calibrado) en la submuestra seca y molida a 1 mm del corte elegido; en base seca. Indicar el corte o la edad de rebrote.",
-   "ref": "14 §4.6"
+   "max": 35,
+   "metodo": "N Kjeldahl (o Dumas) × 6,25, o NIRS calibrado para forrajeras tropicales, en la submuestra secada a 60–65 °C y molida a 1 mm; base seca. Indicar corte y edad de rebrote. Bajo pastoreo, muestrear por simulación de pastoreo (lo que comen los animales). Leguminosas pueden superar 25 %.",
+   "momento": "Al menos un corte de lluvias y uno de seca",
+   "tipos": [
+    "Cultivares / especies forrajeras",
+    "Fertilización de pasturas",
+    "Frecuencia y altura de corte",
+    "Verdeos de invierno",
+    "Mezclas gramínea–leguminosa",
+    "Recuperación de pasturas degradadas",
+    "Diferimiento (heno en pie)",
+    "Pastoreo y producción animal",
+    "Silvopastoril"
+   ],
+   "ref": "14 §4.6",
+   "fuente": "Guía del proyecto ensayos_de_campo/14_ensayos_pasturas.md; https://www.aprosemp.org.py/docs/normativas/5-Resolucion-SENAVE-414-Normas-minimas-para-ensayos-evaluacion-agronomica-calidad-variedades.pdf"
   },
   {
    "id": "fdn",
@@ -538,22 +3448,63 @@
    "tipo": "porcentaje",
    "dec": 1,
    "sub": 1,
-   "min": 25,
+   "min": 20,
    "max": 85,
-   "metodo": "Método de Van Soest et al. (1991) o analizador de fibra, sobre la misma muestra seca y molida; en base seca.",
-   "ref": "14 §4.6"
+   "metodo": "Van Soest et al. (1991) con α-amilasa y sulfito, o analizador de fibra (bolsitas filtrantes), sobre la misma muestra seca y molida; base seca.",
+   "momento": "Mismos cortes que la PB",
+   "tipos": [
+    "Cultivares / especies forrajeras",
+    "Fertilización de pasturas",
+    "Frecuencia y altura de corte",
+    "Verdeos de invierno",
+    "Diferimiento (heno en pie)",
+    "Silvopastoril"
+   ],
+   "ref": "14 §4.6",
+   "fuente": "Guía del proyecto ensayos_de_campo/14_ensayos_pasturas.md"
+  },
+  {
+   "id": "fda",
+   "nombre": "Fibra detergente ácido (FDA)",
+   "unidad": "% de la MS",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 15,
+   "max": 60,
+   "metodo": "Van Soest (secuencial después de la FDN o directa) o analizador de fibra; base seca. Se usa para estimar digestibilidad y, en alfalfa, el valor relativo del forraje.",
+   "momento": "Mismos cortes que la PB",
+   "tipos": [
+    "Cultivares / especies forrajeras",
+    "Fertilización de pasturas",
+    "Frecuencia y altura de corte",
+    "Diferimiento (heno en pie)",
+    "Verdeos de invierno"
+   ],
+   "ref": "",
+   "fuente": "Guía del proyecto ensayos_de_campo/14_ensayos_pasturas.md"
   },
   {
    "id": "divms",
-   "nombre": "Digestibilidad in vitro de la MS",
+   "nombre": "Digestibilidad in vitro de la MS (DIVMS)",
    "unidad": "%",
    "tipo": "porcentaje",
    "dec": 1,
    "sub": 1,
    "min": 30,
    "max": 90,
-   "metodo": "Tilley y Terry (1963) o incubador tipo Daisy; sobre la muestra seca y molida del corte elegido.",
-   "ref": "14 §4.6"
+   "metodo": "Tilley y Terry (1963) o incubador tipo Daisy con líquido ruminal; sobre la muestra seca y molida. Con la DIVMS la app estima la energía metabolizable (EM = 3,6 × DIVMS ÷ 100, Mcal/kg MS).",
+   "momento": "Mismos cortes que la PB",
+   "tipos": [
+    "Cultivares / especies forrajeras",
+    "Frecuencia y altura de corte",
+    "Mezclas gramínea–leguminosa",
+    "Diferimiento (heno en pie)",
+    "Pastoreo y producción animal",
+    "Verdeos de invierno"
+   ],
+   "ref": "14 §4.6",
+   "fuente": "Guía del proyecto ensayos_de_campo/14_ensayos_pasturas.md; https://produccion-animal.com.ar/tablas_composicion_alimentos/57-tabla_composicion_quimica_alimentos_1-introduccion.pdf"
   },
   {
    "id": "plantas_m2",
@@ -564,8 +3515,19 @@
    "sub": 4,
    "min": 0,
    "max": 300,
-   "metodo": "A los 30–45 días de la siembra, contar las plantas de la especie sembrada en 4 marcos de 0,25 m² por parcela y multiplicar por 4 para llevar a m² (cargar el valor ya llevado a m²).",
-   "ref": "14 §4.4"
+   "metodo": "Contar las plantas de la especie sembrada en 4 marcos de 0,25 m² por parcela y multiplicar por 4 (cargar el valor por m²). En siembra en hileras, contar en 2 tramos de 1 m y dividir por la distancia entre hileras. En leguminosas contar aparte.",
+   "momento": "A los 30–45 días de la siembra (fase de macollaje)",
+   "tipos": [
+    "Introducción y adaptación (etapa A)",
+    "Cultivares / especies forrajeras",
+    "Establecimiento y densidad de siembra",
+    "Mezclas gramínea–leguminosa",
+    "Recuperación de pasturas degradadas",
+    "Fertilización de pasturas",
+    "Verdeos de invierno"
+   ],
+   "ref": "14 §4.4",
+   "fuente": "Guía del proyecto ensayos_de_campo/14_ensayos_pasturas.md; https://www.aprosemp.org.py/docs/normativas/5-Resolucion-SENAVE-414-Normas-minimas-para-ensayos-evaluacion-agronomica-calidad-variedades.pdf (población de plantas en macollaje)"
   },
   {
    "id": "cobertura_p",
@@ -573,11 +3535,62 @@
    "unidad": "%",
    "tipo": "porcentaje",
    "dec": 0,
-   "sub": 1,
+   "sub": 4,
    "min": 0,
    "max": 100,
-   "metodo": "Marco de 1 m² con grilla de 100 puntos en 4 lugares de la parcela (o línea de puntos): % de puntos que tocan planta viva de la especie sembrada.",
-   "ref": "14 §4.4"
+   "metodo": "Marco de 1 m² con grilla de 100 puntos en 4 lugares por parcela (o línea de puntos): % de puntos que tocan planta viva de la especie sembrada.",
+   "momento": "Al primer corte (Res. 414: % de área cubierta al primer corte) y al final de cada año (persistencia)",
+   "tipos": [
+    "Introducción y adaptación (etapa A)",
+    "Cultivares / especies forrajeras",
+    "Fertilización de pasturas",
+    "Frecuencia y altura de corte",
+    "Establecimiento y densidad de siembra",
+    "Mezclas gramínea–leguminosa",
+    "Control de malezas en pasturas",
+    "Recuperación de pasturas degradadas",
+    "Pastoreo y producción animal",
+    "Silvopastoril"
+   ],
+   "ref": "14 §4.4",
+   "fuente": "Guía del proyecto ensayos_de_campo/14_ensayos_pasturas.md; https://www.aprosemp.org.py/docs/normativas/5-Resolucion-SENAVE-414-Normas-minimas-para-ensayos-evaluacion-agronomica-calidad-variedades.pdf"
+  },
+  {
+   "id": "suelo_desnudo",
+   "nombre": "Suelo desnudo",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 0,
+   "sub": 4,
+   "min": 0,
+   "max": 100,
+   "metodo": "Con la misma grilla de la cobertura: % de puntos que caen en suelo sin vegetación ni mantillo. Indicador de degradación.",
+   "momento": "Línea de base y cada 3–6 meses",
+   "tipos": [
+    "Recuperación de pasturas degradadas",
+    "Establecimiento y densidad de siembra"
+   ],
+   "ref": "",
+   "fuente": "Guía del proyecto ensayos_de_campo/14_ensayos_pasturas.md"
+  },
+  {
+   "id": "dias_primer_corte",
+   "nombre": "Días de la siembra al primer corte",
+   "unidad": "días",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": 20,
+   "max": 200,
+   "metodo": "Días desde la siembra (o la emergencia) hasta que la parcela alcanza la altura de corte de la especie; corresponde al 'ciclo total' del anexo Brachiaria.",
+   "momento": "Una vez, al primer corte",
+   "tipos": [
+    "Introducción y adaptación (etapa A)",
+    "Cultivares / especies forrajeras",
+    "Establecimiento y densidad de siembra"
+   ],
+   "ref": "",
+   "fuente": "https://www.aprosemp.org.py/docs/normativas/5-Resolucion-SENAVE-414-Normas-minimas-para-ensayos-evaluacion-agronomica-calidad-variedades.pdf"
   },
   {
    "id": "comp_leg",
@@ -588,8 +3601,22 @@
    "sub": 1,
    "min": 0,
    "max": 100,
-   "metodo": "Rango en peso seco ('t Mannetje y Haydock, 1963): en 20 marcos se anota qué especie ocupa el 1.º, 2.º y 3.º lugar en peso; % = 70,2 × fracción de 1.º + 21,1 × fracción de 2.º + 8,7 × fracción de 3.º.",
-   "ref": "14 §4.5"
+   "metodo": "Rango en peso seco ('t Mannetje y Haydock, 1963): en 20 marcos por parcela o potrero anotar qué especie ocupa el 1.º, 2.º y 3.º lugar en peso; % = 70,19 × fracción de 1.º + 21,08 × fracción de 2.º + 8,73 × fracción de 3.º. Alternativa: separación manual del forraje cortado.",
+   "momento": "Antes de cada corte o pastoreo",
+   "cultivos": [
+    "Mezcla gramínea–leguminosa",
+    "Leucaena",
+    "Stylosanthes",
+    "Maní forrajero (Arachis pintoi)",
+    "Campo natural (Paspalum y otras nativas)"
+   ],
+   "tipos": [
+    "Mezclas gramínea–leguminosa",
+    "Recuperación de pasturas degradadas",
+    "Pastoreo y producción animal"
+   ],
+   "ref": "14 §4.5",
+   "fuente": "Guía del proyecto ensayos_de_campo/14_ensayos_pasturas.md"
   },
   {
    "id": "malezas_p",
@@ -597,11 +3624,54 @@
    "unidad": "%",
    "tipo": "porcentaje",
    "dec": 0,
+   "sub": 4,
+   "min": 0,
+   "max": 100,
+   "metodo": "Grilla de puntos como en la cobertura (o estimación visual del % de suelo cubierto por malezas en el área útil). Anotar las 3 especies dominantes.",
+   "momento": "Al establecimiento (60–90 días) y antes de los cortes; en control: 0, 30 y 60 DAA",
+   "tipos": [
+    "Introducción y adaptación (etapa A)",
+    "Establecimiento y densidad de siembra",
+    "Mezclas gramínea–leguminosa",
+    "Control de malezas en pasturas",
+    "Recuperación de pasturas degradadas"
+   ],
+   "ref": "14 §4.4",
+   "fuente": "Guía del proyecto ensayos_de_campo/14_ensayos_pasturas.md"
+  },
+  {
+   "id": "control_malezas",
+   "nombre": "Control de malezas",
+   "unidad": "% de control",
+   "tipo": "porcentaje",
+   "dec": 0,
    "sub": 1,
    "min": 0,
    "max": 100,
-   "metodo": "Estimación visual del % de suelo cubierto por malezas en el área útil, o grilla de puntos como en la cobertura.",
-   "ref": "14 §4.4"
+   "metodo": "Estimación visual del control de cada maleza objetivo respecto del testigo sin aplicar (0 = igual al testigo, 100 = muerte total). Para renovales leñosos: % de plantas muertas o sin rebrote. Lectura orientativa con la escala ALAM: 91–100 excelente; 81–90 muy bueno; 71–80 bueno; 61–70 suficiente; 41–60 regular; 0–40 pobre.",
+   "momento": "15, 30 y 60 DAA; leñosas también a 6 y 12 meses",
+   "tipos": [
+    "Control de malezas en pasturas"
+   ],
+   "ref": "",
+   "fuente": "ALAM (1974), no verificado en esta revisión; Guía del proyecto ensayos_de_campo/08_normativa_paraguay.md"
+  },
+  {
+   "id": "fitotox",
+   "nombre": "Fitotoxicidad en la forrajera",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Estimación visual del daño del herbicida sobre la pastura (clorosis, necrosis, achaparramiento) respecto del testigo: 0 = sin daño, 100 = muerte. Evaluar también en la dosis doble.",
+   "momento": "7, 15 y 30 DAA",
+   "tipos": [
+    "Control de malezas en pasturas"
+   ],
+   "ref": "",
+   "fuente": "Criterio habitual en ensayos de selectividad; no verificado en esta revisión"
   },
   {
    "id": "vigor",
@@ -612,6 +3682,8 @@
    "sub": 1,
    "min": 1,
    "max": 5,
+   "metodo": "Nota visual de toda la parcela (color, densidad y altura), siempre por el mismo evaluador.",
+   "momento": "Antes de cada corte",
    "escala": [
     "1 Muy pobre",
     "2 Pobre",
@@ -619,8 +3691,44 @@
     "4 Bueno",
     "5 Excelente"
    ],
-   "metodo": "Nota visual de toda la parcela (color, densidad y altura), siempre por el mismo evaluador y antes de cada corte.",
-   "ref": "14 §4.7"
+   "escMin": 1,
+   "tipos": [
+    "Introducción y adaptación (etapa A)",
+    "Cultivares / especies forrajeras",
+    "Fertilización de pasturas",
+    "Frecuencia y altura de corte",
+    "Establecimiento y densidad de siembra",
+    "Mezclas gramínea–leguminosa",
+    "Control de malezas en pasturas",
+    "Control de salivazo",
+    "Recuperación de pasturas degradadas"
+   ],
+   "ref": "14 §4.7",
+   "fuente": "Guía del proyecto ensayos_de_campo/14_ensayos_pasturas.md"
+  },
+  {
+   "id": "rebrote",
+   "nombre": "Capacidad de rebrote",
+   "unidad": "nota 1–3",
+   "tipo": "escala",
+   "dec": 0,
+   "sub": 1,
+   "min": 1,
+   "max": 3,
+   "metodo": "Nota visual 7–10 días después de cada corte: velocidad y uniformidad del rebrote de la parcela.",
+   "momento": "7–10 días después de cada corte",
+   "escala": [
+    "1 Baja",
+    "2 Media",
+    "3 Alta"
+   ],
+   "escMin": 1,
+   "tipos": [
+    "Cultivares / especies forrajeras",
+    "Verdeos de invierno"
+   ],
+   "ref": "",
+   "fuente": "https://www.aprosemp.org.py/docs/normativas/5-Resolucion-SENAVE-414-Normas-minimas-para-ensayos-evaluacion-agronomica-calidad-variedades.pdf (capacidad de rebrote alta, media, baja)"
   },
   {
    "id": "saliv_dano",
@@ -631,15 +3739,35 @@
    "sub": 1,
    "min": 1,
    "max": 5,
+   "metodo": "Nota visual del % de follaje dañado (amarillo o seco) en la parcela, siempre por el mismo evaluador. Escala de CIAT (Sotelo et al., 1998), pensada para invernáculo y usada también a campo. Clasificar los cultivares por el daño, no solo por el número de insectos.",
+   "momento": "Al final de cada generación de adultos (2–3 semanas después del pico; intervalo no verificado)",
    "escala": [
-    "1 Sin daño",
-    "2 Leve: puntas amarillas en pocas hojas",
-    "3 Moderado: amarillamiento en manchones",
-    "4 Severo: gran parte del follaje amarillo o seco",
-    "5 Muy severo: plantas secas"
+    "1 0 % de daño foliar",
+    "2 25 %",
+    "3 50 %",
+    "4 75 %",
+    "5 100 % de daño foliar"
    ],
-   "metodo": "Nota visual de la parcela 15–20 días después del pico de adultos de salivazo (cigarrinha de las pasturas). Complementar con el conteo de ninfas.",
-   "ref": "14 §4.8"
+   "escMin": 1,
+   "cultivos": [
+    "Urochloa brizantha (Marandu, Xaraés, Piatã)",
+    "Urochloa decumbens (Basilisk)",
+    "Urochloa humidicola",
+    "Urochloa híbrida (Mulato II, Cayman)",
+    "Megathyrsus maximus (Gatton panic)",
+    "Megathyrsus maximus porte alto (Mombaça, Tanzânia, Zuri)",
+    "Digitaria eriantha (Pangola)",
+    "Cynodon (Tifton 85)",
+    "Pennisetum purpureum (Camerún / elefante)",
+    "Mezcla gramínea–leguminosa"
+   ],
+   "tipos": [
+    "Introducción y adaptación (etapa A)",
+    "Cultivares / especies forrajeras",
+    "Control de salivazo"
+   ],
+   "ref": "14 §4.8",
+   "fuente": "https://revistacolombianaentomologia.univalle.edu.co/index.php/SOCOLEN/article/download/9826/12329/30642"
   },
   {
    "id": "ninfas",
@@ -647,11 +3775,297 @@
    "unidad": "ninfas/m²",
    "tipo": "conteo",
    "dec": 1,
+   "sub": 8,
+   "min": 0,
+   "max": 1000,
+   "metodo": "Marco de 25 × 25 cm (0,0625 m²) arrojado al azar: abrir la base de las plantas y contar las espumas (y ninfas). 8 marcos por parcela (20 por potrero); ninfas/m² = promedio × 16. El marco chico es 1,5 a 3,5 veces más eficiente que el de 0,25 m² (Nilakhe, 1982).",
+   "momento": "Semanal o quincenal en la estación lluviosa; en ensayos de control: 0, 7, 14 y 21 DAA",
+   "cultivos": [
+    "Urochloa brizantha (Marandu, Xaraés, Piatã)",
+    "Urochloa decumbens (Basilisk)",
+    "Urochloa humidicola",
+    "Urochloa híbrida (Mulato II, Cayman)",
+    "Megathyrsus maximus (Gatton panic)",
+    "Megathyrsus maximus porte alto (Mombaça, Tanzânia, Zuri)",
+    "Digitaria eriantha (Pangola)",
+    "Cynodon (Tifton 85)",
+    "Pennisetum purpureum (Camerún / elefante)",
+    "Mezcla gramínea–leguminosa"
+   ],
+   "tipos": [
+    "Control de salivazo"
+   ],
+   "ref": "14 §4.8",
+   "fuente": "https://www.infoteca.cnptia.embrapa.br/infoteca/bitstream/doc/319750/1/Amostragemdeninfas2.pdf; https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/409420/1/MonitoramentoPopulaciona.pdf"
+  },
+  {
+   "id": "adultos_saliv",
+   "nombre": "Adultos de salivazo",
+   "unidad": "adultos/10 redadas",
+   "tipo": "conteo",
+   "dec": 1,
+   "sub": 2,
+   "min": 0,
+   "max": 500,
+   "metodo": "Red entomológica estándar: 10 redadas (golpes) por punto, 2 puntos por parcela (10 puntos por potrero); contar adultos e identificar género (Deois, Notozulia, Mahanarva).",
+   "momento": "Semanal o quincenal desde el inicio de las lluvias",
+   "cultivos": [
+    "Urochloa brizantha (Marandu, Xaraés, Piatã)",
+    "Urochloa decumbens (Basilisk)",
+    "Urochloa humidicola",
+    "Urochloa híbrida (Mulato II, Cayman)",
+    "Megathyrsus maximus (Gatton panic)",
+    "Megathyrsus maximus porte alto (Mombaça, Tanzânia, Zuri)",
+    "Digitaria eriantha (Pangola)",
+    "Cynodon (Tifton 85)",
+    "Pennisetum purpureum (Camerún / elefante)",
+    "Mezcla gramínea–leguminosa"
+   ],
+   "tipos": [
+    "Control de salivazo"
+   ],
+   "ref": "",
+   "fuente": "https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/409420/1/MonitoramentoPopulaciona.pdf"
+  },
+  {
+   "id": "sev_foliar",
+   "nombre": "Severidad de enfermedades foliares",
+   "unidad": "% de área foliar",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 10,
+   "min": 0,
+   "max": 100,
+   "metodo": "10 hojas o macollos al azar por parcela: % de área foliar con lesiones (manchas foliares, roya en raigrás y avena, Rhizoctonia en Urochloa). Anotar el patógeno.",
+   "momento": "Antes de cada corte cuando aparecen síntomas",
+   "tipos": [
+    "Introducción y adaptación (etapa A)",
+    "Cultivares / especies forrajeras",
+    "Verdeos de invierno"
+   ],
+   "ref": "",
+   "fuente": "https://www.aprosemp.org.py/docs/normativas/5-Resolucion-SENAVE-414-Normas-minimas-para-ensayos-evaluacion-agronomica-calidad-variedades.pdf (enfermedades en anexos Brachiaria y Aceven); Guía del proyecto ensayos_de_campo/14_ensayos_pasturas.md"
+  },
+  {
+   "id": "antracnosis",
+   "nombre": "Antracnosis en Stylosanthes",
+   "unidad": "nota 0–9",
+   "tipo": "escala",
+   "dec": 0,
+   "sub": 2,
+   "min": 0,
+   "max": 9,
+   "metodo": "Escala diagramática de 0 (planta sin síntomas) a 9 (planta muerta) en las 2 plantas centrales o en 10 plantas por parcela.",
+   "momento": "Desde los 60 días, cada 2–4 semanas en lluvias",
+   "escala": [
+    "0 Sin síntomas",
+    "1 Manchas aisladas",
+    "2",
+    "3 Lesiones en algunas hojas",
+    "4",
+    "5 Lesiones en tallos y hojas",
+    "6",
+    "7 Defoliación fuerte",
+    "8",
+    "9 Planta muerta"
+   ],
+   "escMin": 0,
+   "cultivos": [
+    "Stylosanthes",
+    "Mezcla gramínea–leguminosa"
+   ],
+   "tipos": [
+    "Mezclas gramínea–leguminosa",
+    "Introducción y adaptación (etapa A)",
+    "Cultivares / especies forrajeras"
+   ],
+   "ref": "",
+   "fuente": "https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/936912/1/Resistencia-genotipos-Stylosanthes-2012.pdf"
+  },
+  {
+   "id": "dano_helada",
+   "nombre": "Daño por helada",
+   "unidad": "% de follaje quemado",
+   "tipo": "porcentaje",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Estimación visual del % de follaje quemado en el área útil; anotar fecha y temperatura mínima del evento. Repetir a los 30 días como % de plantas que rebrotan.",
+   "momento": "3–7 días después de cada helada",
+   "tipos": [
+    "Introducción y adaptación (etapa A)",
+    "Cultivares / especies forrajeras"
+   ],
+   "ref": "",
+   "fuente": "https://www.aprosemp.org.py/docs/normativas/5-Resolucion-SENAVE-414-Normas-minimas-para-ensayos-evaluacion-agronomica-calidad-variedades.pdf (tolerancia al frío); https://www.produccion-animal.com.ar/produccion_y_manejo_pasturas/pasturas_cultivadas_megatermicas/116-Nac-06-AlbrechtGlatzle.pdf"
+  },
+  {
+   "id": "verdor_seca",
+   "nombre": "Forraje verde en la seca",
+   "unidad": "% de hojas verdes",
+   "tipo": "porcentaje",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Estimación visual (o separación de una submuestra) del % de láminas verdes sobre el total; indicador de tolerancia a sequía. Anotar días sin lluvia.",
+   "momento": "Mitad y fin de la estación seca",
+   "tipos": [
+    "Introducción y adaptación (etapa A)",
+    "Cultivares / especies forrajeras"
+   ],
+   "ref": "",
+   "fuente": "https://www.aprosemp.org.py/docs/normativas/5-Resolucion-SENAVE-414-Normas-minimas-para-ensayos-evaluacion-agronomica-calidad-variedades.pdf (tolerancia a sequía)"
+  },
+  {
+   "id": "encharcamiento",
+   "nombre": "Daño por encharcamiento",
+   "unidad": "nota 1–5",
+   "tipo": "escala",
+   "dec": 0,
+   "sub": 1,
+   "min": 1,
+   "max": 5,
+   "metodo": "Nota visual de amarillamiento y muerte de plantas tras un anegamiento (anotar días con agua). Indicador clave para Marandu en bajos.",
+   "momento": "7 y 30 días después de bajar el agua",
+   "escala": [
+    "1 Sin daño",
+    "2 Amarillamiento leve",
+    "3 Amarillamiento general",
+    "4 Muerte de manchones",
+    "5 Más del 50 % de plantas muertas"
+   ],
+   "escMin": 1,
+   "tipos": [
+    "Introducción y adaptación (etapa A)",
+    "Cultivares / especies forrajeras"
+   ],
+   "ref": "",
+   "fuente": "https://www.infoteca.cnptia.embrapa.br/infoteca/bitstream/doc/505444/1/14373.pdf (escala no verificada; usar la del vigor invertida)"
+  },
+  {
+   "id": "nodulacion",
+   "nombre": "Nodulación activa",
+   "unidad": "nódulos/planta",
+   "tipo": "conteo",
+   "dec": 1,
+   "sub": 5,
+   "min": 0,
+   "max": 200,
+   "metodo": "Arrancar 5 plantas por parcela con pan de tierra, lavar y contar los nódulos con interior rojo o rosado (activos); anotar aparte los blancos o verdes.",
+   "momento": "45–60 días después de la siembra",
+   "cultivos": [
+    "Leucaena",
+    "Stylosanthes",
+    "Maní forrajero (Arachis pintoi)",
+    "Alfalfa",
+    "Mezcla gramínea–leguminosa"
+   ],
+   "tipos": [
+    "Mezclas gramínea–leguminosa"
+   ],
+   "ref": "",
+   "fuente": "Guía del proyecto ensayos_de_campo/14_ensayos_pasturas.md"
+  },
+  {
+   "id": "plantulas_resiembra",
+   "nombre": "Plántulas de resiembra natural",
+   "unidad": "plantas/m²",
+   "tipo": "conteo",
+   "dec": 1,
    "sub": 4,
    "min": 0,
    "max": 500,
-   "metodo": "Contar las espumas (ninfas) en la base de las plantas en 4 marcos de 0,25 m² por parcela y llevar a m² (× 4).",
-   "ref": "14 §4.8"
+   "metodo": "Contar plántulas nuevas de la leguminosa en 4 marcos de 0,25 m² por parcela (× 4).",
+   "momento": "Inicio de las lluvias del año siguiente",
+   "cultivos": [
+    "Stylosanthes",
+    "Mezcla gramínea–leguminosa",
+    "Maní forrajero (Arachis pintoi)"
+   ],
+   "tipos": [
+    "Mezclas gramínea–leguminosa"
+   ],
+   "ref": "",
+   "fuente": "https://www.produccion-animal.com.ar/produccion_y_manejo_pasturas/pasturas_cultivadas_megatermicas/116-Nac-06-AlbrechtGlatzle.pdf (Alysicarpus: semillazón prolífica)"
+  },
+  {
+   "id": "dias_flor",
+   "nombre": "Días a floración",
+   "unidad": "días",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": 20,
+   "max": 250,
+   "metodo": "Días desde la siembra (o el corte de uniformización) hasta que el 50 % de los macollos de la parcela muestra la inflorescencia (en alfalfa: 10 % de floración).",
+   "momento": "Una vez por ciclo",
+   "tipos": [
+    "Introducción y adaptación (etapa A)",
+    "Cultivares / especies forrajeras",
+    "Verdeos de invierno"
+   ],
+   "ref": "",
+   "fuente": "https://www.aprosemp.org.py/docs/normativas/5-Resolucion-SENAVE-414-Normas-minimas-para-ensayos-evaluacion-agronomica-calidad-variedades.pdf"
+  },
+  {
+   "id": "rend_semilla",
+   "nombre": "Rendimiento de semilla",
+   "unidad": "kg/ha",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 2000,
+   "metodo": "Cosecha manual de las inflorescencias del área útil en madurez, trilla y limpieza; pesar la semilla pura y llevar a kg/ha.",
+   "momento": "En la madurez de la semilla (parcelas no cortadas)",
+   "cultivos": [
+    "Urochloa brizantha (Marandu, Xaraés, Piatã)",
+    "Urochloa decumbens (Basilisk)",
+    "Urochloa humidicola",
+    "Megathyrsus maximus (Gatton panic)",
+    "Megathyrsus maximus porte alto (Mombaça, Tanzânia, Zuri)",
+    "Cenchrus ciliaris (Buffel)",
+    "Chloris gayana (Grama Rhodes)",
+    "Panicum coloratum (Bambatsi, Klein)",
+    "Raigrás anual (Lolium multiflorum)",
+    "Avena (verdeo de invierno)"
+   ],
+   "tipos": [
+    "Cultivares / especies forrajeras"
+   ],
+   "ref": "",
+   "fuente": "https://www.aprosemp.org.py/docs/normativas/5-Resolucion-SENAVE-414-Normas-minimas-para-ensayos-evaluacion-agronomica-calidad-variedades.pdf (rendimiento de semilla y peso de 1000 semillas en Brachiaria y Aceven)"
+  },
+  {
+   "id": "pms",
+   "nombre": "Peso de 1000 semillas",
+   "unidad": "g",
+   "tipo": "numero",
+   "dec": 2,
+   "sub": 4,
+   "min": 0.1,
+   "max": 50,
+   "metodo": "Contar 4 repeticiones de 100 semillas puras (o 8 si el CV supera 4 %), pesar y multiplicar por 10 (método ISTA).",
+   "momento": "Después de la cosecha de semilla",
+   "cultivos": [
+    "Urochloa brizantha (Marandu, Xaraés, Piatã)",
+    "Urochloa decumbens (Basilisk)",
+    "Urochloa humidicola",
+    "Megathyrsus maximus (Gatton panic)",
+    "Megathyrsus maximus porte alto (Mombaça, Tanzânia, Zuri)",
+    "Cenchrus ciliaris (Buffel)",
+    "Chloris gayana (Grama Rhodes)",
+    "Panicum coloratum (Bambatsi, Klein)",
+    "Raigrás anual (Lolium multiflorum)",
+    "Avena (verdeo de invierno)"
+   ],
+   "tipos": [
+    "Cultivares / especies forrajeras"
+   ],
+   "ref": "",
+   "fuente": "https://www.aprosemp.org.py/docs/normativas/5-Resolucion-SENAVE-414-Normas-minimas-para-ensayos-evaluacion-agronomica-calidad-variedades.pdf; reglas ISTA (no consultadas en esta revisión)"
   },
   {
    "id": "disponible",
@@ -662,8 +4076,13 @@
    "sub": 1,
    "min": 0,
    "max": 15000,
-   "metodo": "Plato medidor de forraje: 50–100 lecturas por potrero, calibrado con cortes de 0,25 m² en el mismo momento (doble muestreo: kg MS/ha = a + b × altura del plato).",
-   "ref": "14 §4.1"
+   "metodo": "Plato medidor (pasturómetro) con 50–100 lecturas por potrero, calibrado en la misma fecha con 5–10 cortes de 0,25 m² bajo el plato (doble muestreo: kg MS/ha = a + b × lectura). La calibración cambia con la especie y la estación.",
+   "momento": "Al entrar los animales (rotativo) o cada 28 días (continuo)",
+   "tipos": [
+    "Pastoreo y producción animal"
+   ],
+   "ref": "14 §4.1",
+   "fuente": "Guía del proyecto ensayos_de_campo/14_ensayos_pasturas.md"
   },
   {
    "id": "residuo",
@@ -675,7 +4094,12 @@
    "min": 0,
    "max": 10000,
    "metodo": "Mismo método que el disponible, al sacar los animales. Utilización aparente = (disponible − remanente) ÷ disponible × 100.",
-   "ref": "14 §5"
+   "momento": "Al salir los animales",
+   "tipos": [
+    "Pastoreo y producción animal"
+   ],
+   "ref": "14 §5",
+   "fuente": "Guía del proyecto ensayos_de_campo/14_ensayos_pasturas.md; https://www.crops.org/files/membership/divisions/c06/international-grazing-terminology.pdf (residue: forraje que queda después de la cosecha)"
   },
   {
    "id": "gdp",
@@ -686,8 +4110,13 @@
    "sub": 1,
    "min": -500,
    "max": 1800,
-   "metodo": "Pesar los animales probadores (al menos 3 por potrero) cada 28 días, con 12–16 h de ayuno; GDP = (peso final − peso inicial) ÷ días. La unidad experimental es el potrero, no el animal.",
-   "ref": "14 §5"
+   "metodo": "Pesar los animales probadores (≥ 3 por potrero, parejos) cada 28 días con 12–16 h de ayuno; GDP = (peso final − inicial) ÷ días × 1000. La unidad experimental es el potrero: cargar el promedio del potrero.",
+   "momento": "Cada 28 días",
+   "tipos": [
+    "Pastoreo y producción animal"
+   ],
+   "ref": "14 §5",
+   "fuente": "Guía del proyecto ensayos_de_campo/14_ensayos_pasturas.md"
   },
   {
    "id": "carga",
@@ -698,8 +4127,13 @@
    "sub": 1,
    "min": 0,
    "max": 10,
-   "metodo": "Suma del peso vivo de todos los animales del potrero ÷ 450 kg (1 UA) ÷ superficie (ha). Promedio ponderado por días si los animales cambian.",
-   "ref": "14 §5"
+   "metodo": "Σ peso vivo del potrero ÷ kg de 1 UA ÷ superficie (ha); promedio ponderado por días si hay animales volantes (put-and-take). Declarar en la ficha el peso de la UA usado (450 kg por defecto; la terminología internacional usa 500 kg).",
+   "momento": "En cada pesada",
+   "tipos": [
+    "Pastoreo y producción animal"
+   ],
+   "ref": "14 §5",
+   "fuente": "https://www.crops.org/files/membership/divisions/c06/international-grazing-terminology.pdf; Guía del proyecto ensayos_de_campo/14_ensayos_pasturas.md"
   },
   {
    "id": "pv_ha",
@@ -710,8 +4144,1055 @@
    "sub": 1,
    "min": -200,
    "max": 2000,
-   "metodo": "Ganancia de peso de todos los animales del potrero en el período ÷ superficie (ha). Incluye animales probadores y volantes.",
-   "ref": "14 §5"
+   "metodo": "Ganancia de peso de todos los animales del potrero (probadores + volantes, por animal-día) en el período ÷ superficie (ha).",
+   "momento": "Por período y por año",
+   "tipos": [
+    "Pastoreo y producción animal"
+   ],
+   "ref": "14 §5",
+   "fuente": "Guía del proyecto ensayos_de_campo/14_ensayos_pasturas.md; https://www.produccion-animal.com.ar/produccion_y_manejo_pasturas/pasturas_cultivadas_megatermicas/116-Nac-06-AlbrechtGlatzle.pdf"
+  },
+  {
+   "id": "rfa_transm",
+   "nombre": "Radiación fotosintéticamente activa transmitida",
+   "unidad": "% del pleno sol",
+   "tipo": "porcentaje",
+   "dec": 0,
+   "sub": 6,
+   "min": 0,
+   "max": 100,
+   "metodo": "Ceptómetro (p. ej. LP-80) a la altura del dosel: lecturas bajo los árboles a distintas distancias de la hilera (0, 3, 6, 9, 12 m…) y a pleno sol, a las 9, 12 y 15 h en días despejados. % transmitida = RFA bajo árboles ÷ RFA a pleno sol × 100 (sombra = 100 − valor).",
+   "momento": "Una vez en lluvias y una en seca por año",
+   "tipos": [
+    "Silvopastoril"
+   ],
+   "ref": "",
+   "fuente": "https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/596332/1/Radiacao-incidente-e-massa-de-forragem-de-Brachiaria-decumbens.pdf"
+  },
+  {
+   "id": "ndvi",
+   "nombre": "NDVI medio (dron)",
+   "unidad": "índice",
+   "tipo": "numero",
+   "dec": 3,
+   "sub": 1,
+   "min": -1,
+   "max": 1,
+   "origen": "dron",
+   "metodo": "Promedio del NDVI de los píxeles dentro del área útil, en el vuelo previo a cada corte; útil para estimar biomasa si se calibra con los cortes.",
+   "ref": "12; 14 §4.1"
+  },
+  {
+   "id": "pulv_cob",
+   "nombre": "Cobertura de pulverización",
+   "unidad": "%",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Papel hidrosensible (26 × 76 mm) colocado en la posición elegida antes de aplicar; se lee con la cámara del celular en la app (Aplicaciones → Leer papel hidrosensible). Cobertura = superficie manchada / superficie del papel, sumando las tarjetas de cada metro lineal.",
+   "momento": "En cada aplicación",
+   "ref": "Papel hidrosensible; DepositScan (Zhu et al., 2011)",
+   "origen": "papel"
+  },
+  {
+   "id": "pulv_dens",
+   "nombre": "Densidad de gotas",
+   "unidad": "gotas/cm²",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 1000,
+   "metodo": "Conteo de impactos en papel hidrosensible con la app; las manchas de gotas pegadas se separan en varias gotas. Recomendado (FAO): 20–30 gotas/cm² sistémicos, 30–40 herbicidas de contacto, 50–70 insecticidas o fungicidas de contacto.",
+   "momento": "En cada aplicación",
+   "ref": "Papel hidrosensible; FAO",
+   "origen": "papel"
+  },
+  {
+   "id": "pulv_dmv",
+   "nombre": "Diámetro mediano volumétrico de gota (DMV)",
+   "unidad": "µm",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": 30,
+   "max": 1500,
+   "metodo": "Dv0,5 estimado desde el diámetro de las manchas con el factor de expansión del papel (d = 0,95·s^0,91). Clase orientativa según ASABE S572.3.",
+   "momento": "En cada aplicación",
+   "ref": "DepositScan (Zhu et al., 2011); ASABE S572.3",
+   "origen": "papel"
+  }
+ ],
+ "silvopastoril": [
+  {
+   "id": "sobrev",
+   "nombre": "Sobrevivencia de árboles",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Contar los árboles vivos y los plantados en el área útil de la franja. Sobrevivencia = vivos ÷ plantados × 100. Anotar aparte los replantes (solo hasta los 30–60 días) y las muertes por animales (ver daño por animales).",
+   "momento": "30–90 días (prendimiento), 6 y 12 meses, al entrar los animales y después anual",
+   "tipos": [
+    "Arreglo espacial y densidad de árboles",
+    "Especies arbóreas para silvopastoril",
+    "Implantación y protección de árboles",
+    "Leucaena: hileras y banco de proteína"
+   ],
+   "ref": "",
+   "fuente": "Guía del proyecto ensayos_de_campo/06_ensayos_forestales.md; https://faolex.fao.org/docs/pdf/par17513.pdf"
+  },
+  {
+   "id": "dap",
+   "nombre": "DAP medio",
+   "unidad": "cm",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 10,
+   "min": 0,
+   "max": 120,
+   "metodo": "Diámetro a 1,30 m con cinta diamétrica (o CAP ÷ π) en los árboles útiles marcados de las hileras que limitan la franja (≥ 10 árboles por parcela después del raleo, según Embrapa). Marcar el punto de 1,30 m con pintura. En bosque nativo y árboles dispersos: todos los árboles con DAP ≥ 10 cm de la parcela de 1 ha o del potrero.",
+   "momento": "Desde que la mayoría supera 2 m de altura, después anual. Bovinos adultos desde DAP ≈ 6 cm",
+   "tipos": [
+    "Arreglo espacial y densidad de árboles",
+    "Especies arbóreas para silvopastoril",
+    "Raleo y poda en silvopastoril",
+    "Raleo de bosque nativo con ganadería (Chaco)",
+    "Implantación y protección de árboles",
+    "Fertilización de la pastura bajo árboles",
+    "Suelo y carbono (largo plazo)"
+   ],
+   "ref": "",
+   "fuente": "https://www.infoteca.cnptia.embrapa.br/infoteca/bitstream/doc/1176578/1/EmbrapaFlorestas-2025-ComunicadoTecnico513.pdf; https://www.infoteca.cnptia.embrapa.br/infoteca/bitstream/doc/1003751/1/projetosilvipastoril.pdf; https://www.revista.ccba.uady.mx/ojs/index.php/TSA/article/download/1075/612"
+  },
+  {
+   "id": "altura_m",
+   "nombre": "Altura total",
+   "unidad": "m",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 10,
+   "min": 0,
+   "max": 40,
+   "metodo": "Hasta ≈ 12 m con vara telescópica; después con hipsómetro (Vertex, Suunto). Medir los mismos árboles marcados del DAP. En leucaena, altura de las plantas antes de cada pastoreo.",
+   "momento": "6 y 12 meses y anual. Eucalipto: sembrar la pastura con árboles de 2,5–3 m",
+   "tipos": [
+    "Arreglo espacial y densidad de árboles",
+    "Especies arbóreas para silvopastoril",
+    "Raleo y poda en silvopastoril",
+    "Implantación y protección de árboles",
+    "Leucaena: hileras y banco de proteína",
+    "Fertilización de la pastura bajo árboles"
+   ],
+   "ref": "",
+   "fuente": "Guía del proyecto ensayos_de_campo/06_ensayos_forestales.md; https://www.undp.org/sites/g/files/zskgke326/files/migration/py/UNDP-PY--2020-Recomendaciones-tecnicas-para-sistema-silvopastoril-con-eucalipto.pdf"
+  },
+  {
+   "id": "copa_diam",
+   "nombre": "Diámetro de copa",
+   "unidad": "m",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 10,
+   "min": 0,
+   "max": 30,
+   "metodo": "Con cinta, dos diámetros perpendiculares de la proyección de la copa (uno en el sentido de la hilera); promediar. Área de copa = π × R1 × R2 (elipse, como el CATIE). Sirve para calcular el % del potrero bajo copa.",
+   "momento": "Anual y antes y después de cada poda o raleo",
+   "tipos": [
+    "Arreglo espacial y densidad de árboles",
+    "Especies arbóreas para silvopastoril",
+    "Raleo y poda en silvopastoril",
+    "Raleo de bosque nativo con ganadería (Chaco)"
+   ],
+   "ref": "",
+   "fuente": "Guía del proyecto ensayos_de_campo/06_ensayos_forestales.md; https://www.revista.ccba.uady.mx/ojs/index.php/TSA/article/download/1075/612"
+  },
+  {
+   "id": "altura_poda",
+   "nombre": "Altura de poda",
+   "unidad": "m",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 10,
+   "min": 0,
+   "max": 15,
+   "metodo": "Con vara graduada, desde el suelo hasta la última rama cortada. Referencia Colonias Unidas/PNUD: podar hasta 2/3 de la altura y dejar 1/3 de copa, desde ≈ 2 años.",
+   "momento": "En cada poda",
+   "cultivos": [
+    "Eucalipto + Urochloa brizantha (hileras simples)",
+    "Eucalipto + Megathyrsus maximus (hileras dobles o triples)",
+    "Eucalipto + Axonopus catarinensis (Itapúa y Alto Paraná)",
+    "Pino + pastura",
+    "Grevillea + Urochloa o Axonopus",
+    "Nativas maderables + pastura (Región Oriental)",
+    "Otro sistema (especificar)"
+   ],
+   "tipos": [
+    "Raleo y poda en silvopastoril"
+   ],
+   "ref": "",
+   "fuente": "https://www.undp.org/sites/g/files/zskgke326/files/migration/py/UNDP-PY--2020-Recomendaciones-tecnicas-para-sistema-silvopastoril-con-eucalipto.pdf"
+  },
+  {
+   "id": "arboles_ha",
+   "nombre": "Árboles en pie por hectárea de potrero",
+   "unidad": "árb/ha",
+   "tipo": "conteo",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 2500,
+   "metodo": "Plantaciones: árboles vivos del módulo llevados a hectárea de potrero (franjas + callejones). Bosque nativo y dispersos: árboles con DAP ≥ 10 cm en la parcela de 1 ha o en el potrero. % de retención = en pie ÷ inventario original × 100.",
+   "momento": "Línea de base (inventario), después de cada raleo y cada 2–3 años",
+   "tipos": [
+    "Arreglo espacial y densidad de árboles",
+    "Raleo y poda en silvopastoril",
+    "Raleo de bosque nativo con ganadería (Chaco)",
+    "Suelo y carbono (largo plazo)"
+   ],
+   "ref": "",
+   "fuente": "https://faolex.fao.org/docs/pdf/par222081.pdf; https://www.conacyt.gov.py/sites/default/files/upload_editores/u454/art%C3%ADculo.pdf"
+  },
+  {
+   "id": "area_basal",
+   "nombre": "Área basal",
+   "unidad": "m²/ha",
+   "tipo": "numero",
+   "dec": 2,
+   "sub": 1,
+   "min": 0,
+   "max": 60,
+   "metodo": "Se calcula: G = Σ 0,00007854 × DAP² (cm) de los árboles en pie × 10 000 ÷ área de la parcela (m²). En el Chaco sirve para expresar la intensidad de raleo.",
+   "momento": "Con cada medición de DAP",
+   "tipos": [
+    "Raleo y poda en silvopastoril",
+    "Raleo de bosque nativo con ganadería (Chaco)",
+    "Arreglo espacial y densidad de árboles"
+   ],
+   "ref": "",
+   "fuente": "Guía del proyecto ensayos_de_campo/06_ensayos_forestales.md"
+  },
+  {
+   "id": "vol_ha",
+   "nombre": "Volumen de madera por hectárea de potrero",
+   "unidad": "m³/ha",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 500,
+   "metodo": "Se calcula: v = 0,00007854 × DAP² × h × ff (eucalipto ff 0,45–0,50, o ecuación local) y V = Σ v × 10 000 ÷ área total del módulo (franja + callejón). Siempre por hectárea de potrero.",
+   "momento": "Anual desde los 24 meses y en cada raleo (sumar lo extraído)",
+   "cultivos": [
+    "Eucalipto + Urochloa brizantha (hileras simples)",
+    "Eucalipto + Megathyrsus maximus (hileras dobles o triples)",
+    "Eucalipto + Axonopus catarinensis (Itapúa y Alto Paraná)",
+    "Pino + pastura",
+    "Grevillea + Urochloa o Axonopus",
+    "Nativas maderables + pastura (Región Oriental)",
+    "Otro sistema (especificar)"
+   ],
+   "tipos": [
+    "Arreglo espacial y densidad de árboles",
+    "Especies arbóreas para silvopastoril",
+    "Raleo y poda en silvopastoril"
+   ],
+   "ref": "",
+   "fuente": "Guía del proyecto ensayos_de_campo/06_ensayos_forestales.md; https://repositorio.conacyt.gov.py/handle/20.500.14066/3046"
+  },
+  {
+   "id": "ima",
+   "nombre": "Incremento medio anual (IMA)",
+   "unidad": "m³/ha/año",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 60,
+   "metodo": "Se calcula: IMA = volumen por hectárea de potrero (en pie + extraído en raleos) ÷ edad en años.",
+   "momento": "Anual desde los 24 meses",
+   "cultivos": [
+    "Eucalipto + Urochloa brizantha (hileras simples)",
+    "Eucalipto + Megathyrsus maximus (hileras dobles o triples)",
+    "Eucalipto + Axonopus catarinensis (Itapúa y Alto Paraná)",
+    "Pino + pastura",
+    "Grevillea + Urochloa o Axonopus",
+    "Nativas maderables + pastura (Región Oriental)",
+    "Otro sistema (especificar)"
+   ],
+   "tipos": [
+    "Arreglo espacial y densidad de árboles",
+    "Especies arbóreas para silvopastoril",
+    "Raleo y poda en silvopastoril"
+   ],
+   "ref": "",
+   "fuente": "Guía del proyecto ensayos_de_campo/06_ensayos_forestales.md; https://repositorio.conacyt.gov.py/handle/20.500.14066/3046"
+  },
+  {
+   "id": "ramoneo",
+   "nombre": "Daño de árboles por animales",
+   "unidad": "nota 0–5",
+   "tipo": "escala",
+   "dec": 0,
+   "sub": 10,
+   "min": 0,
+   "max": 5,
+   "metodo": "Nota por árbol marcado; promediar por parcela y cargar además el % de árboles con nota ≥ 3. Registrar la categoría animal presente. Siempre el mismo evaluador.",
+   "momento": "Cada 30 días el primer año con animales; después en cada pesada",
+   "escala": [
+    "0 Sin daño",
+    "1 Ramoneo de hojas o ramas laterales",
+    "2 Brote terminal comido",
+    "3 Descortezado < 50 % o rama principal quebrada",
+    "4 Descortezado ≥ 50 % o fuste quebrado",
+    "5 Árbol muerto por animales"
+   ],
+   "escMin": 0,
+   "tipos": [
+    "Implantación y protección de árboles",
+    "Especies arbóreas para silvopastoril",
+    "Producción animal silvopastoril vs. pleno sol",
+    "Leucaena: hileras y banco de proteína",
+    "Manejo del pastoreo en silvopastoril"
+   ],
+   "ref": "",
+   "fuente": "Escala orientativa, no normalizada (no verificada). Criterio de entrada de animales: https://www.infoteca.cnptia.embrapa.br/infoteca/bitstream/doc/1003751/1/projetosilvipastoril.pdf"
+  },
+  {
+   "id": "hormigas",
+   "nombre": "Plantas atacadas por hormigas",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "En la misma recorrida de sobrevivencia: plantas con corte de hojas o brotes por hormigas cortadoras (Atta, Acromyrmex) ÷ plantas evaluadas × 100.",
+   "momento": "Semanal el primer mes; a los 30–90 días, 6 y 12 meses",
+   "cultivos": [
+    "Eucalipto + Urochloa brizantha (hileras simples)",
+    "Eucalipto + Megathyrsus maximus (hileras dobles o triples)",
+    "Eucalipto + Axonopus catarinensis (Itapúa y Alto Paraná)",
+    "Pino + pastura",
+    "Grevillea + Urochloa o Axonopus",
+    "Nativas maderables + pastura (Región Oriental)",
+    "Otro sistema (especificar)"
+   ],
+   "tipos": [
+    "Implantación y protección de árboles",
+    "Especies arbóreas para silvopastoril"
+   ],
+   "ref": "",
+   "fuente": "Propuesta del rubro Forestal (id hormigas)"
+  },
+  {
+   "id": "helada",
+   "nombre": "Daño por helada en árboles",
+   "unidad": "nota 0–10",
+   "tipo": "escala",
+   "dec": 0,
+   "sub": 10,
+   "min": 0,
+   "max": 10,
+   "metodo": "Nota por árbol según el % de follaje y de tallo dañado (10 = sin daño). Registrar fecha y temperatura mínima. Anotar aparte el daño en la pastura bajo árboles y a pleno sol: los árboles lo reducen.",
+   "momento": "7–15 días después de cada helada",
+   "escala": [
+    "0 100 % del tallo dañado",
+    "1 75–99 % del tallo",
+    "2 50–74 % del tallo",
+    "3 25–49 % del tallo",
+    "4 < 25 % del tallo",
+    "5 100 % del follaje",
+    "6 75–99 % del follaje",
+    "7 50–74 % del follaje",
+    "8 25–49 % del follaje",
+    "9 < 25 % del follaje",
+    "10 Sin daño"
+   ],
+   "escMin": 0,
+   "cultivos": [
+    "Eucalipto + Urochloa brizantha (hileras simples)",
+    "Eucalipto + Megathyrsus maximus (hileras dobles o triples)",
+    "Eucalipto + Axonopus catarinensis (Itapúa y Alto Paraná)",
+    "Grevillea + Urochloa o Axonopus",
+    "Nativas maderables + pastura (Región Oriental)",
+    "Leucaena en hileras dobles + Gatton panic",
+    "Banco de proteína de leucaena + pastura base"
+   ],
+   "tipos": [
+    "Especies arbóreas para silvopastoril",
+    "Implantación y protección de árboles",
+    "Leucaena: hileras y banco de proteína"
+   ],
+   "ref": "",
+   "fuente": "Propuesta del rubro Forestal (id helada: Franklin y Meskimen, adaptada por Higa); efecto sobre la pastura: https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/1112705/1/2019ILPFinovacaocomintegracaodelavourapecuariaefloresta2019.pdf"
+  },
+  {
+   "id": "rfa_transm",
+   "nombre": "RFA transmitida (luz que llega a la pastura)",
+   "unidad": "% del pleno sol",
+   "tipo": "porcentaje",
+   "dec": 0,
+   "sub": 6,
+   "min": 0,
+   "max": 100,
+   "metodo": "Ceptómetro de barra (p. ej. AccuPAR) o sensor cuántico horizontal a la altura del dosel de la pastura, en cada punto de la transecta, con un sensor de referencia a pleno sol leído al mismo tiempo. Hacerlo a las 9, 12 y 15 h en días despejados. % transmitida = RFA bajo árboles ÷ RFA a pleno sol × 100; sombra = 100 − valor. Alternativa: foto hemisférica (ver cobertura de copa). No usar luxómetro salvo como medida relativa.",
+   "momento": "Una vez en lluvias y una en seca por año, y antes y después de cada poda o raleo",
+   "tipos": [
+    "Arreglo espacial y densidad de árboles",
+    "Especies arbóreas para silvopastoril",
+    "Raleo y poda en silvopastoril",
+    "Raleo de bosque nativo con ganadería (Chaco)",
+    "Forrajeras bajo sombra",
+    "Niveles de sombra con malla",
+    "Fertilización de la pastura bajo árboles"
+   ],
+   "porPosicion": true,
+   "ref": "",
+   "fuente": "https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/909026/1/PROCI2011.00211.pdf; https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/1154196/1/Influence-of-shade-on-productivity-and-nutritional-value.pdf"
+  },
+  {
+   "id": "cob_copa",
+   "nombre": "Cobertura de copa (densiómetro o foto hemisférica)",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 0,
+   "sub": 4,
+   "min": 0,
+   "max": 100,
+   "metodo": "Densiómetro esférico de 96 puntos, nivelado a la altura del codo: contar los puntos con cielo abierto mirando al N, S, E y O; apertura % = promedio × 1,04; cobertura = 100 − apertura. Alternativa más precisa: foto hemisférica (lente ojo de pez nivelada a 1 m, norte marcado, cielo nublado parejo o al amanecer o atardecer) procesada con un programa de análisis de dosel (p. ej. Gap Light Analyzer), que da además el índice de área foliar.",
+   "momento": "Una vez en lluvias y una en seca por año; después de cada poda o raleo",
+   "tipos": [
+    "Arreglo espacial y densidad de árboles",
+    "Especies arbóreas para silvopastoril",
+    "Raleo y poda en silvopastoril",
+    "Raleo de bosque nativo con ganadería (Chaco)"
+   ],
+   "porPosicion": true,
+   "ref": "",
+   "fuente": "https://ppbio.inpa.gov.br/sites/default/files/Protocolo_de_uso_de_densiometro_florestal_06_2017.pdf (foto hemisférica: método de uso general, no verificado en esta revisión)"
+  },
+  {
+   "id": "temp_aire",
+   "nombre": "Temperatura del aire",
+   "unidad": "°C",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 1,
+   "min": -5,
+   "max": 50,
+   "metodo": "Termohigrómetro o registrador protegido de la radiación, a la altura del animal (≈ 1,5 m), uno bajo los árboles y otro a pleno sol.",
+   "momento": "Cada 2 h de 7 a 17 h, 4 días seguidos por estación (o continuo)",
+   "tipos": [
+    "Confort térmico y bienestar animal",
+    "Niveles de sombra con malla"
+   ],
+   "ref": "",
+   "fuente": "https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/936049/1/indice-temperatura-globo-umidade-2012.pdf"
+  },
+  {
+   "id": "hr_aire",
+   "nombre": "Humedad relativa del aire",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 0,
+   "sub": 1,
+   "min": 5,
+   "max": 100,
+   "metodo": "Mismo termohigrómetro, bajo sombra y a pleno sol.",
+   "momento": "Igual que la temperatura",
+   "tipos": [
+    "Confort térmico y bienestar animal"
+   ],
+   "ref": "",
+   "fuente": "https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/936049/1/indice-temperatura-globo-umidade-2012.pdf"
+  },
+  {
+   "id": "temp_globo",
+   "nombre": "Temperatura de globo negro",
+   "unidad": "°C",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 1,
+   "min": -5,
+   "max": 70,
+   "metodo": "Globo de Vernon: esfera hueca de cobre de 15 cm pintada de negro mate, sensor en el centro, a 1,5 m del suelo, bajo los árboles y a pleno sol. Leer tras 20–30 min de estabilización.",
+   "momento": "Igual que la temperatura",
+   "tipos": [
+    "Confort térmico y bienestar animal"
+   ],
+   "ref": "",
+   "fuente": "https://scielo.br/j/eagri/a/MmWvTqGgDbWBsFvQH6gsdxM/?lang=en; https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/936049/1/indice-temperatura-globo-umidade-2012.pdf"
+  },
+  {
+   "id": "ith",
+   "nombre": "Índice de temperatura y humedad (ITH)",
+   "unidad": "índice",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 1,
+   "min": 40,
+   "max": 100,
+   "metodo": "Se calcula: ITH = 0,8 × T + (HR/100) × (T − 14,3) + 46,4 (T en °C). Por separado bajo sombra y a pleno sol; reportar también el % de horas en cada clase. Escala: ≤ 74 Normal · 75–78 Alerta · 79–83 Peligro · ≥ 84 Emergencia (LWSI).",
+   "momento": "Igual que la temperatura",
+   "tipos": [
+    "Confort térmico y bienestar animal"
+   ],
+   "ref": "",
+   "fuente": "https://ams.confex.com/ams/pdfpapers/47453.pdf"
+  },
+  {
+   "id": "itgu",
+   "nombre": "Índice de temperatura de globo y humedad (ITGU)",
+   "unidad": "índice",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 1,
+   "min": 40,
+   "max": 110,
+   "metodo": "Se calcula: ITGU = Tg + 0,36 × Tpr + 41,5 (Buffington), con Tg = temperatura de globo negro y Tpr = punto de rocío (°C) calculado desde T y HR. Incluye la radiación: es el índice que mejor muestra el efecto de la sombra. Escala: ≤ 74 Confort · 74–78 Alerta · 79–84 Peligro · > 84 Emergencia.",
+   "momento": "Igual que la temperatura",
+   "tipos": [
+    "Confort térmico y bienestar animal"
+   ],
+   "ref": "",
+   "fuente": "https://apct.sede.embrapa.br/pab/en/article/download/8275/6648; https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/936049/1/indice-temperatura-globo-umidade-2012.pdf"
+  },
+  {
+   "id": "ms",
+   "nombre": "Forraje (materia seca)",
+   "unidad": "kg MS/ha",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 2,
+   "min": 0,
+   "max": 15000,
+   "metodo": "En cada punto de la transecta (junto a la hilera, 1/4 y centro del callejón, de los dos lados) y en el testigo a pleno sol: cortar a la altura de corte de la especie 2 marcos de 0,25 m² (bosque nativo: subparcelas de 1 × 1 m bajo copa y a sol). Pesar en verde y secar una submuestra a 60–65 °C hasta peso constante. kg MS/ha = peso verde (g) ÷ área del marco (m²) × MS % ÷ 100 × 10. El valor del potrero se pondera por el ancho que representa cada posición.",
+   "momento": "En cada corte o entrada de animales (28–35 días en lluvias, 60–70 en seca)",
+   "tipos": [
+    "Arreglo espacial y densidad de árboles",
+    "Especies arbóreas para silvopastoril",
+    "Raleo y poda en silvopastoril",
+    "Raleo de bosque nativo con ganadería (Chaco)",
+    "Forrajeras bajo sombra",
+    "Niveles de sombra con malla",
+    "Fertilización de la pastura bajo árboles",
+    "Leucaena: hileras y banco de proteína",
+    "Manejo del pastoreo en silvopastoril",
+    "Producción animal silvopastoril vs. pleno sol"
+   ],
+   "porCorte": true,
+   "porPosicion": true,
+   "entrada": "ms",
+   "ref": "",
+   "fuente": "Guía del proyecto ensayos_de_campo/14_ensayos_pasturas.md; https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/1023426/1/Crescimentoeproducaodocapimpiataemsistemaagrossilvipastorilcomduasdensidadesarboreas.pdf; https://www.conacyt.gov.py/sites/default/files/upload_editores/u454/art%C3%ADculo.pdf"
+  },
+  {
+   "id": "ms_pct",
+   "nombre": "Contenido de materia seca",
+   "unidad": "% del peso verde",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 8,
+   "max": 90,
+   "metodo": "Submuestra de ≈ 300 g por posición: peso seco a 60–65 °C ÷ peso verde × 100. Cambia con la posición (Lipsch et al.: 24 % en el centro y 30–32 % junto a los árboles): no usar un único % de MS.",
+   "momento": "En cada corte",
+   "tipos": [
+    "Arreglo espacial y densidad de árboles",
+    "Forrajeras bajo sombra",
+    "Niveles de sombra con malla",
+    "Fertilización de la pastura bajo árboles"
+   ],
+   "porCorte": true,
+   "porPosicion": true,
+   "ref": "",
+   "fuente": "https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/1023426/1/Crescimentoeproducaodocapimpiataemsistemaagrossilvipastorilcomduasdensidadesarboreas.pdf"
+  },
+  {
+   "id": "altura_f",
+   "nombre": "Altura del forraje",
+   "unidad": "cm",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 10,
+   "min": 0,
+   "max": 250,
+   "metodo": "Regla o bastón medidor: 10 lecturas por posición, del suelo a la curvatura de las hojas más altas. Bajo sombra las gramíneas se alargan: usar la misma altura de entrada en todas las posiciones o declararlo.",
+   "momento": "Antes de cada corte o entrada de animales",
+   "tipos": [
+    "Arreglo espacial y densidad de árboles",
+    "Forrajeras bajo sombra",
+    "Niveles de sombra con malla",
+    "Manejo del pastoreo en silvopastoril"
+   ],
+   "porCorte": true,
+   "porPosicion": true,
+   "ref": "",
+   "fuente": "Propuesta del rubro Pasturas (id altura_f); https://apct.sede.embrapa.br/pab/article/download/18656/12694/87491"
+  },
+  {
+   "id": "hoja",
+   "nombre": "Proporción de lámina foliar",
+   "unidad": "% de la MS",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Separar a mano una submuestra por posición en lámina, tallo + vaina y material muerto; secar cada fracción y expresar la lámina como % del peso seco total.",
+   "momento": "Al menos un corte en lluvias y uno en seca",
+   "tipos": [
+    "Arreglo espacial y densidad de árboles",
+    "Forrajeras bajo sombra",
+    "Niveles de sombra con malla"
+   ],
+   "porCorte": true,
+   "porPosicion": true,
+   "ref": "",
+   "fuente": "Propuesta del rubro Pasturas (id hoja); https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/1154196/1/Influence-of-shade-on-productivity-and-nutritional-value.pdf"
+  },
+  {
+   "id": "cobertura_p",
+   "nombre": "Cobertura de la forrajera",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 0,
+   "sub": 4,
+   "min": 0,
+   "max": 100,
+   "metodo": "Marco de 1 m² con grilla de 100 puntos en cada posición: % de puntos que tocan planta viva de la forrajera sembrada. Mide la persistencia bajo sombra.",
+   "momento": "Al final de lluvias y de seca, cada año",
+   "tipos": [
+    "Arreglo espacial y densidad de árboles",
+    "Raleo y poda en silvopastoril",
+    "Raleo de bosque nativo con ganadería (Chaco)",
+    "Forrajeras bajo sombra",
+    "Fertilización de la pastura bajo árboles",
+    "Manejo del pastoreo en silvopastoril"
+   ],
+   "porPosicion": true,
+   "ref": "",
+   "fuente": "Propuesta del rubro Pasturas (id cobertura_p)"
+  },
+  {
+   "id": "pb",
+   "nombre": "Proteína bruta",
+   "unidad": "% de la MS",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 2,
+   "max": 35,
+   "metodo": "N Kjeldahl (o Dumas) × 6,25, o NIRS calibrado, sobre la submuestra seca y molida a 1 mm de cada posición, sin mezclar posiciones. Bajo sombra la PB suele subir.",
+   "momento": "Al menos un corte en lluvias y uno en seca",
+   "tipos": [
+    "Arreglo espacial y densidad de árboles",
+    "Especies arbóreas para silvopastoril",
+    "Raleo de bosque nativo con ganadería (Chaco)",
+    "Forrajeras bajo sombra",
+    "Niveles de sombra con malla",
+    "Fertilización de la pastura bajo árboles",
+    "Leucaena: hileras y banco de proteína",
+    "Manejo del pastoreo en silvopastoril",
+    "Producción animal silvopastoril vs. pleno sol"
+   ],
+   "porPosicion": true,
+   "ref": "",
+   "fuente": "Propuesta del rubro Pasturas (id pb); efecto de la sombra: https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/1154196/1/Influence-of-shade-on-productivity-and-nutritional-value.pdf; https://repositorio.inta.gob.ar/handle/20.500.12123/19001"
+  },
+  {
+   "id": "fdn",
+   "nombre": "Fibra detergente neutro (FDN)",
+   "unidad": "% de la MS",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 20,
+   "max": 85,
+   "metodo": "Van Soest et al. (1991) o analizador de fibra, sobre la misma muestra por posición; en base seca.",
+   "momento": "Mismos cortes que la PB",
+   "tipos": [
+    "Arreglo espacial y densidad de árboles",
+    "Forrajeras bajo sombra",
+    "Niveles de sombra con malla"
+   ],
+   "porPosicion": true,
+   "ref": "",
+   "fuente": "Propuesta del rubro Pasturas (id fdn); https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/1154196/1/Influence-of-shade-on-productivity-and-nutritional-value.pdf"
+  },
+  {
+   "id": "divms",
+   "nombre": "Digestibilidad in vitro de la MS (DIVMS)",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 30,
+   "max": 90,
+   "metodo": "Tilley y Terry (1963) o incubador tipo Daisy, sobre la misma muestra por posición.",
+   "momento": "Mismos cortes que la PB",
+   "tipos": [
+    "Forrajeras bajo sombra",
+    "Niveles de sombra con malla",
+    "Producción animal silvopastoril vs. pleno sol"
+   ],
+   "porPosicion": true,
+   "ref": "",
+   "fuente": "Propuesta del rubro Pasturas (id divms)"
+  },
+  {
+   "id": "ms_comestible",
+   "nombre": "Biomasa comestible de leucaena",
+   "unidad": "kg MS/ha",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 15000,
+   "metodo": "Antes de cada pastoreo, cosechar a mano hojas y tallos finos (< 6 mm) en 2–3 tramos de 2–5 m de hilera (o del banco); secar y llevar a kg MS por hectárea de potrero con los metros de hilera por hectárea.",
+   "momento": "Antes de cada pastoreo (≈ cada 40 días en lluvias)",
+   "cultivos": [
+    "Leucaena en hileras dobles + Gatton panic",
+    "Banco de proteína de leucaena + pastura base"
+   ],
+   "tipos": [
+    "Leucaena: hileras y banco de proteína"
+   ],
+   "porCorte": true,
+   "ref": "",
+   "fuente": "Propuesta del rubro Pasturas (id ms_comestible); manejo: https://produccion-animal.com.ar/produccion_y_manejo_pasturas/pasturas_cultivadas_megatermicas/106-leucaena.pdf"
+  },
+  {
+   "id": "disponible",
+   "nombre": "Forraje disponible antes de pastorear",
+   "unidad": "kg MS/ha",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 15000,
+   "metodo": "Plato medidor con lecturas estratificadas por posición (la misma cantidad en cada franja de posición), calibrado con cortes de 0,25 m² por separado bajo sombra y a pleno sol: la relación lectura–MS cambia con la sombra.",
+   "momento": "Al entrar los animales",
+   "tipos": [
+    "Producción animal silvopastoril vs. pleno sol",
+    "Leucaena: hileras y banco de proteína",
+    "Manejo del pastoreo en silvopastoril"
+   ],
+   "porPosicion": true,
+   "ref": "",
+   "fuente": "Propuesta del rubro Pasturas (id disponible); calibración separada: recomendación de esta revisión"
+  },
+  {
+   "id": "residuo",
+   "nombre": "Forraje remanente después de pastorear",
+   "unidad": "kg MS/ha",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 10000,
+   "metodo": "Mismo método que el disponible, al sacar los animales. Utilización = (disponible − remanente) ÷ disponible × 100.",
+   "momento": "Al salir los animales",
+   "tipos": [
+    "Producción animal silvopastoril vs. pleno sol",
+    "Manejo del pastoreo en silvopastoril"
+   ],
+   "porPosicion": true,
+   "ref": "",
+   "fuente": "Propuesta del rubro Pasturas (id residuo)"
+  },
+  {
+   "id": "cob_lenosa",
+   "nombre": "Cobertura de leñosas bajas (rebrote y renovales)",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 0,
+   "sub": 2,
+   "min": 0,
+   "max": 100,
+   "metodo": "Línea de intercepción: 2 transectas de 50 m por parcela; sumar los tramos cubiertos por arbustos, rebrotes y renovales < 2 m y dividir por la longitud total × 100. Mide el reenmalezamiento después del raleo o rolado.",
+   "momento": "Línea de base y al final de cada estación de lluvias",
+   "cultivos": [
+    "Bosque nativo raleado + Gatton panic (Chaco)",
+    "Bosque nativo raleado + Buffel (Chaco seco)",
+    "Franjas de bosque nativo + pastura (Chaco)",
+    "Algarrobo (Prosopis) + Gatton panic o Pangola (Chaco Central)",
+    "Palo santo remanente + pastura (Chaco)"
+   ],
+   "tipos": [
+    "Raleo de bosque nativo con ganadería (Chaco)"
+   ],
+   "ref": "",
+   "fuente": "Método de uso general (sin fuente verificada en esta revisión); rolado: https://intainforma.inta.gob.ar/wp-content/uploads/2016/06/Nota-RIA-SerProductivos.pdf"
+  },
+  {
+   "id": "gdp",
+   "nombre": "Ganancia diaria de peso",
+   "unidad": "g/animal/día",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": -500,
+   "max": 1800,
+   "metodo": "Pesar los animales probadores (≥ 3 por potrero, parejos) cada 28 días con 12–16 h de ayuno; GDP = (peso final − inicial) ÷ días × 1000. Cargar el promedio del potrero: la unidad experimental es el potrero.",
+   "momento": "Cada 28 días",
+   "tipos": [
+    "Producción animal silvopastoril vs. pleno sol",
+    "Leucaena: hileras y banco de proteína",
+    "Raleo de bosque nativo con ganadería (Chaco)",
+    "Confort térmico y bienestar animal",
+    "Manejo del pastoreo en silvopastoril"
+   ],
+   "ref": "",
+   "fuente": "Propuesta del rubro Pasturas (id gdp); Guía del proyecto ensayos_de_campo/14_ensayos_pasturas.md"
+  },
+  {
+   "id": "carga",
+   "nombre": "Carga animal",
+   "unidad": "UA/ha",
+   "tipo": "numero",
+   "dec": 2,
+   "sub": 1,
+   "min": 0,
+   "max": 10,
+   "metodo": "Σ peso vivo del potrero ÷ kg de 1 UA (450 por defecto, declararlo) ÷ superficie total del potrero en ha, incluidas las franjas de árboles.",
+   "momento": "En cada pesada",
+   "tipos": [
+    "Producción animal silvopastoril vs. pleno sol",
+    "Leucaena: hileras y banco de proteína",
+    "Raleo de bosque nativo con ganadería (Chaco)",
+    "Manejo del pastoreo en silvopastoril"
+   ],
+   "ref": "",
+   "fuente": "Propuesta del rubro Pasturas (id carga)"
+  },
+  {
+   "id": "pv_ha",
+   "nombre": "Producción de carne por hectárea",
+   "unidad": "kg PV/ha",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": -200,
+   "max": 2000,
+   "metodo": "Ganancia de todos los animales del potrero (probadores + volantes) en el período ÷ superficie total del potrero (ha).",
+   "momento": "Por período y por año",
+   "tipos": [
+    "Producción animal silvopastoril vs. pleno sol",
+    "Leucaena: hileras y banco de proteína",
+    "Manejo del pastoreo en silvopastoril"
+   ],
+   "ref": "",
+   "fuente": "Propuesta del rubro Pasturas (id pv_ha); ejemplo Chaco: https://produccion-animal.com.ar/produccion_y_manejo_pasturas/pasturas_cultivadas_megatermicas/109-leucaena_invernada.pdf"
+  },
+  {
+   "id": "uso_sombra",
+   "nombre": "Animales a la sombra",
+   "unidad": "% de observaciones",
+   "tipo": "porcentaje",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Barrido instantáneo: cada 10–15 min, de 7 a 18 h, contar los animales del potrero que están a la sombra. % = a la sombra ÷ observados × 100, promedio del día. Registrar a la vez el ITH o el ITGU.",
+   "momento": "2–3 días despejados y calurosos por estación",
+   "tipos": [
+    "Confort térmico y bienestar animal",
+    "Producción animal silvopastoril vs. pleno sol"
+   ],
+   "ref": "",
+   "fuente": "Método etológico de uso general (sin fuente verificada en esta revisión)"
+  },
+  {
+   "id": "tiempo_pastoreo",
+   "nombre": "Animales pastoreando",
+   "unidad": "% de observaciones",
+   "tipo": "porcentaje",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Con el mismo barrido, % de animales pastoreando (también se puede registrar rumiando, echados o bebiendo). Con calor el pastoreo diurno baja.",
+   "momento": "Mismos días que el uso de sombra",
+   "tipos": [
+    "Confort térmico y bienestar animal"
+   ],
+   "ref": "",
+   "fuente": "Método etológico de uso general (sin fuente verificada en esta revisión)"
+  },
+  {
+   "id": "frec_resp",
+   "nombre": "Frecuencia respiratoria",
+   "unidad": "mov/min",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 3,
+   "min": 10,
+   "max": 150,
+   "metodo": "Contar los movimientos del flanco de cada animal probador, sin moverlo y en el lugar donde está, durante 30 s y multiplicar por 2 (o 15 s × 4, o 1 min). Referencia: ≤ 60 mov/min sin estrés térmico (Hahn, citado por Salla et al.).",
+   "momento": "Mañana (6–9 h) y tarde (12–15 h), mismos días que el ITGU",
+   "tipos": [
+    "Confort térmico y bienestar animal"
+   ],
+   "ref": "",
+   "fuente": "https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/1172655/1/Temperatura-retal-e-frequencia-respiratoria-de-novilhas-mesticas.pdf; https://apct.sede.embrapa.br/pab/en/article/download/8275/6648"
+  },
+  {
+   "id": "temp_rectal",
+   "nombre": "Temperatura rectal",
+   "unidad": "°C",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 3,
+   "min": 36,
+   "max": 43,
+   "metodo": "Termómetro clínico digital (precisión 0,1 °C) introducido en el recto hasta la señal de lectura estable, en los animales probadores; llevarlos con calma a la manga más cercana y medir rápido para no sumar estrés. Referencia normal en bovinos: 38–39 °C.",
+   "momento": "Mañana (6–9 h) y tarde (12–15 h) en días de calor; mismos días que la frecuencia respiratoria",
+   "tipos": [
+    "Confort térmico y bienestar animal"
+   ],
+   "ref": "",
+   "fuente": "https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/1172655/1/Temperatura-retal-e-frequencia-respiratoria-de-novilhas-mesticas.pdf; https://apct.sede.embrapa.br/pab/en/article/download/8275/6648"
+  },
+  {
+   "id": "hum_suelo",
+   "nombre": "Humedad del suelo",
+   "unidad": "% (gravimétrica)",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 2,
+   "min": 0,
+   "max": 60,
+   "metodo": "Barreno en cada posición a 0–10, 10–20 y 20–40 cm; pesar en húmedo y secar a 105 °C hasta peso constante. Humedad = (húmedo − seco) ÷ seco × 100. Alternativa: sensor TDR o FDR calibrado.",
+   "momento": "Mitad y final de la seca; junto con el penetrómetro",
+   "tipos": [
+    "Suelo y carbono (largo plazo)",
+    "Arreglo espacial y densidad de árboles",
+    "Raleo de bosque nativo con ganadería (Chaco)"
+   ],
+   "porPosicion": true,
+   "ref": "",
+   "fuente": "https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/216023/1/pl2007.117.pdf"
+  },
+  {
+   "id": "mo_suelo",
+   "nombre": "Materia orgánica del suelo",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 2,
+   "sub": 3,
+   "min": 0,
+   "max": 15,
+   "metodo": "Walkley y Black en muestras compuestas (10–15 submuestras) a 0–10 y 10–30 cm, bajo copa o junto a la hilera, en el callejón y a pleno sol.",
+   "momento": "Línea de base y cada 4–5 años",
+   "tipos": [
+    "Suelo y carbono (largo plazo)",
+    "Raleo de bosque nativo con ganadería (Chaco)"
+   ],
+   "porPosicion": true,
+   "ref": "",
+   "fuente": "https://agris.fao.org/search/ar/records/6474731b2d3f560f80ab6ac8; https://cfores.upr.edu.cu/index.php/cfores/article/download/681/html_1?inline=1; https://www.fao.org/fileadmin/user_upload/GSP/MRV/GSP_MRV_Protocol_A4_EN_002.pdf"
+  },
+  {
+   "id": "dens_ap",
+   "nombre": "Densidad aparente del suelo",
+   "unidad": "g/cm³",
+   "tipo": "numero",
+   "dec": 2,
+   "sub": 3,
+   "min": 0.6,
+   "max": 2.0,
+   "metodo": "Cilindro (anillo) de volumen conocido hincado sin compactar en el centro de cada capa (0–10 y 10–30 cm), por posición. Secar a 105 °C y dividir el peso seco de la tierra fina (< 2 mm) por el volumen; descontar el volumen de piedras o concreciones si hay.",
+   "momento": "Junto con el carbono (línea de base y cada 4–5 años)",
+   "tipos": [
+    "Suelo y carbono (largo plazo)"
+   ],
+   "porPosicion": true,
+   "ref": "",
+   "fuente": "https://www.fao.org/3/ca2934en/ca2934en.pdf"
+  },
+  {
+   "id": "cos_suelo",
+   "nombre": "Stock de carbono orgánico del suelo",
+   "unidad": "Mg C/ha",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 300,
+   "metodo": "Se calcula por capa y se suma de 0 a ≥ 30 cm: COS = C (g/kg) × densidad aparente de tierra fina (g/cm³) × (1 − fracción volumétrica de fragmentos gruesos) × espesor (cm) × 0,1 (FAO LEAP). C por combustión seca (Dumas) o Walkley y Black (declarar cuál). Si la densidad cambia entre muestreos, comparar a masa de suelo equivalente.",
+   "momento": "Línea de base y cada 4–5 años",
+   "tipos": [
+    "Suelo y carbono (largo plazo)",
+    "Raleo de bosque nativo con ganadería (Chaco)"
+   ],
+   "porPosicion": true,
+   "ref": "",
+   "fuente": "https://www.fao.org/3/ca2934en/ca2934en.pdf; https://www.fao.org/fileadmin/user_upload/GSP/MRV/GSP_MRV_Protocol_A4_EN_002.pdf; https://dialnet.unirioja.es/descarga/articulo/8144096.pdf"
+  },
+  {
+   "id": "rp_suelo",
+   "nombre": "Resistencia a la penetración",
+   "unidad": "MPa",
+   "tipo": "numero",
+   "dec": 2,
+   "sub": 4,
+   "min": 0,
+   "max": 10,
+   "metodo": "Penetrómetro de impacto (Stolf) o digital de cono, de 0 a 40–60 cm, en 4 puntos por posición (callejón, junto a la hilera y, si interesa el pisoteo, caminos y aguadas). Medir la humedad al mismo tiempo y comparar solo con humedad similar.",
+   "momento": "Línea de base y anual, al final de las lluvias",
+   "tipos": [
+    "Suelo y carbono (largo plazo)",
+    "Producción animal silvopastoril vs. pleno sol",
+    "Manejo del pastoreo en silvopastoril"
+   ],
+   "porPosicion": true,
+   "ref": "",
+   "fuente": "https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/216023/1/pl2007.117.pdf"
+  },
+  {
+   "id": "ler",
+   "nombre": "Índice equivalente de tierra (LER)",
+   "unidad": "índice",
+   "tipo": "numero",
+   "dec": 2,
+   "sub": 1,
+   "min": 0,
+   "max": 3,
+   "metodo": "Se calcula por bloque o potrero: LER = madera del sistema ÷ madera de la plantación pura + forraje (o carne) del sistema ÷ forraje (o carne) a pleno sol. LER > 1: el sistema produce más que las dos actividades por separado en la misma superficie. Necesita los dos testigos (pleno sol y plantación pura) o datos locales declarados.",
+   "momento": "Al cierre de cada año y al final del ensayo",
+   "tipos": [
+    "Arreglo espacial y densidad de árboles",
+    "Especies arbóreas para silvopastoril",
+    "Producción animal silvopastoril vs. pleno sol"
+   ],
+   "ref": "",
+   "fuente": "https://link.springer.com/article/10.1007/s10457-020-00494-6"
+  },
+  {
+   "id": "ingreso_neto",
+   "nombre": "Ingreso neto del sistema",
+   "unidad": "USD/ha/año",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": -2000,
+   "max": 5000,
+   "metodo": "Se calcula por hectárea de potrero: (kg PV vendidos × precio + madera de raleos y corta final × precio por producto + otros) − costos directos (implantación y manejo de árboles y pastura, sanidad, mano de obra). En ciclos largos usar el valor actual neto anualizado con la tasa declarada (calculadora de la app Calculadora agrícola). Declarar moneda, precios y fecha.",
+   "momento": "Anual y al final del ensayo",
+   "tipos": [
+    "Arreglo espacial y densidad de árboles",
+    "Raleo y poda en silvopastoril",
+    "Leucaena: hileras y banco de proteína",
+    "Producción animal silvopastoril vs. pleno sol"
+   ],
+   "ref": "",
+   "fuente": "https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/1112705/1/2019ILPFinovacaocomintegracaodelavourapecuariaefloresta2019.pdf; Guía del proyecto calculadora_agricola/00_brief_inicio.md (VAN y TIR de forestación)"
   },
   {
    "id": "ndvi",

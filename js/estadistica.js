@@ -88,3 +88,26 @@ export function ladoALado(trat, test, umbral = 0) {
     if (sd > 0) { const tc = qT(0.05, gl); r.t = md / se; r.gl = gl; r.p = pT2(r.t, gl); r.icInf = md - tc * se; r.icSup = md + tc * se; r.probNuevo = 1 - cdfT((umbral - md) / (sd * Math.sqrt(1 + 1 / n)), gl); } }
   return r;
 }
+// Parcelas divididas en bloques completos al azar: tratamiento (A) en la parcela, posición (P) en la subparcela.
+// datos: [{y, trat, bloque, pos}] balanceado. Error a = bloques × A; error b = residuo dentro de las parcelas.
+export function anovaParcelasDivididas(datos){
+ const ys=datos.map(d=>d.y), G=mean(ys), n=datos.length;
+ const grupo=f=>{const m=new Map(); for(const d of datos){const k=f(d); if(!m.has(k)) m.set(k,[]); m.get(k).push(d.y);} return m;};
+ const A=grupo(d=>String(d.trat)), B=grupo(d=>String(d.bloque)), P=grupo(d=>String(d.pos)), AB=grupo(d=>d.trat+'|'+d.bloque), AP=grupo(d=>d.trat+'|'+d.pos);
+ const ss=m=>[...m.values()].reduce((s,v)=>s+v.length*(mean(v)-G)**2,0);
+ const na=A.size, nb=B.size, np=P.size;
+ const sct=ys.reduce((s,v)=>s+(v-G)**2,0), scb=ss(B), sca=ss(A), scab=ss(AB), scea=scab-scb-sca, scp=ss(P), scap=ss(AP)-sca-scp, sceb=sct-scab-scp-scap;
+ const gb=nb-1, ga=na-1, gea=(nb-1)*(na-1), gp=np-1, gap=(na-1)*(np-1), geb=na*(nb-1)*(np-1);
+ const cmea=scea/gea, cmeb=sceb/geb, f=(sc,g,cm,ge)=>{const F=(sc/g)/cm; return {F, p:pF(F,g,ge)};};
+ const fB=f(scb,gb,cmea,gea), fA=f(sca,ga,cmea,gea), fP=f(scp,gp,cmeb,geb), fAP=f(scap,gap,cmeb,geb);
+ const med=m=>Object.fromEntries([...m].map(([k,v])=>[k,mean(v)]));
+ return { tabla:[
+   {fuente:'Bloques',gl:gb,sc:scb,cm:scb/gb,F:fB.F,p:fB.p},
+   {fuente:'Tratamientos (A)',gl:ga,sc:sca,cm:sca/ga,F:fA.F,p:fA.p},
+   {fuente:'Error a (bloques × A)',gl:gea,sc:scea,cm:cmea},
+   {fuente:'Posición (P)',gl:gp,sc:scp,cm:scp/gp,F:fP.F,p:fP.p},
+   {fuente:'A × P',gl:gap,sc:scap,cm:scap/gap,F:fAP.F,p:fAP.p},
+   {fuente:'Error b',gl:geb,sc:sceb,cm:cmeb},{fuente:'Total',gl:n-1,sc:sct}],
+   cmea, gea, cmeb, geb, media:G, cva:Math.sqrt(Math.max(0,cmea))/G*100, cvb:Math.sqrt(Math.max(0,cmeb))/G*100,
+   mediasA:med(A), mediasP:med(P), mediasAP:med(AP), na, nb, np, pA:fA.p, pP:fP.p, pAP:fAP.p };
+}

@@ -17,7 +17,7 @@
   --accent:#1f6b52; --accent-ink:#ffffff; --accent-soft:#dcefe6;
   --ok:#2e7d32; --ok-soft:#e3f2e4; --warn:#a15c00; --warn-soft:#fbeed8; --bad:#b3261e; --bad-soft:#fbe4e2;
   --hypo:#6b4fa3; --hypo-soft:#ece6f7; --dron:#0b6e8a; --dron-soft:#dff0f5;
-  --agr:#a86b12; --agr-soft:#f6ead6; --hor:#2f7d3a; --hor-soft:#e2f1e1; --for:#1f5f5b; --for-soft:#dcecea; --pas:#4d7c0f; --pas-soft:#ecf3d9;
+  --agr:#a86b12; --agr-soft:#f6ead6; --hor:#2f7d3a; --hor-soft:#e2f1e1; --for:#1f5f5b; --for-soft:#dcecea; --pas:#4d7c0f; --pas-soft:#ecf3d9; --sil:#6b5b2e; --sil-soft:#efe9d8;
   --field:#e3eadb; --shadow:0 10px 30px rgba(20,30,24,.16);
   --f-ui:"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-head:"Archivo Narrow","Archivo",system-ui,sans-serif;
@@ -29,14 +29,14 @@
   --accent:#5cc49b; --accent-ink:#0c1a13; --accent-soft:#1d3a2e;
   --ok:#7cc983; --ok-soft:#1d3320; --warn:#e5a54b; --warn-soft:#3a2c14; --bad:#f08c84; --bad-soft:#3d1d1a;
   --hypo:#b9a2ea; --hypo-soft:#2c2540; --dron:#6cc5dd; --dron-soft:#153340;
-  --agr:#e3a94f; --agr-soft:#3a2c14; --hor:#7cc983; --hor-soft:#1d3320; --for:#6cc5bd; --for-soft:#153633; --pas:#a3d65c; --pas-soft:#25321a;
+  --agr:#e3a94f; --agr-soft:#3a2c14; --hor:#7cc983; --hor-soft:#1d3320; --for:#6cc5bd; --for-soft:#153633; --pas:#a3d65c; --pas-soft:#25321a; --sil:#d4bf7f; --sil-soft:#332c18;
   --field:#1c2620; --shadow:0 10px 30px rgba(0,0,0,.5); color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#101512; --panel:#171e1a; --ink:#e4ece6; --muted:#9aa89f; --line:#2b3530; --soft:#1e2622;
   --accent:#5cc49b; --accent-ink:#0c1a13; --accent-soft:#1d3a2e;
   --ok:#7cc983; --ok-soft:#1d3320; --warn:#e5a54b; --warn-soft:#3a2c14; --bad:#f08c84; --bad-soft:#3d1d1a;
   --hypo:#b9a2ea; --hypo-soft:#2c2540; --dron:#6cc5dd; --dron-soft:#153340;
-  --agr:#e3a94f; --agr-soft:#3a2c14; --hor:#7cc983; --hor-soft:#1d3320; --for:#6cc5bd; --for-soft:#153633; --pas:#a3d65c; --pas-soft:#25321a;
+  --agr:#e3a94f; --agr-soft:#3a2c14; --hor:#7cc983; --hor-soft:#1d3320; --for:#6cc5bd; --for-soft:#153633; --pas:#a3d65c; --pas-soft:#25321a; --sil:#d4bf7f; --sil-soft:#332c18;
   --field:#1c2620; --shadow:0 10px 30px rgba(0,0,0,.5); color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -112,14 +112,16 @@ td input[type=number]{width:86px;text-align:right;font-family:var(--f-data);font
 .perfil[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
 .perfil:focus-visible{outline:2px solid var(--accent)}
 /* Rubros */
-.rubros{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.rubros{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
 .rubro{all:unset;cursor:pointer;border-radius:14px;padding:20px;display:grid;gap:10px;align-content:start;border:2px solid transparent;min-height:210px}
 .rubro:hover,.rubro:focus-visible{border-color:currentColor}
 .rubro svg{width:54px;height:54px}
 .rubro h2{font-size:1.5rem}
 .rubro p{margin:0;color:var(--ink);opacity:.8;font-size:.9rem}
 .rubro .ej{font-size:.8rem;opacity:.75}
-.r-agricola{background:var(--agr-soft);color:var(--agr)} .r-horticola{background:var(--hor-soft);color:var(--hor)} .r-forestal{background:var(--for-soft);color:var(--for)} .r-pasturas{background:var(--pas-soft);color:var(--pas)}
+.met,.note,.kv dd,.opchk span,.callout{overflow-wrap:anywhere}
+#pos-card input[type=text]{min-width:0}
+.r-agricola{background:var(--agr-soft);color:var(--agr)} .r-horticola{background:var(--hor-soft);color:var(--hor)} .r-forestal{background:var(--for-soft);color:var(--for)} .r-pasturas{background:var(--pas-soft);color:var(--pas)} .r-silvopastoril{background:var(--sil-soft);color:var(--sil)}
 /* Inicio */
 .trial{display:grid;grid-template-columns:1fr auto;gap:6px 14px;align-items:center}
 .trial h3{font-size:1.05rem}
@@ -263,7 +265,7 @@ pre.code{margin:0;max-height:260px;overflow:auto;background:var(--soft);border-r
 .gtip{position:absolute;z-index:3;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);padding:8px 10px;display:grid;gap:3px;font-size:.8rem;min-width:150px;pointer-events:none}
 .ultima{font-size:.84rem;background:var(--soft);border-radius:8px;padding:6px 10px}
 .toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 18px);transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-weight:600;font-size:.88rem;z-index:60;box-shadow:var(--shadow)}
-@media (max-width:1100px){.rubros{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
 @media (max-width:900px){
   .welcome{grid-template-columns:1fr}
   .rubros{grid-template-columns:1fr}
@@ -410,7 +412,7 @@ pre.code{margin:0;max-height:260px;overflow:auto;background:var(--soft);border-r
 
 <div class="carga" id="carga"><div class="spin"></div><span>Abriendo Ensayos de Campo…</span></div>
 <noscript><p style="padding:20px">Esta aplicación necesita JavaScript activado.</p></noscript>
-<script type="module" src="./js/app.js?v=b3bc0a3c80"></script>
+<script type="module" src="./js/app.js?v=79b7a9e4aa"></script>
 <script>window.addEventListener('unhandledrejection', e => { const c = document.getElementById('carga'); if (c) c.innerHTML = '<span>No se pudo abrir la app: ' + (e.reason && e.reason.message || 'error') + '. Abrila con iniciar-app.cmd.</span>'; });
 window.addEventListener('error', e => { try { if (document.getElementById('carga') && !sessionStorage.getItem('ec-recarga')) { sessionStorage.setItem('ec-recarga', '1'); setTimeout(() => location.reload(), 600); return; } } catch (x) {} const c = document.getElementById('carga'); if (c) c.innerHTML = '<span>No se pudo abrir la app: ' + (e.message || 'error') + '. Probá abrirla con iniciar-app.cmd (no con doble clic en index.html).</span>'; });</script>
 </body>

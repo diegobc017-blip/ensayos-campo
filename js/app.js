@@ -1,6 +1,6 @@
 // app.js — Ensayos de Campo v2 (rubros, roles, control de parcela, mediciones, aplicaciones, análisis).
 // Todo se guarda en este equipo (IndexedDB, ver db.js) y funciona sin internet.
-import {anovaDBCA, tukey, interpretarCV, anovaCombinado, ladoALado, welch} from './estadistica.js';
+import {anovaDBCA, tukey, interpretarCV, anovaCombinado, ladoALado, welch, anovaParcelasDivididas} from './estadistica.js';
 import {enRect, enCuad, distancia, areaM2, svgMapa, desdeMerc, mover, rumbo} from './lib/geo.js';
 import {leerArchivoGeo, cuatroEsquinas, centroide, puntoEnPoligono, crearShapefile, crearGpx} from './lib/importgeo.js';
 import * as DB from './db.js';
@@ -27,13 +27,13 @@ function mulberry(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0
 const PALETA = ['#8d8d8d', '#2f7fd1', '#e0a21a', '#c2410c', '#7c3aed', '#0f9d77', '#d6336c', '#5c6f2b', '#1c7ed6', '#a0522d'];
 
 /* ================= datos ================= */
-const [E0, CAT, MET, EJ] = await Promise.all(['./datos/ensayo_demo.json', './datos/catalogo.json', './datos/metodos.json', './datos/ensayos_ejemplo.json'].map(u => fetch(u).then(r => r.json())));
+const [E0, CAT, MET, EJ, RUBD] = await Promise.all(['./datos/ensayo_demo.json', './datos/catalogo.json', './datos/metodos.json', './datos/ensayos_ejemplo.json', './datos/rubros.json'].map(u => fetch(u).then(r => r.json())));
 const catIdx = CAT.cols.reduce((o, c, i) => (o[c] = i, o), {});
 const catByReg = new Map(CAT.rows.map(r => [Number(r[catIdx.reg]), r]));
 const ALTERNATIVAS = {
   sev_roya: ['10 folíolos del tercio medio por parcela; % de área afectada con la escala diagramática de Godoy et al. (2006).', 'Índice de McKinney: escala 0–4 en 20 plantas por parcela.', 'Estimación visual del % de área foliar afectada en toda el área útil.'],
   severidad: ['10 hojas del tercio medio por parcela, % de área afectada con escala diagramática; a los 21 días de la aplicación.', 'Índice de McKinney: escala 0–4 en 20 plantas por parcela.', 'Estimación visual en toda el área útil.'],
-  rend_kg: ['Cosechar las 2 hileras centrales × 5 m (sin cabeceras), trillar, pesar y medir humedad. Corregir a 13 % de humedad: P × (100 − H) / 87 y llevar a hectárea.', 'Cosecha con microcosechadora de parcelas y balanza integrada; humedad del equipo.', 'Monitor de rendimiento calibrado (franjas y lado a lado).'],
+  rend_kg: ['Cosechar las hileras útiles sin cabeceras, trillar, pesar y medir la humedad. Corregir a la humedad base del cultivo: P × (100 − H) ÷ (100 − H base) y llevar a hectárea (soja, maíz y trigo 13 %, girasol 11 %; se puede cambiar en la ficha del ensayo).', 'Cosecha con microcosechadora de parcelas y balanza integrada; humedad del equipo.', 'Monitor de rendimiento calibrado (franjas y lado a lado).'],
   rendimiento: ['Suma de todas las cosechas de las plantas útiles; kg/planta × plantas/ha / 1000.', 'Cosecha única del área útil pesada en balanza de campo.'],
   dap: ['Diámetro a 1,30 m con cinta diamétrica en los árboles útiles (sin borde); en pendiente, desde el lado de arriba.', 'Forcípula: promedio de dos lecturas perpendiculares.', 'Circunferencia (CAP) con cinta métrica; DAP = CAP / π.'],
   altura_m: ['Hipsómetro (Vertex, Suunto) en los árboles útiles o submuestra + relación hipsométrica.', 'Vara telescópica (árboles jóvenes, hasta 12 m).', 'Altura estimada desde modelo digital de superficie del dron.'],
@@ -46,24 +46,28 @@ const ALTERNATIVAS = {
   pb: ['Nitrógeno Kjeldahl × 6,25 (o NIRS calibrado) en la submuestra seca y molida a 1 mm del corte elegido; en base seca. Indicar el corte o la edad de rebrote.', 'Combustión (Dumas) × 6,25.', 'NIRS con curva de calibración para gramíneas tropicales.'],
   comp_leg: ["Rango en peso seco ('t Mannetje y Haydock, 1963): en 20 marcos se anota qué especie ocupa el 1.º, 2.º y 3.º lugar en peso; % = 70,2 × fracción de 1.º + 21,1 × fracción de 2.º + 8,7 × fracción de 3.º.", 'Separación manual del forraje cortado en 2 marcos de 0,25 m² por parcela, secado por fracción.', 'Estimación visual del % de leguminosa calibrada con separación manual.']
 };
+const normT = t => String(t ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 const RUBROS = {
-  agricola: {nombre: 'Agrícola', clase: 'r-agricola', texto: 'Granos, oleaginosas, algodón, caña y abonos verdes.', ej: 'Cultivares, fungicidas, herbicidas, fertilización, lado a lado',
-    tipos: ['Cultivares (RNCC)', 'Eficacia de fungicida', 'Eficacia de insecticida', 'Eficacia de herbicida', 'Fertilización', 'Inoculante / bioinsumo', 'Densidad o época', 'Lado a lado'],
-    cultivos: ['Soja', 'Maíz', 'Trigo', 'Girasol', 'Canola', 'Arroz', 'Sésamo', 'Chía', 'Algodón', 'Sorgo'],
+  agricola: {nombre: 'Agrícola', clase: 'r-agricola',
     icono: '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 44V14" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M24 20c-7-1-11-6-11-12 7 1 11 6 11 12Zm0 0c7-1 11-6 11-12-7 1-11 6-11 12Zm0 10c-7-1-11-6-11-12 7 1 11 6 11 12Zm0 0c7-1 11-6 11-12-7 1-11 6-11 12Z" fill="currentColor"/></svg>'},
-  horticola: {nombre: 'Hortícola', clase: 'r-horticola', texto: 'Hortalizas y frutales, a campo o bajo cubierta.', ej: 'Híbridos, sanidad, fertirriego, sustratos, poscosecha',
-    tipos: ['Cultivares / híbridos', 'Eficacia de fungicidas', 'Eficacia de insecticidas', 'Fertirriego', 'Sustratos', 'Cobertura del suelo', 'Poscosecha', 'Plantines'],
-    cultivos: ['Tomate', 'Locote', 'Lechuga', 'Cebolla', 'Zanahoria', 'Frutilla', 'Melón', 'Sandía', 'Papa', 'Frutal en hileras'],
+  horticola: {nombre: 'Hortícola', clase: 'r-horticola',
     icono: '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="28" r="14" fill="currentColor"/><path d="M24 14c0-5 3-8 8-9M24 14c-4-4-9-4-12-2 3 3 8 4 12 2Z" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/></svg>'},
-  forestal: {nombre: 'Forestal', clase: 'r-forestal', texto: 'Plantaciones, clones, nativas y silvopastoril.', ej: 'Clones, progenies, espaciamiento, fertilización, vivero',
-    tipos: ['Clones', 'Procedencias', 'Progenies', 'Espaciamiento', 'Fertilización', 'Control de hormigas', 'Raleo y poda', 'Vivero'],
-    cultivos: ['Eucalyptus grandis', 'Eucalyptus urograndis', 'Pinus taeda', 'Paraíso gigante', 'Kiri', 'Lapacho', 'Peterevy'],
+  forestal: {nombre: 'Forestal', clase: 'r-forestal',
     icono: '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 4 10 24h8L8 36h32L30 24h8Z" fill="currentColor"/><rect x="21" y="36" width="6" height="8" rx="1" fill="currentColor"/></svg>'},
-  pasturas: {nombre: 'Pasturas', clase: 'r-pasturas', texto: 'Gramíneas y leguminosas forrajeras, bajo corte o pastoreo.', ej: 'Cultivares, fertilización, frecuencia de corte, mezclas, pastoreo',
-    tipos: ['Cultivares / especies forrajeras', 'Fertilización de pasturas', 'Frecuencia y altura de corte', 'Establecimiento y densidad de siembra', 'Mezclas gramínea–leguminosa', 'Control de malezas en pasturas', 'Control de salivazo', 'Recuperación de pasturas degradadas', 'Pastoreo y producción animal', 'Silvopastoril'],
-    cultivos: ['Urochloa brizantha (Marandu)', 'Urochloa híbrida (Mulato II)', 'Megathyrsus maximus (Gatton panic)', 'Megathyrsus maximus (Mombaça)', 'Cenchrus ciliaris (Buffel)', 'Chloris gayana (Grama Rhodes)', 'Digitaria (Pangola)', 'Cynodon (Tifton 85)', 'Pennisetum purpureum (Camerún)', 'Avena o raigrás (invierno)', 'Alfalfa', 'Leucaena', 'Mezcla gramínea–leguminosa', 'Gramíneas tropicales'],
-    icono: '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M10 44c0-12 2-22 8-30M18 44c0-10 0-20-4-30M24 44c0-13 3-26 10-34M30 44c0-9 2-17 8-24M38 44c0-8-1-14-6-20" stroke="currentColor" stroke-width="3.2" fill="none" stroke-linecap="round"/><path d="M6 44h36" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>'}
+  pasturas: {nombre: 'Pasturas', clase: 'r-pasturas',
+    icono: '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M10 44c0-12 2-22 8-30M18 44c0-10 0-20-4-30M24 44c0-13 3-26 10-34M30 44c0-9 2-17 8-24M38 44c0-8-1-14-6-20" stroke="currentColor" stroke-width="3.2" fill="none" stroke-linecap="round"/><path d="M6 44h36" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>'},
+  silvopastoril: {nombre: 'Silvopastoril', clase: 'r-silvopastoril',
+    icono: '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M15 6 6 20h5L4 30h22l-7-10h5Z" fill="currentColor"/><rect x="13" y="30" width="4" height="8" rx="1" fill="currentColor"/><path d="M28 44c0-7 1-12 4-16M34 44c0-6 0-11-2-16M39 44c0-7 2-13 6-17M30 44h16" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M2 44h26" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>'}
 };
+// Tipos de ensayo, cultivos o especies, ficha y textos de cada rubro (datos/rubros.json, revisados con fuentes)
+Object.entries(RUBROS).forEach(([k, R]) => { const D = RUBD[k]; Object.assign(R, {texto: D.texto, ej: D.ej, tipos: D.tipos.map(t => t.n), cultivos: D.cultivos.map(c => c.n)}); });
+// Busca el tipo o el cultivo por nombre (tolera nombres viejos: "Clones" → "Clones (ensayo clonal)")
+function buscaNom(lista, n) { const x = normT(n); if (!x) return null; return lista.find(t => normT(t.n) === x) || lista.find(t => normT(t.n).startsWith(x) || x.startsWith(normT(t.n))) || lista.find(t => normT(t.n).split(' ')[0] === x.split(' ')[0] && x.split(' ')[0].length > 4) || null; }
+const tipoDef = (rubro, n) => buscaNom(RUBD[rubro]?.tipos || [], n);
+const cultDef = (rubro, n) => buscaNom(RUBD[rubro]?.cultivos || [], n);
+// ¿La medición corresponde a este cultivo? (sin lista = todos)
+const vaEnCultivo = (v, rubro, cultivo) => { if (!v.cultivos?.length || !cultivo) return true; const c = cultDef(rubro, cultivo); return !c || v.cultivos.includes(c.n); };
+
 const PERFILES = {independiente: 'Independiente', gerente: 'Gerente', operador: 'Operador', observador: 'Observador'};
 const EQUIPOS = {eq1: {nombre: 'Equipo Itapúa', codigo: 'ITA-4821', ejemplo: true}};
 const USERS = {
@@ -109,26 +113,73 @@ function ensayoSimple(J) {
     parcelas: J.parcelas.map(p => ({...p, valores: {...p.valores}, sub: structuredClone(p.sub || {})})), tratamientos: J.tratamientos.map(t => ({productos: [], ...t})),
     asig: Object.fromEntries(Object.entries(J.asig).map(([k, v]) => [Number(k), v])), trabajo: Object.fromEntries([...new Set(Object.values(J.asig))].map(u => [u, 'parcelas'])),
     notas: structuredClone(J.notas || []), cambios: structuredClone(J.cambios || []), aplicaciones: structuredClone(J.aplicaciones || []), compartido: {...(J.compartido || {})}};
-  if (T.cortes) { T.porCorte = [...(T.porCorte || [])]; T.cortes = structuredClone(T.cortes); armarCortes(T); }
+  if (T.cortes || T.porPos) { T.porCorte = [...(T.porCorte || [])]; T.porPos = [...(T.porPos || [])]; T.cortes = structuredClone(T.cortes || []); armarCortes(T); } else recalc(T);
   return T;
 }
-/* ----- pasturas: variables por corte y calculadas ----- */
+/* ----- pasturas y silvopastoril: variables por corte, por posición y calculadas ----- */
+// Una sola fila por medición repetida (por corte o por posición) y su nombre sin el sufijo
+const esPrimera = v => (!v.corte || v.corte === 1) && (!v.pos || v.pos === 1);
+const nomBase = (T, v) => v.base ? (varDef(T.rubro, v.base)?.nombre || (v.calc === 'suma' ? 'Producción acumulada de forraje' : v.calc === 'tasa' ? 'Tasa de crecimiento media' : v.nombre)) : v.nombre;
+const repTxt = (T, v) => [v.corte ? `en cada corte (${T.cortes.length})` : '', v.pos ? `en cada posición (${(T.posiciones || []).length})` : ''].filter(Boolean).join(' y ');
+const posCorta = n => String(n || '').split(' (')[0].replace(/^Bajo copa \/ junto a la hilera.*/i, 'Junto a la hilera');
 function armarCortes(T) {
-  const base = T.variables.filter(v => !v.corte && v.origen !== 'calc'), nuevas = [];
-  T.porCorte.forEach(b => { const d = varDef(T.rubro, b); if (!d) return;
-    T.cortes.forEach(c => nuevas.push({...structuredClone(d), id: `${b}_c${c.n}`, base: b, corte: c.n, nombre: `${d.nombre} · corte ${c.n}`, momento: `Corte ${c.n} · ${fechaTxt(c.fecha)} · ${c.dias} días de rebrote`})); });
-  if (T.porCorte.includes('ms') && T.cortes.length) {
-    const u = varDef(T.rubro, 'ms');
-    nuevas.push({id: 'ms_total', nombre: 'Producción acumulada de forraje', unidad: 'kg MS/ha', tipo: 'numero', dec: 0, sub: 1, origen: 'calc', calc: 'suma', metodo: `Suma de la materia seca de los ${T.cortes.length} cortes; se calcula sola cuando están todos cargados.`, ref: u.ref});
-    nuevas.push({id: 'tasa', nombre: 'Tasa de crecimiento media', unidad: 'kg MS/ha/día', tipo: 'numero', dec: 1, sub: 1, origen: 'calc', calc: 'tasa', metodo: 'Producción acumulada ÷ días de rebrote sumados de todos los cortes.', ref: u.ref});
-  }
+  const base = T.variables.filter(v => !v.corte && !v.pos && v.origen !== 'calc'), nuevas = [], porC = T.porCorte || [], porP = T.porPos || [], pos = porP.length ? (T.posiciones || []) : [], cortes = T.cortes || [];
+  const ks = b => porP.includes(b) && pos.length ? pos.map((_, k) => k + 1) : [0];
+  porC.forEach(b => { const d = varDef(T.rubro, b); if (!d) return;
+    cortes.forEach(c => ks(b).forEach(k => nuevas.push({...structuredClone(d), id: `${b}_c${c.n}${k ? '_p' + k : ''}`, base: b, corte: c.n, ...(k ? {pos: k} : {}), nombre: `${d.nombre} · corte ${c.n}${k ? ' · ' + posCorta(pos[k - 1]) : ''}`, momento: `Corte ${c.n} · ${fechaTxt(c.fecha)} · ${c.dias} días de rebrote`}))); });
+  porP.filter(b => !porC.includes(b)).forEach(b => { const d = varDef(T.rubro, b); if (!d) return;
+    pos.forEach((n, i) => nuevas.push({...structuredClone(d), id: `${b}_p${i + 1}`, base: b, pos: i + 1, nombre: `${d.nombre} · ${posCorta(n)}`})); });
+  if (porC.includes('ms') && cortes.length) { const u = varDef(T.rubro, 'ms');
+    ks('ms').forEach(k => { const sx = k ? '_p' + k : '', nx = k ? ' · ' + posCorta(pos[k - 1]) : '';
+      nuevas.push({id: 'ms_total' + sx, nombre: 'Producción acumulada de forraje' + nx, unidad: 'kg MS/ha', tipo: 'numero', dec: 0, sub: 1, origen: 'calc', calc: 'suma', ...(k ? {pos: k, base: 'ms_total'} : {}), metodo: `Suma de la materia seca de los ${cortes.length} cortes; se calcula sola cuando están todos cargados.`, ref: u.ref});
+      nuevas.push({id: 'tasa' + sx, nombre: 'Tasa de crecimiento media' + nx, unidad: 'kg MS/ha/día', tipo: 'numero', dec: 1, sub: 1, origen: 'calc', calc: 'tasa', ...(k ? {pos: k, base: 'tasa'} : {}), metodo: 'Producción acumulada ÷ días de rebrote sumados de todos los cortes.', ref: u.ref}); }); }
   T.variables = [...nuevas, ...base]; recalc(T);
 }
+// Mediciones que se calculan solas a partir de otras del mismo ensayo (forestal, silvopastoril, vivero, confort animal).
+// Si el ensayo no tiene las mediciones de origen, quedan para cargar a mano.
+const DERIV = {
+  area_basal: {usa: ['dap'], txt: 'el DAP de cada árbol y los árboles vivos por hectárea'},
+  vol_arbol: {usa: ['dap', 'altura_m'], txt: 'el DAP y la altura de cada árbol (factor de forma de la ficha)'},
+  vol_ha: {usa: ['dap', 'altura_m'], txt: 'el DAP y la altura de cada árbol, el factor de forma y los árboles vivos por hectárea'},
+  ima: {usa: ['dap', 'altura_m'], txt: 'el volumen por hectárea y la edad (fecha de plantación de la ficha)'},
+  rel_hd: {usa: ['alt_plantin', 'dc_plantin'], txt: 'la altura y el diámetro de cuello del plantín'},
+  iqd: {usa: ['alt_plantin', 'dc_plantin', 'ps_aerea', 'ps_raiz'], txt: 'altura, diámetro de cuello y pesos secos aéreo y de raíz'},
+  ith: {usa: ['temp_aire', 'hr_aire'], txt: 'la temperatura y la humedad relativa del aire'}};
+const derivTxt = v => DERIV[v.base || v.id]?.txt || '';
+function marcarDerivadas(T) {
+  const ids = new Set(T.variables.map(v => v.base || v.id));
+  T.variables.forEach(v => { const d = DERIV[v.id]; if (!d || v.corte || v.pos) return;
+    const ok = d.usa.every(u => ids.has(u)) && (v.id !== 'area_basal' && v.id !== 'vol_ha' && v.id !== 'ima' || ids.has('arboles_ha') || T.rubro === 'forestal' || ids.has('sobrev') && T.rubro !== 'silvopastoril');
+    if (ok) { v.origen = 'calc'; v.calc = 'deriv'; } else if (v.calc === 'deriv') { delete v.origen; delete v.calc; } });
+}
+const listaNum = (p, id) => { const s = p.sub?.[id]; const a = Array.isArray(s) ? s.map(x => x === '' || x == null ? NaN : +x).filter(x => isFinite(x)) : [];
+  if (a.length) return a; const m = p.valores[id]; return m != null && m !== '' && isFinite(+m) ? [+m] : []; };
+const mediaL = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
+function arbHaPlantados(T) { try { return areaNueva(T.parcela, T.rubro).arbHa || 0; } catch (e) { return 0; } }
+function edadAnios(T, p) { const f = T.ficha?.plantacion; if (!f) return null; const t0 = new Date(f + 'T12:00:00');
+  const ts = ['dap', 'altura_m'].map(k => p.ts?.[k]).filter(Boolean).sort().pop(), t1 = ts ? new Date(ts) : new Date(); const a = (t1 - t0) / (365.25 * 864e5); return a > 0.05 ? a : null; }
+function calcDeriv(T, p, id) {
+  const ff = +T.ficha?.ff > 0 && +T.ficha.ff < 1.2 ? +T.ficha.ff : 0.45, D = listaNum(p, 'dap'), H = listaNum(p, 'altura_m');
+  const nHa = () => { const a = p.valores.arboles_ha; if (a != null && a !== '') return +a; if (T.rubro === 'silvopastoril') return null;
+    const pl = arbHaPlantados(T), sv = p.valores.sobrev; return pl ? pl * (sv != null && sv !== '' ? +sv / 100 : 1) : null; };
+  const g = d => 0.00007854 * d * d, vols = () => { if (!D.length || !H.length) return []; const hm = mediaL(H); return D.map((d, i) => g(d) * (H.length === D.length ? H[i] : hm) * ff); };
+  if (id === 'area_basal') { const n = nHa(); return D.length && n != null ? mediaL(D.map(g)) * n : null; }
+  if (id === 'vol_arbol') { const v = vols(); return v.length ? mediaL(v) : null; }
+  if (id === 'vol_ha' || id === 'ima') { const v = vols(), n = nHa(); if (!v.length || n == null) return null; const V = mediaL(v) * n; if (id === 'vol_ha') return V; const e = edadAnios(T, p); return e ? V / e : null; }
+  const m = k => mediaL(listaNum(p, k));
+  if (id === 'rel_hd') { const h = m('alt_plantin'), d = m('dc_plantin'); return h != null && d ? h / d : null; }
+  if (id === 'iqd') { const h = m('alt_plantin'), d = m('dc_plantin'), a = m('ps_aerea'), r = m('ps_raiz'); return h != null && d && a != null && r ? (a + r) / (h / d + a / r) : null; }
+  if (id === 'ith') { const t = m('temp_aire'), hr = m('hr_aire'); return t != null && hr != null ? (1.8 * t + 32) - (0.55 - 0.0055 * hr) * (1.8 * t - 26) : null; }
+  return null;
+}
 function recalc(T) {
-  const calc = T.variables.filter(v => v.origen === 'calc'); if (!calc.length) return;
-  const ms = T.variables.filter(v => v.base === 'ms'), dias = (T.cortes || []).reduce((s, c) => s + c.dias, 0);
-  T.parcelas.forEach(p => { const vals = ms.map(v => p.valores[v.id]), ok = vals.length && vals.every(x => x != null && x !== ''), tot = ok ? vals.reduce((s, x) => s + +x, 0) : null;
-    calc.forEach(v => { p.valores[v.id] = tot == null ? null : v.calc === 'suma' ? tot : +(tot / dias).toFixed(2); }); });
+  marcarDerivadas(T);
+  const der = T.variables.filter(v => v.calc === 'deriv');
+  if (der.length) T.parcelas.forEach(p => der.forEach(v => { const x = calcDeriv(T, p, v.id); p.valores[v.id] = x == null || !isFinite(x) ? null : +x.toFixed(Math.max(v.dec ?? 2, 2)); }));
+  const calc = T.variables.filter(v => v.origen === 'calc' && v.calc !== 'deriv'); if (!calc.length) return;
+  const dias = (T.cortes || []).reduce((s, c) => s + c.dias, 0);
+  T.parcelas.forEach(p => { calc.forEach(v => { const ms = T.variables.filter(x => x.base === 'ms' && x.corte && (x.pos || 0) === (v.pos || 0)), vals = ms.map(x => p.valores[x.id]), ok = vals.length && vals.every(x => x != null && x !== ''), tot = ok ? vals.reduce((s, x) => s + +x, 0) : null;
+    p.valores[v.id] = tot == null ? null : v.calc === 'suma' ? tot : +(tot / dias).toFixed(2); }); });
 }
 const TRIALS = [ensayoRico(E0), ...EJ.map(ensayoSimple)];
 const byId = id => TRIALS.find(T => T.id === id);
@@ -160,7 +211,7 @@ const META = {};
 let ESTADO_DB = 'ok', SESION = null;
 const GUARD = await DB.cargarTodo().catch(e => { console.error(e); ESTADO_DB = 'error'; return null; });
 function cargarEstado(ensayos, cfg) {
-  TRIALS.length = 0; ensayos.forEach(T => TRIALS.push(T));
+  TRIALS.length = 0; ensayos.forEach(T => { try { recalc(T); } catch (e) { console.warn(e); } TRIALS.push(T); });
   Object.keys(USERS).forEach(k => delete USERS[k]); Object.assign(USERS, cfg.perfiles || {});
   Object.keys(EQUIPOS).forEach(k => delete EQUIPOS[k]); Object.assign(EQUIPOS, cfg.equipos || {});
   CUSTOM.length = 0; CUSTOM.push(...(cfg.custom || []));
@@ -171,9 +222,13 @@ function cargarEstado(ensayos, cfg) {
 if (GUARD?.config) { cargarEstado(GUARD.ensayos, GUARD.config);
   // las tarjetas de ejemplo guardadas antes de tener imagen toman la imagen (y la lectura nueva) del ejemplo actual
   try { const sem = new Map(JSON.parse(SEMILLA).trials.flatMap(T => (T.papeles || []).filter(x => x.imgUrl).map(x => [x.id, x])));
-    TRIALS.forEach(T => (T.papeles || []).forEach(x => { const n = sem.get(x.id); if (n && !x.imgUrl && !x.img) Object.assign(x, {imgUrl: n.imgUrl, st: n.st, calidad: n.calidad}); })); } catch (e) { console.warn(e); } }
+    TRIALS.forEach(T => (T.papeles || []).forEach(x => { const n = sem.get(x.id); if (n && !x.imgUrl && !x.img) Object.assign(x, {imgUrl: n.imgUrl, st: n.st, calidad: n.calidad}); })); } catch (e) { console.warn(e); }
+  // ejemplos nuevos (p. ej. el silvopastoril) y la ficha de los ejemplos que ya estaban, si la persona conserva los ejemplos
+  try { if (TRIALS.some(T => T.ejemplo)) { const sem = JSON.parse(SEMILLA).trials.filter(T => T.ejemplo);
+    const vistos = META.ejemplos || ['DEMO-2026-01', 'DEMO-AG-02', 'DEMO-AG-01', 'DEMO-FO-01', 'DEMO-PA-01', 'DEMO-LAL-01'];
+    sem.forEach(N => { const T = TRIALS.find(x => x.id === N.id); if (!T) { if (!vistos.includes(N.id)) TRIALS.push(N); } else if (!T.ficha && N.ficha) T.ficha = N.ficha; }); META.ejemplos = sem.map(N => N.id); } } catch (e) { console.warn(e); } }
 else META.creado = new Date().toISOString();
-const EJ_ = () => byId('DEMO-AG-02'), PA_ = () => byId('DEMO-PA-01'), RED_ = () => byId('DEMO-AG-01'), LAL_ = () => byId('DEMO-LAL-01');
+const EJ_ = () => byId('DEMO-AG-02'), PA_ = () => byId('DEMO-PA-01'), RED_ = () => byId('DEMO-AG-01'), LAL_ = () => byId('DEMO-LAL-01'), SP_ = () => byId('DEMO-SP-01');
 
 /* ================= estado y permisos ================= */
 const S = {user: null, rubro: null, T: null, paso: 0, sel: null, sitio: null};
@@ -381,48 +436,106 @@ const NV = {};
 const opsDisponibles = () => (S.user.perfil === 'gerente' ? Object.values(USERS).filter(u => u.perfil === 'operador' && u.equipo === S.user.equipo) : S.user.perfil === 'operador' ? [] : Object.values(USERS).filter(u => u.perfil === 'operador')).filter(u => !u.ejemplo || S.user.ejemplo);
 function nuevoEnsayo() {
   const R = RUBROS[S.rubro];
-  Object.assign(NV, {paso: 1, titulo: '', cultivo: R.cultivos[0], tipo: R.tipos[0], lugar: '', otros: '', bloques: 4,
-    trats: S.rubro === 'forestal' ? 'Testigo comercial\nClon A\nClon B\nClon C' : S.rubro === 'pasturas' ? 'Marandu (testigo)\nCultivar 2\nCultivar 3\nCultivar 4\nCultivar 5' : 'Testigo sin tratar\nTratamiento 2\nTratamiento 3\nTratamiento 4\nTratamiento 5',
-    par: S.rubro === 'agricola' ? {hileras: 4, dist: 0.45, largo: 5, util: 2} : S.rubro === 'horticola' ? {plantas: 20, utiles: 12, entre: 1.2, sobre: 0.4} : S.rubro === 'pasturas' ? {ancho: 3, largo: 5, borde: 0.5, marco: 0.25, marcos: 2, altura_corte: 20} : {filas: 5, columnas: 5, e1: 3, e2: 2, borde: 1},
-    vars: new Set(MET[S.rubro].filter(v => v.origen !== 'dron').slice(0, 3).map(v => v.id)), ops: new Set(), modoOps: 'bloques', dron: false,
+  Object.assign(NV, {paso: 1, titulo: '', cultivo: R.cultivos[0], tipo: R.tipos.find(t => !/lado a lado/i.test(t)) || R.tipos[0], lugar: '', otros: '', bloques: 4, trats: '', par: {}, vars: new Set(),
+    tocado: {}, verTodas: false, ops: new Set(), modoOps: 'bloques', dron: false,
     modo: 'dbca', productor: '', lote: '', escala: 'macro', testigo: false, pares: 1, puntos: ESCALAS.macro.puntos, lal: {...ESCALAS.macro, sep: 0},
     lados: [{nombre: 'Producto a probar', prod: '', dosis: '', unidad: 'L/ha'}, {nombre: 'Producto del productor', prod: '', dosis: '', unidad: 'L/ha'}]});
-  renderNuevo(); pantalla('nuevo');
+  aplicarPerfil(); renderNuevo(); pantalla('nuevo');
 }
-function areaNueva() {
-  const p = NV.par;
-  if (S.rubro === 'agricola') return {area: p.hileras * p.dist * p.largo, util: p.util * p.dist * Math.max(0, p.largo - 1), txt: `${p.hileras} hileras × ${p.dist} m × ${p.largo} m`};
-  if (S.rubro === 'horticola') return {area: p.plantas * p.entre * p.sobre, util: p.utiles * p.entre * p.sobre, txt: `${p.plantas} plantas a ${p.entre} × ${p.sobre} m`};
-  if (S.rubro === 'pasturas') return {area: p.ancho * p.largo, util: Math.max(0, p.ancho - 2 * p.borde) * Math.max(0, p.largo - 2 * p.borde), txt: `${p.ancho} × ${p.largo} m, ${p.marcos} marcos de ${p.marco} m² por corte, corte a ${p.altura_corte} cm`};
-  return {area: p.filas * p.columnas * p.e1 * p.e2, util: Math.max(0, p.filas - 2 * p.borde) * Math.max(0, p.columnas - 2 * p.borde) * p.e1 * p.e2, txt: `${p.filas} × ${p.columnas} árboles a ${p.e1} × ${p.e2} m`};
+// Parcela por defecto si el cultivo no tiene una propia
+const PAR_DEF = {agricola: {hileras: 4, dist: 0.45, largo: 5, util: 2}, horticola: {hileras: 2, entre: 1.2, largo: 5, sobre: 0.4, util: 1, bordeP: 1}, forestal: {filas: 7, columnas: 7, e1: 3, e2: 2, borde: 1},
+  pasturas: {ancho: 3, largo: 5, borde: 0.5, marco: 0.25, marcos: 2, altura_corte: 15}, silvopastoril: {arreglo: 'hileras', hileras: 1, dh: 0, callejon: 14, da: 2, largo: 30, modulos: 2, posiciones: ['Junto a la hilera (0–1 m)', '1/4 del callejón', '1/2 del callejón (centro)']}};
+// Lo que el tipo de ensayo y el cultivo traen: parcela típica, tratamientos de ejemplo, bloques mínimos y mediciones sugeridas.
+// Solo se cambia lo que la persona todavía no tocó.
+function aplicarPerfil() {
+  const td = tipoDef(S.rubro, NV.tipo), cd = cultDef(S.rubro, NV.cultivo);
+  if (!NV.tocado.par) NV.par = S.rubro === 'forestal' && /vivero|propagaci|miniestaca/i.test(NV.tipo) ? {filas: 6, columnas: 8, e1: 0.06, e2: 0.06, borde: 1} : structuredClone(cd?.parcela || PAR_DEF[S.rubro]);
+  if (!NV.tocado.trats) NV.trats = td?.trat || 'Testigo\nTratamiento 2\nTratamiento 3\nTratamiento 4';
+  if (!NV.tocado.bloques) NV.bloques = Math.max(td?.bloques_min || 4, S.rubro === 'silvopastoril' ? 3 : 4);
+  if (!NV.tocado.vars) NV.vars = new Set((td?.variables || []).filter(id => { const v = varDef(S.rubro, id); return v && vaEnCultivo(v, S.rubro, NV.cultivo) && (NV.dron || v.origen !== 'dron'); }));
+}
+function areaNueva(p = NV.par, rubro = S.rubro) {
+  const n = x => +x || 0, q = x => (+x || 0).toLocaleString('es-PY', {maximumFractionDigits: 2});
+  if (rubro === 'agricola') return {area: n(p.hileras) * n(p.dist) * n(p.largo), util: n(p.util) * n(p.dist) * Math.max(0, n(p.largo) - 1), ancho: n(p.hileras) * n(p.dist), largo: n(p.largo), txt: `${p.hileras} hileras a ${q(p.dist)} m × ${q(p.largo)} m; se cosechan ${p.util} hileras sin 0,5 m de cabecera`};
+  if (rubro === 'horticola') { const ppl = Math.max(1, Math.round(n(p.largo) / (n(p.sobre) || 1))), uppl = Math.max(0, ppl - 2 * n(p.bordeP));
+    return {area: n(p.hileras) * n(p.entre) * n(p.largo), util: n(p.util) * n(p.entre) * uppl * n(p.sobre), ancho: n(p.hileras) * n(p.entre), largo: n(p.largo), plantas: n(p.hileras) * ppl, utiles: n(p.util) * uppl,
+      txt: `${p.hileras} ${n(p.hileras) === 1 ? 'hilera' : 'hileras'} a ${q(p.entre)} m × ${q(p.largo)} m, plantas a ${q(p.sobre)} m (${n(p.hileras) * ppl} plantas; útiles: ${n(p.util) * uppl}, sin ${p.bordeP} de borde por extremo)`}; }
+  if (rubro === 'pasturas') return {area: n(p.ancho) * n(p.largo), util: Math.max(0, n(p.ancho) - 2 * n(p.borde)) * Math.max(0, n(p.largo) - 2 * n(p.borde)), ancho: n(p.ancho), largo: n(p.largo), txt: `${q(p.ancho)} × ${q(p.largo)} m, ${p.marcos} marcos de ${q(p.marco)} m² por corte, corte a ${q(p.altura_corte)} cm`};
+  if (rubro === 'silvopastoril') {
+    if (p.arreglo === 'disperso') { const a = n(p.area_ha) * 10000; return {area: a, util: a, ancho: Math.sqrt(a), largo: Math.sqrt(a), arbHa: n(p.arb_ha), txt: `Potrero o parcela de ${fmt(n(p.area_ha), 2)} ha con unos ${fmt(n(p.arb_ha), 0)} árboles/ha`}; }
+    const mod = n(p.callejon) + Math.max(0, n(p.hileras) - 1) * n(p.dh), ancho = n(p.modulos) * mod, arb = mod && n(p.da) ? 10000 * n(p.hileras) / (mod * n(p.da)) : 0;
+    return {area: ancho * n(p.largo), util: ancho * n(p.largo), ancho, largo: n(p.largo), arbHa: arb,
+      txt: `${p.modulos} ${n(p.modulos) === 1 ? 'módulo' : 'módulos'} de ${n(p.hileras) === 1 ? 'hilera simple' : n(p.hileras) === 2 ? 'hilera doble' : p.hileras + ' hileras'}${n(p.hileras) > 1 ? ` (a ${q(p.dh)} m)` : ''} y callejón de ${q(p.callejon)} m, árboles a ${q(p.da)} m, ${q(p.largo)} m de largo (${fmt(arb, 0)} árboles/ha)`}; }
+  const ha = n(p.e1) * n(p.e2) ? 10000 / (n(p.e1) * n(p.e2)) : 0, ut = Math.max(0, n(p.filas) - 2 * n(p.borde)) * Math.max(0, n(p.columnas) - 2 * n(p.borde));
+  if (n(p.e1) < 0.5) return {area: n(p.filas) * n(p.columnas) * n(p.e1) * n(p.e2), util: ut * n(p.e1) * n(p.e2), ancho: n(p.columnas) * n(p.e2), largo: n(p.filas) * n(p.e1),
+    txt: `Bandeja o cantero de ${p.filas} × ${p.columnas} plantines a ${q(p.e1 * 100)} × ${q(p.e2 * 100)} cm; útiles: ${ut} con ${p.borde} ${n(p.borde) === 1 ? 'fila' : 'filas'} de borde`};
+  return {area: n(p.filas) * n(p.columnas) * n(p.e1) * n(p.e2), util: ut * n(p.e1) * n(p.e2), ancho: n(p.columnas) * n(p.e2), largo: n(p.filas) * n(p.e1), arbHa: ha,
+    txt: `${p.filas} × ${p.columnas} árboles a ${q(p.e1)} × ${q(p.e2)} m (${fmt(ha, 0)} árb/ha); útiles: ${ut} con ${p.borde} ${n(p.borde) === 1 ? 'fila' : 'filas'} de borde`};
+}
+// gl del error recomendados: 15 en cultivares (Res. SENAVE 414/2020), 12 en el resto (EPPO PP1/152)
+const glMin = (tipo, rubro) => rubro === 'silvopastoril' ? 6 : /cultivar|rncc|vcu/i.test(tipo || '') ? 15 : 12; // silvopastoril: parcelas grandes, pocas repeticiones (la posición se prueba con el error b)
+// Ficha del tipo de ensayo y del cultivo elegidos (qué pide, testigos, momentos, análisis y norma)
+// Ficha del ensayo: datos propios del rubro (fecha de siembra o plantación, suelo, antecesor, humedad base…)
+const fichaFilas = T => (RUBD[T.rubro]?.ficha || []).map(d => { const v = d.id === 'humedad' ? (T.ficha?.humedad ?? (T.variables.some(x => x.entrada) ? humBase(T) : null)) : T.ficha?.[d.id]; return v === '' || v == null ? null : [d.campo, d.tipo === 'fecha' ? fechaTxt(v) : v]; }).filter(Boolean);
+function fichaCard(T) {
+  const F = RUBD[T.rubro]?.ficha || [], ed = puede.diseno(T), f = T.ficha || {}; if (!F.length) return '';
+  const val = d => f[d.id] ?? (d.id === 'humedad' ? humBase(T) : '');
+  const campo = d => { const v = val(d);
+    if (!ed) return v === '' || v == null ? '' : `<dt>${esc(d.campo)}</dt><dd>${esc(d.tipo === 'fecha' ? fechaTxt(v) : v)}</dd>`;
+    const inp = d.tipo === 'lista' ? `<select data-ficha="${d.id}"><option value="">—</option>${d.opciones.map(o => `<option ${o === v ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`
+      : d.tipo === 'fecha' ? `<input type="date" data-ficha="${d.id}" value="${esc(v)}">` : d.tipo === 'numero' ? `<input type="number" step="any" data-ficha="${d.id}" value="${esc(v)}">` : `<input type="text" data-ficha="${d.id}" value="${esc(v)}">`;
+    return `<label class="f">${esc(d.campo)}${inp}${d.ayuda ? `<span class="note">${esc(d.ayuda)}</span>` : ''}</label>`; };
+  const llenos = F.filter(d => { const v = val(d); return v !== '' && v != null; }).length;
+  return `<details class="card" ${ed && llenos < 3 ? 'open' : ''}><summary style="cursor:pointer"><b>Ficha del ensayo · ${esc(RUBROS[T.rubro].nombre.toLowerCase())}</b> <span class="note">(${llenos} de ${F.length} datos)</span></summary>
+    ${ed ? `<p class="note" style="margin:0">Datos del sitio y del manejo que pide un ensayo ${esc(RUBROS[T.rubro].nombre.toLowerCase())}. Se guardan al salir de cada campo y salen en el informe y en el Excel.</p><div class="grid2">${F.map(campo).join('')}</div>` : `<dl class="kv">${F.map(campo).join('') || '<dt>—</dt><dd>Sin datos cargados</dd>'}</dl>`}</details>`;
+}
+function fichaTipoHtml(rubro, tipo, cultivo, abierta) {
+  const td = tipoDef(rubro, tipo), cd = cultDef(rubro, cultivo); if (!td && !cd) return '';
+  const fila = (t, x) => x ? `<dt>${t}</dt><dd>${esc(x)}</dd>` : '';
+  return `<details class="card ficha-tipo" ${abierta ? 'open' : ''} style="gap:8px"><summary style="cursor:pointer"><b>Qué pide este ensayo${td ? ': ' + esc(td.n) : ''}${cd ? ' en ' + esc(cd.n) : ''}</b></summary>
+    ${td?.descripcion ? `<p style="margin:0">${esc(td.descripcion)}</p>` : ''}
+    <dl class="kv">${fila('Testigos', td?.testigos)}${td ? fila('Bloques mínimos', String(td.bloques_min)) : ''}${fila('Unidad experimental', td?.unidad_experimental)}${fila('Diseño', td?.diseno)}${fila('Cuándo evaluar', td?.momentos)}${fila('Análisis', td?.analisis)}${fila('Norma', td?.normativa)}
+      ${cd ? fila('Árbol', cd.arbol) + fila('Pastura', cd.pastura) + fila(rubro === 'silvopastoril' ? 'Sistema' : 'Nombre científico', cd.cientifico) + fila('Fenología', cd.fenologia) + fila('Parcela típica', cd.parcelaTxt) + (cd.humedad != null ? fila('Humedad base del rendimiento', cd.humedad + ' %') : '') : ''}</dl>
+    ${cd?.notas ? `<p class="note" style="margin:0">${esc(cd.notas)}</p>` : ''}</details>`;
+}
+function camposParcela(p, rubro) {
+  const num = (id, l, v, st = 1) => `<label class="f">${l}<input type="number" data-par="${id}" value="${v ?? ''}" step="${st}" min="0"></label>`;
+  if (rubro === 'agricola') return num('hileras', 'Hileras por parcela', p.hileras) + num('dist', 'Distancia entre hileras (m)', p.dist, 0.01) + num('largo', 'Largo (m)', p.largo, 0.5) + num('util', 'Hileras cosechadas', p.util);
+  if (rubro === 'horticola') return num('hileras', 'Hileras por parcela', p.hileras) + num('entre', 'Entre hileras (m)', p.entre, 0.05) + num('largo', 'Largo (m)', p.largo, 0.5) + num('sobre', 'Entre plantas (m)', p.sobre, 0.01) + num('util', 'Hileras útiles', p.util) + num('bordeP', 'Plantas de borde en cada extremo', p.bordeP);
+  if (rubro === 'pasturas') return num('ancho', 'Ancho (m)', p.ancho, 0.5) + num('largo', 'Largo (m)', p.largo, 0.5) + num('borde', 'Borde sin evaluar (m)', p.borde, 0.25) + num('marco', 'Marco de corte (m²)', p.marco, 0.05) + num('marcos', 'Marcos por parcela', p.marcos) + num('altura_corte', 'Altura de corte (cm)', p.altura_corte);
+  if (rubro === 'silvopastoril') return `<label class="f">Arreglo de los árboles<select data-par="arreglo"><option value="hileras" ${p.arreglo !== 'disperso' ? 'selected' : ''}>En hileras con callejón</option><option value="disperso" ${p.arreglo === 'disperso' ? 'selected' : ''}>Dispersos (bosque raleado o remanentes)</option></select></label>` +
+    (p.arreglo === 'disperso' ? num('area_ha', 'Superficie de cada parcela (ha)', p.area_ha, 0.05) + num('arb_ha', 'Árboles por hectárea', p.arb_ha)
+      : num('hileras', 'Hileras por franja', p.hileras) + num('dh', 'Entre hileras de la franja (m)', p.dh, 0.5) + num('callejon', 'Ancho del callejón (m)', p.callejon, 0.5) + num('da', 'Entre árboles (m)', p.da, 0.5) + num('modulos', 'Módulos (franja + callejón) por parcela', p.modulos) + num('largo', 'Largo de la parcela (m)', p.largo, 1));
+  const pl = (+p.e1 || 0) < 0.5; return num('filas', pl ? 'Filas de plantines' : 'Filas de árboles', p.filas) + num('columnas', pl ? 'Plantines por fila' : 'Árboles por fila', p.columnas) + num('e1', 'Entre filas (m)', p.e1, pl ? 0.01 : 0.5) + num('e2', pl ? 'Entre plantines (m)' : 'Entre árboles (m)', p.e2, pl ? 0.01 : 0.5) + num('borde', 'Filas de borde', p.borde);
 }
 function renderNuevo() {
-  const R = RUBROS[S.rubro], trs = NV.trats.split('\n').map(s => s.trim()).filter(Boolean), gl = (trs.length - 1) * (NV.bloques - 1), A = areaNueva();
-  const lal = NV.modo === 'lal', pasos = lal ? ['Datos', 'Productos y franjas', 'Qué vas a medir'] : ['Datos', 'Parcela y tratamientos', 'Qué vas a medir'];
+  const R = RUBROS[S.rubro], trs = NV.trats.split('\n').map(s => s.trim()).filter(Boolean), gl = (trs.length - 1) * (NV.bloques - 1), A = areaNueva(), td = tipoDef(S.rubro, NV.tipo), cd = cultDef(S.rubro, NV.cultivo);
+  const lal = NV.modo === 'lal', pasos = lal ? ['Datos', 'Productos y franjas', 'Qué vas a medir'] : ['Datos', 'Parcela y tratamientos', 'Qué vas a medir'], hayLal = R.tipos.some(t => /lado a lado/i.test(t));
   let h = `<div class="row" style="justify-content:space-between"><div style="display:grid;gap:4px"><button class="linkbtn" id="nv-cancel" style="justify-self:start">← Cancelar</button><h1>${lal ? 'Nuevo lado a lado' : 'Nuevo ensayo'} ${R.nombre.toLowerCase()}</h1></div>
     <div class="row">${pasos.map((p, i) => `<span class="chip ${i + 1 === NV.paso ? 'acc' : 'neu'}">${i + 1}. ${p}</span>`).join('')}</div></div><div class="card" style="gap:14px">`;
-  if (NV.paso === 1) {
+  if (NV.paso === 1 && hayLal) {
     h += `<div class="modos" role="radiogroup" aria-label="Qué querés hacer">
       <label class="modo ${!lal ? 'on' : ''}"><input type="radio" name="nv-modo-t" value="dbca" ${!lal ? 'checked' : ''}><b>🧪 Ensayo experimental</b><span>Varios tratamientos en bloques al azar, con análisis estadístico (ANAVA y Tukey).</span></label>
-      <label class="modo ${lal ? 'on' : ''}"><input type="radio" name="nv-modo-t" value="lal"><b>↔️ Lado a lado en la parcela del productor</b><span>Para probar la eficacia de un producto contra el que usa el productor, en macroparcelas o microparcelas. No es un ensayo experimental.</span></label></div>`;
+      <label class="modo ${lal ? 'on' : ''}"><input type="radio" name="nv-modo-t" value="lal"><b>↔️ Lado a lado en la parcela del productor</b><span>Para probar la eficacia de un producto contra el que usa el productor, en macroparcelas o microparcelas. No es un ensayo experimental ni sirve para registro.</span></label></div>`;
   }
+  const selCult = `<label class="f">${S.rubro === 'silvopastoril' ? 'Sistema (árbol + forrajera)' : S.rubro === 'forestal' || S.rubro === 'pasturas' ? 'Especie' : 'Cultivo'}<input type="text" id="nv-cultivo" list="nv-cult-l" value="${esc(NV.cultivo)}"><datalist id="nv-cult-l">${R.cultivos.map(c => `<option value="${esc(c)}">`).join('')}</datalist><span class="note">Elegí de la lista o escribí otro${cd ? '' : ': sin datos propios, se muestran todas las mediciones del rubro'}.</span></label>`;
   if (NV.paso === 1 && lal) {
     h += `<div class="grid2"><label class="f">Nombre<input type="text" id="nv-titulo" value="${esc(NV.titulo)}" placeholder="Ej.: Fungicida nuevo vs. el del productor, soja"></label>
       <label class="f">Productor<input type="text" id="nv-productor" value="${esc(NV.productor)}" placeholder="Nombre del productor o empresa"></label>
       <label class="f">Establecimiento o lote<input type="text" id="nv-lote" value="${esc(NV.lote)}" placeholder="Ej.: Estancia San José, lote 4"></label>
       <label class="f">Lugar<input type="text" id="nv-lugar" value="${esc(NV.lugar)}" placeholder="Distrito, departamento"></label>
-      <label class="f">Cultivo o especie<input type="text" id="nv-cultivo" list="nv-cult-l" value="${esc(NV.cultivo)}"><datalist id="nv-cult-l">${R.cultivos.map(c => `<option value="${c}">`).join('')}</datalist></label>
+      ${selCult}
       <label class="f">Escala<select id="nv-escala">${Object.entries(ESCALAS).map(([k, e]) => `<option value="${k}" ${k === NV.escala ? 'selected' : ''}>${e.n}</option>`).join('')}</select><span class="note">${NV.escala === 'macro' ? 'Franjas del ancho de la máquina, a lo largo del lote (100 m o más).' : 'Parcelas chicas dentro del lote del productor, aplicadas con mochila.'}</span></label>
       <label class="f">¿Se prueba en otras chacras? (opcional, una por renglón)<textarea id="nv-otros" rows="2" placeholder="Ej.: Chacra Benítez, Naranjal&#10;Chacra Ortiz, Santa Rosa">${esc(NV.otros || '')}</textarea><span class="note">Con varias chacras la app calcula en cuántas ganó el producto y la ganancia media.</span></label>
       <label class="f">Dron<select id="nv-dron"><option value="no" ${NV.dron ? '' : 'selected'}>Sin dron, o solo una foto aérea general</option><option value="si" ${NV.dron ? 'selected' : ''}>Sí, también imágenes multiespectrales</option></select></label></div>`;
   } else if (NV.paso === 1) {
-    h += `<div class="grid2"><label class="f">Nombre del ensayo<input type="text" id="nv-titulo" value="${esc(NV.titulo)}" placeholder="Ej.: Fungicidas en ${esc(R.cultivos[0].toLowerCase())}, zafra 2026"></label>
-      <label class="f">Cultivo o especie<input type="text" id="nv-cultivo" list="nv-cult-l" value="${esc(NV.cultivo)}"><datalist id="nv-cult-l">${R.cultivos.map(c => `<option value="${c}">`).join('')}</datalist></label>
-      <label class="f">Tipo de ensayo<select id="nv-tipo">${R.tipos.filter(t => t !== 'Lado a lado').map(t => `<option ${t === NV.tipo ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
+    h += `<div class="grid2"><label class="f">Nombre del ensayo<input type="text" id="nv-titulo" value="${esc(NV.titulo)}" placeholder="Ej.: ${esc(NV.tipo)} en ${esc(String(NV.cultivo).split(' (')[0].toLowerCase())}, 2026"></label>
+      <label class="f">Tipo de ensayo<select id="nv-tipo">${R.tipos.filter(t => !/lado a lado/i.test(t)).map(t => `<option ${t === NV.tipo ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
+      ${selCult}
       <label class="f">Lugar<input type="text" id="nv-lugar" value="${esc(NV.lugar)}" placeholder="Departamento, distrito o establecimiento"></label>
       <label class="f">¿Se repite en otros lugares? (opcional, uno por renglón)<textarea id="nv-otros" rows="2" placeholder="Ej.: Naranjal, Alto Paraná&#10;Santa Rosa, San Pedro">${esc(NV.otros || '')}</textarea><span class="note">Cada lugar tiene su croquis sorteado y puede tener su propio operador.</span></label>
       <label class="f">Imágenes de dron<select id="nv-dron"><option value="no" ${NV.dron ? '' : 'selected'}>Sin dron, o solo una foto aérea general</option><option value="si" ${NV.dron ? 'selected' : ''}>Sí, también imágenes multiespectrales (índices)</option></select></label></div>
-      <p class="note" style="margin:0">El dron es opcional: sin él, el ensayo se centra en lo que medís a campo y en lo que vas aplicando. Una foto aérea general se puede cargar siempre, en “Croquis”.</p>`;
+      <div id="nv-ficha">${fichaTipoHtml(S.rubro, NV.tipo, NV.cultivo, true)}</div>`;
   }
   if (NV.paso === 1) {
     const cand = opsDisponibles();
@@ -448,31 +561,37 @@ function renderNuevo() {
         <label class="f">Repeticiones (pares de franjas)<select id="nv-pares">${[1, 2, 3, 4].map(n => `<option ${n === NV.pares ? 'selected' : ''}>${n}</option>`).join('')}</select></label></div>
       <p class="note" style="margin:0" id="nv-lal-area">Cada franja: ${fmt(L.ancho * L.largo, 0)} m² (${fmt(ha, ha < 0.1 ? 3 : 2)} ha) · se evalúan ${fmt(util, 0)} m². ${NV.pares > 1 ? `El orden se alterna en cada par (A-B, B-A…) para no favorecer un lado.` : 'Con un solo par la comparación es directa; con 2 o más pares (o varias chacras) se puede saber si la diferencia es confiable.'} La ubicación se marca después con el GPS.</p>`;
   } else if (NV.paso === 2) {
-    const p = NV.par, num = (id, l, v, st = 1) => `<label class="f">${l}<input type="number" data-par="${id}" value="${v}" step="${st}" min="0"></label>`;
-    const campos = S.rubro === 'agricola' ? num('hileras', 'Hileras por parcela', p.hileras) + num('dist', 'Distancia entre hileras (m)', p.dist, 0.05) + num('largo', 'Largo (m)', p.largo, 0.5) + num('util', 'Hileras cosechadas', p.util)
-      : S.rubro === 'horticola' ? num('plantas', 'Plantas por parcela', p.plantas) + num('utiles', 'Plantas útiles', p.utiles) + num('entre', 'Entre hileras (m)', p.entre, 0.05) + num('sobre', 'Entre plantas (m)', p.sobre, 0.05)
-      : S.rubro === 'pasturas' ? num('ancho', 'Ancho (m)', p.ancho, 0.5) + num('largo', 'Largo (m)', p.largo, 0.5) + num('borde', 'Borde sin evaluar (m)', p.borde, 0.25) + num('marco', 'Marco de corte (m²)', p.marco, 0.05) + num('marcos', 'Marcos por parcela', p.marcos) + num('altura_corte', 'Altura de corte (cm)', p.altura_corte)
-        : num('filas', 'Filas de árboles', p.filas) + num('columnas', 'Árboles por fila', p.columnas) + num('e1', 'Entre filas (m)', p.e1, 0.5) + num('e2', 'Entre árboles (m)', p.e2, 0.5) + num('borde', 'Filas de borde', p.borde);
-    h += `<h3>Parcela</h3><div class="grid3">${campos}</div><p class="note" style="margin:0">${A.txt}: ${fmt(A.area, 1)} m² por parcela, ${fmt(A.util, 1)} m² útiles.</p>
-      <h3>Tratamientos y bloques</h3><div class="grid2"><label class="f">Un tratamiento por renglón (el primero es el testigo)<textarea id="nv-trats" rows="6">${esc(NV.trats)}</textarea></label>
-      <div style="display:grid;gap:10px;align-content:start"><label class="f">Bloques (repeticiones)<select id="nv-bloques">${[3, 4, 5, 6].map(b => `<option ${b === NV.bloques ? 'selected' : ''}>${b}</option>`).join('')}</select></label>
-      <div><span class="chip ${gl >= 12 ? 'ok' : 'warn'}">${gl >= 12 ? '✓' : '!'}</span> ${trs.length} tratamientos × ${NV.bloques} bloques = ${trs.length * NV.bloques} parcelas · ${gl} gl de error ${gl >= 12 ? '(suficiente)' : '(conviene ≥ 12: sumá bloques)'}</div>
-      <div class="note">Diseño: bloques completos al azar. El croquis se sortea al crear el ensayo.${S.rubro === 'pasturas' ? ' Las fechas de corte se cargan después, en “Mediciones”.' : ''}</div></div></div>`;
+    const p = NV.par, gm = glMin(NV.tipo, S.rubro), bmin = td?.bloques_min || 3, okB = gl >= gm && NV.bloques >= bmin, silvo = S.rubro === 'silvopastoril';
+    h += `<h3>${silvo ? 'Parcela (unidad experimental)' : 'Parcela'}</h3>${cd?.parcelaTxt ? `<p class="note" style="margin:0">Parcela típica para ${esc(cd.n)}: ${esc(cd.parcelaTxt)}</p>` : ''}
+      <div class="grid3">${camposParcela(p, S.rubro)}</div><p class="note" style="margin:0" id="nv-area">${esc(A.txt)}: ${fmt(A.area, A.area > 1000 ? 0 : 1)} m² por parcela${A.util !== A.area ? `, ${fmt(A.util, 1)} m² útiles` : ''}.</p>
+      ${silvo ? `<label class="f">Posiciones de muestreo del forraje, la luz y el suelo (una por renglón)<textarea id="nv-pos" rows="4">${esc((p.posiciones || []).join('\n'))}</textarea><span class="note">Las mediciones marcadas “por posición” se cargan en cada una (subparcelas) y se analizan en parcelas divididas. El testigo a pleno sol conviene como un tratamiento más, sin árboles, con las muestras en los mismos puntos.</span></label>` : ''}
+      <h3>Tratamientos y bloques</h3><div class="grid2"><label class="f">Un tratamiento por renglón (el primero es el testigo)<textarea id="nv-trats" rows="6">${esc(NV.trats)}</textarea>${td?.testigos ? `<span class="note">Testigos para ${esc(td.n.toLowerCase())}: ${esc(td.testigos)}</span>` : ''}</label>
+      <div style="display:grid;gap:10px;align-content:start"><label class="f">Bloques (repeticiones)<input type="number" id="nv-bloques" min="2" max="40" step="1" value="${NV.bloques}"></label>
+      <div><span class="chip ${okB ? 'ok' : 'warn'}">${okB ? '✓' : '!'}</span> ${trs.length} tratamientos × ${NV.bloques} bloques = ${trs.length * NV.bloques} parcelas · ${gl} gl de error ${okB ? '(suficiente)' : `(conviene ${gl < gm ? `≥ ${gm} gl` : ''}${gl < gm && NV.bloques < bmin ? ' y ' : ''}${NV.bloques < bmin ? `al menos ${bmin} bloques` : ''}: sumá bloques)`}</div>
+      <div class="note">Diseño: bloques completos al azar${silvo ? ' con las posiciones como subparcelas (parcelas divididas)' : ''}. El croquis se sortea al crear el ensayo.${T_CORTES.includes(S.rubro) ? ' Las fechas de corte se cargan después, en “Mediciones”.' : ''}</div></div></div>`;
   } else {
-    const lista = [...MET[S.rubro], ...CUSTOM.filter(c => c.rubro === S.rubro)].filter(v => NV.dron || v.origen !== 'dron');
+    const todas = [...MET[S.rubro], ...CUSTOM.filter(c => c.rubro === S.rubro)].filter(v => NV.dron || v.origen !== 'dron');
+    const suger = new Set(td?.variables || []), delCult = todas.filter(v => vaEnCultivo(v, S.rubro, NV.cultivo)), fuera = todas.filter(v => !vaEnCultivo(v, S.rubro, NV.cultivo));
+    const item = v => `<label class="opchk"><input type="checkbox" data-var="${v.id}" ${NV.vars.has(v.id) ? 'checked' : ''}><span><b>${esc(v.nombre)}</b> ${v.unidad ? `<span class="note">(${esc(v.unidad)})</span>` : ''} ${v.origen === 'dron' ? '<span class="chip dron">dron</span>' : ''}${v.porCorte ? '<span class="chip acc">en cada corte</span>' : ''}${v.porPosicion && S.rubro === 'silvopastoril' ? '<span class="chip acc">por posición</span>' : ''}${v.propio ? '<span class="chip hypo">propio</span>' : ''}<br><span class="note">${esc(v.metodo)}${v.momento ? ' · <b>Cuándo:</b> ' + esc(v.momento) : ''}</span></span></label>`;
     if (lal) h += `<label class="f" style="max-width:340px">Puntos de muestreo por franja<input type="number" min="1" max="30" id="nv-puntos" value="${NV.puntos}"><span class="note">En cada franja se mide en varios puntos repartidos a lo largo (sin cabeceras) y la app promedia.</span></label>`;
-    h += `<p class="lead" style="font-size:.92rem">Estas son las mediciones sugeridas para ${R.nombre.toLowerCase()}, cada una con su forma de medir. Tildá las que vas a usar; después podés cambiar el método o crear tus propios indicadores en el paso “Mediciones”.${NV.dron ? '' : ' Las mediciones del dron no aparecen porque elegiste trabajar sin dron.'}${S.rubro === 'pasturas' ? ' Las marcadas “en cada corte” se repiten en cada corte que agregues.' : ''}</p>
-      <div>${lista.map(v => `<label class="opchk"><input type="checkbox" data-var="${v.id}" ${NV.vars.has(v.id) ? 'checked' : ''}><span><b>${esc(v.nombre)}</b> ${v.unidad ? `<span class="note">(${esc(v.unidad)})</span>` : ''} ${v.origen === 'dron' ? '<span class="chip dron">dron</span>' : ''}${v.porCorte ? '<span class="chip acc">en cada corte</span>' : ''}${v.propio ? '<span class="chip hypo">propio</span>' : ''}<br><span class="note">${esc(v.metodo)}</span></span></label>`).join('')}</div>`;
+    const a = delCult.filter(v => suger.has(v.id)), b = delCult.filter(v => !suger.has(v.id));
+    h += `<p class="lead" style="font-size:.92rem">Mediciones para ${lal ? 'el lado a lado' : esc(NV.tipo.toLowerCase())} en ${esc(NV.cultivo)}, cada una con su forma de medir y cuándo. Están tildadas las que pide este tipo de ensayo; después podés cambiar el método o crear tus propios indicadores en “Mediciones”.${NV.dron ? '' : ' Las del dron no aparecen porque elegiste trabajar sin dron.'}</p>
+      ${a.length ? `<h3>Sugeridas para este ensayo</h3><div>${a.map(item).join('')}</div>` : ''}
+      ${b.length ? `<details ${a.length ? '' : 'open'}><summary style="cursor:pointer"><b>Otras mediciones de ${esc(R.nombre.toLowerCase())} para ${esc(NV.cultivo)}</b> <span class="note">(${b.length})</span></summary><div>${b.map(item).join('')}</div></details>` : ''}
+      ${fuera.length ? `<details><summary style="cursor:pointer"><span class="note">Mediciones de otros cultivos del rubro (no corresponden a ${esc(NV.cultivo)}) · ${fuera.length}</span></summary><div>${fuera.map(item).join('')}</div></details>` : ''}`;
   }
   h += `</div><div class="stepper"><button class="btn" id="nv-prev" ${NV.paso === 1 ? 'style="visibility:hidden"' : ''}>← Anterior</button><button class="btn primary" id="nv-next">${NV.paso === 3 ? (lal ? 'Crear y ubicar las franjas' : 'Crear ensayo y empezar a cargar') : 'Siguiente →'}</button></div>`;
   $('#s-nuevo').innerHTML = h;
   if (lal && NV.paso === 2 && !document.getElementById('nv-prods')) { const d = document.createElement('datalist'); d.id = 'nv-prods'; d.innerHTML = [...new Set(CAT.rows.filter(r => r[catIdx.sit] !== 'CANCELADO').map(r => r[catIdx.prod]))].map(n => `<option value="${esc(n)}">`).join(''); document.body.appendChild(d); }
 }
+const T_CORTES = ['pasturas', 'silvopastoril']; // rubros con cortes de forraje
 $('#s-nuevo').addEventListener('input', e => {
   const t = e.target;
-  if (t.id === 'nv-titulo') NV.titulo = t.value; if (t.id === 'nv-cultivo') NV.cultivo = t.value; if (t.id === 'nv-lugar') NV.lugar = t.value; if (t.id === 'nv-otros') NV.otros = t.value;
-  if (t.dataset.par) { NV.par[t.dataset.par] = parseFloat(t.value) || 0; const A = areaNueva(); t.closest('.card').querySelector('p.note').textContent = `${A.txt}: ${fmt(A.area, 1)} m² por parcela, ${fmt(A.util, 1)} m² útiles.`; }
-  if (t.id === 'nv-trats') NV.trats = t.value;
+  if (t.id === 'nv-titulo') NV.titulo = t.value; if (t.id === 'nv-lugar') NV.lugar = t.value; if (t.id === 'nv-otros') NV.otros = t.value;
+  if (t.id === 'nv-cultivo') { NV.cultivo = t.value; aplicarPerfil(); const f = $('#nv-ficha'); if (f) f.innerHTML = fichaTipoHtml(S.rubro, NV.tipo, NV.cultivo, true); }
+  if (t.dataset.par && t.tagName !== 'SELECT') { NV.par[t.dataset.par] = parseFloat(t.value) || 0; NV.tocado.par = true; const A = areaNueva(), el = $('#nv-area'); if (el) el.textContent = `${A.txt}: ${fmt(A.area, A.area > 1000 ? 0 : 1)} m² por parcela${A.util !== A.area ? `, ${fmt(A.util, 1)} m² útiles` : ''}.`; }
+  if (t.id === 'nv-pos') { NV.par.posiciones = t.value.split('\n').map(x => x.trim()).filter(Boolean); NV.tocado.par = true; }
+  if (t.id === 'nv-trats') { NV.trats = t.value; NV.tocado.trats = true; }
   if (t.id === 'nv-productor') NV.productor = t.value; if (t.id === 'nv-lote') NV.lote = t.value; if (t.id === 'nv-puntos') NV.puntos = Math.max(1, +t.value || 1);
   if (t.dataset.lado) { const [i, k] = t.dataset.lado.split('|'); NV.lados[+i][k] = t.value; }
   if (t.dataset.lal) { NV.lal[t.dataset.lal] = parseFloat(t.value) || 0; if (t.dataset.lal === 'ancho' && NV.lal.anchoCos > NV.lal.ancho) NV.lal.anchoCos = NV.lal.ancho;
@@ -480,26 +599,34 @@ $('#s-nuevo').addEventListener('input', e => {
 });
 $('#s-nuevo').addEventListener('change', e => {
   const t = e.target;
-  if (t.id === 'nv-tipo') NV.tipo = t.value;
+  if (t.id === 'nv-tipo') { NV.tipo = t.value; aplicarPerfil(); renderNuevo(); return; }
+  if (t.id === 'nv-cultivo') { renderNuevo(); return; }
+  if (t.dataset.par === 'arreglo') { NV.par.arreglo = t.value; if (t.value === 'disperso') { NV.par.area_ha = NV.par.area_ha || 1; NV.par.arb_ha = NV.par.arb_ha || 60; } else Object.assign(NV.par, {...PAR_DEF.silvopastoril, ...NV.par, arreglo: 'hileras'}); NV.tocado.par = true; renderNuevo(); return; }
   if (t.name === 'nv-modo-t') { NV.modo = t.value; renderNuevo(); return; }
   if (t.id === 'nv-escala') { NV.escala = t.value; const e = ESCALAS[t.value]; NV.lal = {...NV.lal, ancho: e.ancho, largo: e.largo, cab: e.cab, anchoCos: e.anchoCos}; NV.puntos = e.puntos; renderNuevo(); return; }
   if (t.id === 'nv-testigo') NV.testigo = t.checked; if (t.id === 'nv-pares') { NV.pares = +t.value; renderNuevo(); return; }
   if (t.dataset.lado && t.tagName === 'SELECT') { const [i, k] = t.dataset.lado.split('|'); NV.lados[+i][k] = t.value; }
   if (t.dataset.nvop) t.checked ? NV.ops.add(t.dataset.nvop) : NV.ops.delete(t.dataset.nvop);
   if (t.id === 'nv-modo') NV.modoOps = t.value;
-  if (t.id === 'nv-dron') NV.dron = t.value === 'si';
-  if (t.id === 'nv-bloques' || t.id === 'nv-trats') { NV.bloques = Number($('#nv-bloques').value); NV.trats = $('#nv-trats').value; renderNuevo(); }
-  if (t.dataset.var) t.checked ? NV.vars.add(t.dataset.var) : NV.vars.delete(t.dataset.var);
+  if (t.id === 'nv-dron') { NV.dron = t.value === 'si'; aplicarPerfil(); }
+  if (t.id === 'nv-bloques' || t.id === 'nv-trats') { NV.bloques = Math.max(2, Math.min(40, Math.round(Number($('#nv-bloques').value) || 4))); if (t.id === 'nv-bloques') NV.tocado.bloques = true; NV.trats = $('#nv-trats').value; renderNuevo(); }
+  if (t.dataset.var) { t.checked ? NV.vars.add(t.dataset.var) : NV.vars.delete(t.dataset.var); NV.tocado.vars = true; }
 });
 $('#s-nuevo').addEventListener('click', e => {
   if (e.target.closest('#nv-cancel')) return irInicio();
   if (e.target.closest('#nv-prev')) { NV.paso--; renderNuevo(); }
   if (e.target.closest('#nv-next')) {
-    if (NV.paso === 1 && !NV.titulo.trim()) { NV.titulo = NV.modo === 'lal' ? `Lado a lado en ${NV.cultivo}${NV.productor ? ' · ' + NV.productor : ''}` : `${NV.tipo} en ${NV.cultivo}`; }
+    if (NV.paso === 1 && !NV.titulo.trim()) { NV.titulo = NV.modo === 'lal' ? `Lado a lado en ${NV.cultivo}${NV.productor ? ' · ' + NV.productor : ''}` : `${NV.tipo} en ${String(NV.cultivo).split(' (')[0]}`; }
     if (NV.paso < 3) { NV.paso++; renderNuevo(); return; }
     crearEnsayo();
   }
 });
+// Separa las mediciones que se repiten en cada corte o en cada posición (pasturas y silvopastoril)
+function prepararRepetidas(T) {
+  if (T_CORTES.includes(T.rubro)) { T.porCorte = T.variables.filter(v => v.porCorte).map(v => v.id); T.variables = T.variables.filter(v => !v.porCorte); T.cortes = []; }
+  if (T.rubro === 'silvopastoril' && T.posiciones?.length) { T.porPos = T.variables.filter(v => v.porPosicion).map(v => v.id); T.variables = T.variables.filter(v => !v.porPosicion); }
+  if (T.porCorte || T.porPos) armarCortes(T);
+}
 async function crearEnsayo() {
   if (NV.modo === 'lal') return crearLal();
   const trs = NV.trats.split('\n').map(s => s.trim()).filter(Boolean), pref = S.rubro === 'forestal' ? 'C' : 'T';
@@ -507,12 +634,14 @@ async function crearEnsayo() {
   const rnd = mulberry(Date.now() % 100000), parcelas = [];
   for (let b = 1; b <= NV.bloques; b++) { const orden = tratamientos.map(t => t.cod).sort(() => rnd() - 0.5);
     orden.forEach((c, i) => parcelas.push({parcela: b * 100 + i + 1, bloque: b, trat: c, valores: {}, sub: {}})); }
-  const A = areaNueva();
+  const A = areaNueva(), cd = cultDef(S.rubro, NV.cultivo), par = {...NV.par}; delete par.posiciones;
   const T = {id: nuevoIdEnsayo(), creado: new Date().toISOString(), rubro: S.rubro, titulo: NV.titulo.trim() || `${NV.tipo} en ${NV.cultivo}`, cultivo: NV.cultivo, tipo: NV.tipo, campana: '2026/27',
     lugar: NV.lugar || 'Sin ubicación', owner: S.user.id, equipo: S.user.perfil === 'gerente' ? S.user.equipo : null, bloques: NV.bloques,
-    parcela: {forma: S.rubro, ...NV.par, area_m2: +A.area.toFixed(1), area_util_m2: +A.util.toFixed(1), texto: A.txt}, tratamientos,
-    variables: [...NV.vars].map(id => varDef(S.rubro, id)).filter(v => v && (NV.dron || v.origen !== 'dron')), parcelas, asig: {}, compartido: {}, notas: [], cambios: [], aplicaciones: [], dron: NV.dron};
-  if (S.rubro === 'pasturas') { T.porCorte = T.variables.filter(v => v.porCorte).map(v => v.id); T.variables = T.variables.filter(v => !v.porCorte); T.cortes = []; }
+    parcela: {forma: S.rubro, ...par, ancho: +A.ancho.toFixed(2), largo: +A.largo.toFixed(2), area_m2: +A.area.toFixed(1), area_util_m2: +A.util.toFixed(1), texto: A.txt, ...(A.arbHa ? {arb_ha: Math.round(A.arbHa)} : {})}, tratamientos,
+    variables: [...NV.vars].map(id => varDef(S.rubro, id)).filter(v => v && (NV.dron || v.origen !== 'dron')), parcelas, asig: {}, compartido: {}, notas: [], cambios: [], aplicaciones: [], dron: NV.dron,
+    ficha: fichaInicial(S.rubro, cd)};
+  if (S.rubro === 'silvopastoril') T.posiciones = (NV.par.posiciones || []).length ? [...NV.par.posiciones] : [...PAR_DEF.silvopastoril.posiciones];
+  prepararRepetidas(T);
   const ops = [...NV.ops]; T.trabajo = {};
   if (ops.length) { if (!T.equipo) T.invitados = ops; ops.forEach(id => T.trabajo[id] = NV.modoOps === 'ensayo' ? 'ensayo' : 'parcelas'); if (NV.modoOps === 'bloques') repartir(T, ops); }
   TRIALS.push(T);
@@ -522,13 +651,19 @@ async function crearEnsayo() {
     if (ops.length && NV.modoOps === 'bloques') { repartir(T, ops); T.asig = {}; } T.cambios = []; }
   toast(otros.length ? `Ensayo creado en ${T.sitios.length} lugares` : ops.length ? `Ensayo creado y asignado a ${ops.map(id => USERS[id].nombre.split(' ')[0]).join(', ')}` : 'Ensayo creado y croquis sorteado'); abrir(T, 'campo');
 }
+// Ficha del ensayo: valores que se conocen al crearlo
+function fichaInicial(rubro, cd) { const f = {}; if (cd?.humedad != null && RUBD[rubro].ficha.some(x => x.id === 'humedad')) f.humedad = cd.humedad;
+  if (RUBD[rubro].ficha.some(x => x.id === 'ua')) f.ua = 450; if (rubro === 'forestal') f.ff = 0.45; return f; }
 
 /* ================= lado a lado (prueba de producto en la parcela del productor) ================= */
 const esLal = T => T?.modo === 'lal';
 const ESCALAS = {macro: {n: 'Macroparcelas (franjas de máquina)', ancho: 20, largo: 200, cab: 10, anchoCos: 9, puntos: 10}, micro: {n: 'Microparcelas (parcelas chicas)', ancho: 5, largo: 10, cab: 1, anchoCos: 3, puntos: 5}};
 const COL_LADO = {A: '#2563eb', B: '#d97706', C: '#6b7280', D: '#16a34a'};
 const NOM_POS = ['izquierda', 'derecha'];
-const menorEsMejor = v => /sev|incid|descarte|hormig|chinch|defol|ewrc|saliv|ninfa|maleza|dano|daño|plaga/.test(v.id + ' ' + v.nombre.toLowerCase());
+// Mediciones donde menos es mejor (enfermedades, plagas, daños, malezas, pérdidas). Ojo: la escala de helada va al revés (10 = sin daño).
+const menorEsMejor = v => v.id !== 'helada' && /sev|incid|descarte|hormig|chinch|defol|ewrc|saliv|ninfa|maleza|fusari|brusone|achapar|oruga|chicharr|pulgon|picudo|diatraea|insectos|vuelco|quebrad|podrid|virosis|mosca|tuta|danad|trips|acaro|agalla|fitotox|perdida|tipburn|espigad|dobles|defect|termita|roya|hypsipyla|boro|enfermedad|nidos|ramoneo|lenosa|desnudo|muerto|dano|encharc|antracn|adultos|bifurc|plaga/.test(v.id + ' ' + normT(v.nombre));
+// % de control de Abbott solo en ensayos de eficacia o control (no en cultivares, fertilización, etc.)
+const usaAbbott = T => /abbott|henderson/i.test(tipoDef(T.rubro, T.tipo)?.analisis || '') || /eficacia|control|plaga|enfermedad|fungic|insectic|herbic|nematod|salivazo|hormig|tratamiento de semilla/i.test(T.tipo || '');
 const media0 = a => a.length ? a.reduce((s, x) => s + x, 0) / a.length : null;
 const desvio = a => { if (a.length < 2) return null; const m = media0(a); return Math.sqrt(a.reduce((s, x) => s + (x - m) ** 2, 0) / (a.length - 1)); };
 const ladoDe = (T, cod) => T.tratamientos.find(t => t.cod === cod);
@@ -550,7 +685,7 @@ async function crearLal() {
     lal: {escala: NV.escala, productor: NV.productor.trim(), lote: NV.lote.trim(), sep: L.sep || 0, puntos: NV.puntos, costo: {}, precio: null},
     tratamientos: lados, variables, parcelas, asig: {}, compartido: {}, notas: [], cambios: [], aplicaciones: [], dron: NV.dron,
     objetivo: `Comparar en la parcela del productor la eficacia de ${lados[0].productos[0]?.prod || lados[0].nombre} frente a ${lados[1].productos[0]?.prod || lados[1].nombre}${NV.testigo ? ', con una franja testigo sin aplicar' : ''}.`};
-  if (S.rubro === 'pasturas') { T.porCorte = T.variables.filter(v => v.porCorte).map(v => v.id); T.variables = T.variables.filter(v => !v.porCorte); T.cortes = []; }
+  prepararRepetidas(T);
   const ops = [...NV.ops]; T.trabajo = {};
   if (ops.length) { if (!T.equipo) T.invitados = ops; ops.forEach(id => T.trabajo[id] = NV.modoOps === 'ensayo' ? 'ensayo' : 'parcelas'); if (NV.modoOps === 'bloques') repartir(T, ops); }
   TRIALS.push(T);
@@ -1185,6 +1320,26 @@ function cortesCard(T, ed) {
     ${ed ? `<div class="row" style="align-items:end">${T.uniformizacion ? '' : `<label class="f">Corte de uniformización<input type="date" id="cu-fecha"></label>`}<label class="f">Fecha del nuevo corte<input type="date" id="nc-fecha" value="${HOY}"></label><button class="btn primary small" id="btn-corte">+ Agregar corte</button><span class="note" id="nc-msg">${desde ? `Días de rebrote desde el ${fechaTxt(desde)}.` : 'Cargá primero la fecha del corte de uniformización.'}</span></div>
       <p class="note" style="margin:0">Al agregar un corte se crean sus mediciones para cargar en cada parcela. La producción acumulada y la tasa de crecimiento se calculan solas.</p>` : ''}</div>`;
 }
+// Silvopastoril: posiciones de muestreo respecto de la hilera o la copa (subparcelas) y su peso en el promedio del potrero
+function posCard(T, ed) {
+  const pos = T.posiciones || [], pesos = pesosPos(T), bases = (T.porPos || []).map(b => varDef(T.rubro, b)).filter(Boolean);
+  return `<div class="card" id="pos-card"><div class="row" style="justify-content:space-between"><h3>Posiciones de muestreo</h3><span class="note">Se mide en cada posición: ${bases.map(b => esc(b.nombre.toLowerCase())).join(', ') || '—'}</span></div>
+    <p class="note" style="margin:0">El forraje, la luz y el suelo cambian con la distancia a los árboles: cada posición es una subparcela. El análisis se hace en parcelas divididas (tratamiento en la parcela, posición en la subparcela) y el promedio del potrero pondera cada posición por la parte del callejón que representa.</p>
+    <div class="tw"><table><thead><tr><th>#</th><th>Posición</th><th class="num">Peso en el promedio (%)</th></tr></thead><tbody>
+    ${pos.map((n, k) => `<tr><td>${k + 1}</td><td>${ed ? `<input type="text" data-posn="${k}" value="${esc(n)}" style="width:100%">` : esc(n)}</td><td class="num">${ed ? `<input type="number" data-posp="${k}" min="0" max="100" step="any" value="${+(pesos[k] * 100).toFixed(1)}" style="width:90px;text-align:right">` : fmt(pesos[k] * 100, 1)}</td></tr>`).join('')}</tbody></table></div>
+    ${ed ? `<div class="row"><button class="btn small" id="btn-pos-add">+ Agregar posición</button><button class="btn small primary" id="btn-pos-guardar">Guardar posiciones</button><span class="note">Si quitás una posición se borran sus datos.</span></div>` : ''}</div>`;
+}
+// Pesos de cada posición (suman 1). Por defecto iguales.
+function pesosPos(T) { const n = (T.posiciones || []).length; if (!n) return []; const w = (T.posPeso || []).slice(0, n).map(x => +x || 0); const tot = w.reduce((a, x) => a + x, 0);
+  return w.length === n && tot > 0 ? w.map(x => x / tot) : Array(n).fill(1 / n); }
+function guardarPos(T, panel) {
+  const nombres = [...panel.querySelectorAll('[data-posn]')].map(i => i.value.trim()), pes = [...panel.querySelectorAll('[data-posp]')].map(i => +i.value || 0);
+  const keep = nombres.map((n, k) => [n, pes[k]]).filter(([n]) => n);
+  if (keep.length < 2) { toast('Hacen falta al menos 2 posiciones'); return false; }
+  const antes = T.posiciones.length; T.posiciones = keep.map(x => x[0]); T.posPeso = keep.map(x => x[1]);
+  if (keep.length < antes) T.parcelas.forEach(p => Object.keys(p.valores).forEach(id => { const m = id.match(/_p(\d+)$/); if (m && +m[1] > keep.length) { delete p.valores[id]; delete p.sub[id]; } }));
+  armarCortes(T); toast('Posiciones guardadas'); return true;
+}
 function agregarCorte(T) {
   if (!T.uniformizacion) { const u = $('#cu-fecha')?.value; if (!u) { $('#nc-msg').textContent = 'Falta la fecha del corte de uniformización.'; return false; } T.uniformizacion = u; }
   const f = $('#nc-fecha').value, prev = T.cortes.length ? T.cortes[T.cortes.length - 1].fecha : T.uniformizacion, d = Math.round((Date.parse(f) - Date.parse(prev)) / 86400000);
@@ -1226,7 +1381,7 @@ function duplicarEnsayo(T) {
   Object.assign(C, {id, titulo: T.titulo + ' (copia)', owner: S.user.id, equipo: S.user.perfil === 'gerente' ? S.user.equipo : T.equipo, ejemplo: false, creado: new Date().toISOString(),
     notas: [], cambios: [], aplicaciones: [], asig: {}, trabajo: {}, compartido: {}, cortes: T.cortes ? [] : undefined, uniformizacion: undefined, imagen: undefined, dron: !!T.dron && !T.imagen});
   C.parcelas = T.parcelas.map(p => ({parcela: p.parcela, bloque: p.bloque, trat: p.trat, valores: {}, sub: {}}));
-  if (C.cortes) { C.variables = C.variables.filter(v => !v.corte && v.origen !== 'calc'); }
+  if (C.cortes || C.porPos) { C.variables = C.variables.filter(v => !v.corte && !v.pos && v.origen !== 'calc'); armarCortes(C); }
   TRIALS.push(C); toast('Ensayo duplicado: revisá nombre, lugar y fechas'); abrir(C, 'plan');
 }
 function nuevoIdEnsayo() { const y = new Date().getFullYear(); let n = TRIALS.filter(T => T.id.startsWith(`ENS-${y}-`)).length + 1, id; do { id = `ENS-${y}-${String(n++).padStart(3, '0')}`; } while (TRIALS.some(T => T.id === id)); return id; }
@@ -1283,9 +1438,11 @@ RENDER.plan = T => {
       <dt>Lados</dt><dd>${T.tratamientos.map(x => `<span class="swatch" style="background:${COL_LADO[x.cod]}"></span> ${x.cod} · ${esc(x.nombre)}`).join('<br>')}</dd><dt>Franjas</dt><dd>${T.parcelas.length} de ${fmt(pa.ancho, 1)} × ${fmt(pa.largo, 0)} m${T.bloques > 1 ? ` · ${T.bloques} pares` : ''}</dd><dt>Muestreo</dt><dd>${T.lal?.puntos || '—'} puntos por franja</dd></dl>
       <div class="callout" style="margin:0">Prueba de eficacia en la parcela del productor: no es un ensayo experimental. Para generalizar el resultado, repetila en varias chacras (se suman como “otras chacras”).</div></div>` : `<div class="card"><h3>Diseño</h3><dl class="kv"><dt>Diseño</dt><dd>Bloques completos al azar</dd><dt>Parcelas</dt><dd>${t} tratamientos × ${b} bloques = ${t * b}</dd>
       <dt>Parcela</dt><dd>${esc(parc)} · ${fmt(pa.area_m2, 1)} m² (útil ${fmt(pa.area_util_m2, 1)} m²)</dd><dt>gl del error</dt><dd>${gl}</dd>${T.cortes ? `<dt>Cortes</dt><dd>${T.cortes.length ? T.cortes.length + ' (' + T.cortes.map(c => fechaTxt(c.fecha)).join(', ') + ')' : 'Todavía sin cortes'}</dd>` : ''}</dl>
-      <div><span class="chip ${gl >= 12 ? 'ok' : 'warn'}">${gl >= 12 ? '✓' : '!'}</span> ${gl >= 12 ? 'Cumple el mínimo recomendado de 12 gl' : 'Menos de 12 gl: conviene sumar bloques'}</div>
+      ${(() => { const gm = glMin(T.tipo, T.rubro), bm = tipoDef(T.rubro, T.tipo)?.bloques_min || 0, ok = gl >= gm && b >= bm; return `<div><span class="chip ${ok ? 'ok' : 'warn'}">${ok ? '✓' : '!'}</span> ${ok ? `Cumple el mínimo recomendado (${gm} gl${bm ? `, ${bm} bloques` : ''})` : `${gl < gm ? `Menos de ${gm} gl` : ''}${gl < gm && b < bm ? ' y ' : ''}${b < bm ? `menos de ${bm} bloques` : ''}: conviene sumar bloques`}</div>`; })()}
+      ${T.posiciones?.length ? `<div><span class="chip neu">i</span> ${T.posiciones.length} posiciones de muestreo como subparcelas (parcelas divididas)</div>` : ''}
       <div><span class="chip ${T.tratamientos.some(x => x.testigo) ? 'ok' : 'warn'}">${T.tratamientos.some(x => x.testigo) ? '✓' : '!'}</span> ${T.tratamientos.some(x => x.testigo) ? 'Incluye testigo' : 'Falta definir el testigo'}</div></div>`}</div>
-    <div class="card"><h3>Mediciones del ensayo</h3><div class="row">${vis(T).map(v => `<span class="chip ${v.origen === 'dron' ? 'dron' : v.propio ? 'hypo' : 'neu'}">${esc(v.nombre)}</span>`).join('')}</div>
+    ${esLal(T) ? '' : `<div class="grid2">${fichaCard(T)}${fichaTipoHtml(T.rubro, T.tipo, T.cultivo, false)}</div>`}
+    <div class="card"><h3>Mediciones del ensayo</h3><div class="row">${vis(T).filter(esPrimera).map(v => `<span class="chip ${v.origen === 'dron' ? 'dron' : v.propio ? 'hypo' : 'neu'}">${esc(nomBase(T, v))}</span>`).join('')}</div>
       <p class="note" style="margin:0">Se definen en el paso “Mediciones”: cada una tiene su forma de medir.</p></div>
     <div class="card"><h3>Opciones del ensayo</h3>
       <label class="opchk"><input type="checkbox" id="op-dron" ${T.dron ? 'checked' : ''} ${puede.diseno(T) ? '' : 'disabled'}><span><b>Usar imágenes multiespectrales del dron</b><br><span class="note">${T.dron ? 'Activado: se suman las mediciones del dron (índices por parcela). Se cargan desde un CSV de QGIS en “Carga de datos → Importar”.' : 'Desactivado: el ensayo se centra en las mediciones de campo y en las aplicaciones. Para una foto aérea común del dron no hace falta activarlo: se carga en el paso del croquis y se recorta por bloque.'}</span></span></label></div>
@@ -1305,7 +1462,10 @@ RENDER.plan = T => {
   const fd = $('#f-datos'); if (fd) fd.onsubmit = e => { e.preventDefault(); const f = new FormData(fd);
     ['cultivo', 'tipo', 'lugar', 'campana', 'objetivo'].forEach(k => { const v = String(f.get(k) || '').trim(); if (v !== (T[k] || '')) { T.cambios.unshift({fecha: ahora(), usuario: S.user.id, parcela: '—', variable: 'Datos: ' + k, antes: T[k] || null, despues: v, estado: 'aprobado'}); T[k] = v; } });
     toast('Datos guardados'); abrir(T, 'plan'); };
-  P().onchange = e => { if (e.target.dataset.fotoIn != null) return subirFotos(e.target, T, null); if (e.target.id !== 'op-dron') return; T.dron = e.target.checked;
+  P().onchange = e => { if (e.target.dataset.fotoIn != null) return subirFotos(e.target, T, null);
+    const fc = e.target.dataset.ficha; if (fc) { const def = RUBD[T.rubro].ficha.find(x => x.id === fc), v = def?.tipo === 'numero' ? (e.target.value === '' ? null : +e.target.value) : e.target.value.trim(); T.ficha = T.ficha || {};
+      if ((T.ficha[fc] ?? '') !== (v ?? '')) { T.cambios.unshift({fecha: ahora(), usuario: S.user.id, parcela: '—', variable: 'Ficha: ' + (def?.campo || fc), antes: T.ficha[fc] ?? null, despues: v, estado: 'aprobado'}); T.ficha[fc] = v; if (fc === 'plantacion' || fc === 'ff') recalc(T); toast('Ficha guardada'); } return; }
+    if (e.target.id !== 'op-dron') return; T.dron = e.target.checked;
     if (T.dron && !T.variables.some(v => v.origen === 'dron')) MET[T.rubro].filter(m => m.origen === 'dron').slice(0, 2).forEach(m => T.variables.push(structuredClone(m)));
     T.cambios.unshift({fecha: ahora(), usuario: S.user.id, parcela: '—', variable: 'Imágenes de dron', antes: T.dron ? 'No' : 'Sí', despues: T.dron ? 'Sí' : 'No', estado: 'aprobado'});
     mapa.reset(); $('#e-leyenda').innerHTML = T.imagen && T.dron ? '<span class="chip hypo">● Dato hipotético</span><span class="chip dron">● Medido del dron</span>' : '';
@@ -1381,6 +1541,13 @@ RENDER.trat = T => {
 /* ---------- 3 aplicaciones y manejo ---------- */
 const TIPOS_APL = ['Aplicación de tratamientos', 'Siembra o plantación', 'Fertilización', 'Control de malezas', 'Control de plagas', 'Fungicida', 'Riego', 'Raleo o poda', 'Corte de forraje', 'Pastoreo', 'Cosecha', 'Otra labor'];
 const PULVERIZA = ['Aplicación de tratamientos', 'Control de malezas', 'Control de plagas', 'Fungicida'];
+// Labores que corresponden a cada rubro (las que no aplican no se muestran)
+const APL_RUBRO = {
+  agricola: ['Aplicación de tratamientos', 'Siembra o plantación', 'Tratamiento de semillas', 'Fertilización', 'Control de malezas', 'Control de plagas', 'Fungicida', 'Riego', 'Cosecha', 'Otra labor'],
+  horticola: ['Aplicación de tratamientos', 'Siembra o plantación', 'Fertilización', 'Control de malezas', 'Control de plagas', 'Fungicida', 'Riego', 'Raleo o poda', 'Cosecha', 'Otra labor'],
+  forestal: ['Aplicación de tratamientos', 'Siembra o plantación', 'Replante', 'Fertilización', 'Control de malezas', 'Control de hormigas', 'Control de plagas', 'Fungicida', 'Riego', 'Raleo o poda', 'Cosecha', 'Otra labor'],
+  pasturas: ['Aplicación de tratamientos', 'Siembra o plantación', 'Fertilización', 'Control de malezas', 'Control de plagas', 'Riego', 'Corte de forraje', 'Pastoreo', 'Otra labor'],
+  silvopastoril: ['Aplicación de tratamientos', 'Siembra o plantación', 'Replante', 'Fertilización', 'Control de malezas', 'Control de hormigas', 'Control de plagas', 'Raleo o poda', 'Corte de forraje', 'Pastoreo', 'Otra labor']};
 const dias = f => Math.round((Date.parse(HOY) - Date.parse(f)) / 86400000);
 
 const MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
@@ -1417,7 +1584,7 @@ RENDER.aplic = T => {
         : `<button class="btn small" data-realizar="${a.id}" style="justify-self:start">Registrar como realizada</button>`) : ''}</div></div>`; };
   const resp = [T.owner, ...Object.keys(T.trabajo || {}), ...(T.sitios || []).flatMap(x => x.ops || [])].filter((x, i, arr) => USERS[x] && arr.indexOf(x) === i);
   const form = ed && aplForm ? `<div class="card" id="apl-form"><h3>Nueva aplicación o tarea</h3><div class="grid3">
-      <label class="f">Tipo<select id="af-tipo">${TIPOS_APL.map(t => `<option>${t}</option>`).join('')}</select></label>
+      <label class="f">Tipo<select id="af-tipo">${(APL_RUBRO[T.rubro] || TIPOS_APL).map(t => `<option>${t}</option>`).join('')}</select></label>
       <label class="f">Fecha<input type="date" id="af-fecha" value="${HOY}"></label>
       <label class="f">Momento o estadio<input type="text" id="af-estadio" placeholder="Ej.: V6, floración, 24 meses"></label>
       ${T.sitios ? `<label class="f">Lugar<select id="af-sitio">${T.sitios.map(x => `<option value="${x.id}" ${S.sitio === x.id ? 'selected' : ''}>${esc(x.nombre)}</option>`).join('')}<option value="todos">Todos los lugares</option></select></label>` : ''}
@@ -1836,20 +2003,24 @@ RENDER.campo = T => {
 /* ---------- 4 mediciones (variables y métodos) ---------- */
 let medirAbierto = null;
 RENDER.medir = T => {
-  const ed = puede.diseno(T), disponibles = [...MET[T.rubro], ...CUSTOM.filter(c => c.rubro === T.rubro)].filter(m => !T.variables.some(v => v.id === m.id) && !(T.porCorte || []).includes(m.id) && (T.dron || m.origen !== 'dron'));
+  const ed = puede.diseno(T), disponibles = [...MET[T.rubro], ...CUSTOM.filter(c => c.rubro === T.rubro)].filter(m => !T.variables.some(v => v.id === m.id) && !(T.porCorte || []).includes(m.id) && !(T.porPos || []).includes(m.id) && (T.dron || m.origen !== 'dron'));
   P().innerHTML = `<section class="panel"><h2>Mediciones</h2>
     <p class="lead">Qué se mide en este ensayo y cómo. Cada medición trae su método precargado; ${ed ? 'podés elegir otro método, escribir el tuyo o crear un indicador propio.' : 'el método lo define el responsable del ensayo.'}</p>
     ${T.cortes ? cortesCard(T, ed) : ''}
-    <div class="card">${vis(T).filter(v => !v.corte || v.corte === 1).map(v => `<div class="varc"><div><b>${esc(v.corte ? v.nombre.replace(/ · corte \d+$/, '') : v.nombre)}</b> ${v.unidad ? `<span class="note">(${esc(v.unidad)})</span>` : ''} ${v.origen === 'dron' ? '<span class="chip dron">dron</span>' : ''}${v.corte ? `<span class="chip acc">en cada corte (${T.cortes.length})</span>` : ''}${v.origen === 'calc' ? '<span class="chip neu">se calcula sola</span>' : ''}${v.propio ? '<span class="chip hypo">indicador propio</span>' : ''}
-        <div class="note">${v.origen === 'calc' ? 'Se calcula a partir de los cortes · no se carga' : v.tipo === 'escala' ? 'Escala ' + esc((v.escala || []).length ? v.escala[0] + ' … ' + v.escala[v.escala.length - 1] : '') : v.tipo === 'texto' ? 'Observación escrita' : `${v.tipo === 'porcentaje' ? 'Porcentaje' : v.tipo === 'conteo' ? 'Conteo' : 'Número'} · rango ${v.min ?? '—'} a ${v.max ?? '—'}`} · ${v.entrada === 'ms' ? `calculadora de materia seca (${T.parcela.marcos || 2} marcos de ${T.parcela.marco || 0.25} m²)` : v.entrada === 'rend13' ? 'calculadora de rendimiento a 13 % de humedad' : v.sub > 1 ? v.sub + ' submuestras por parcela (se promedian)' : '1 valor por parcela'}${v.momento && !v.corte ? ' · ' + esc(v.momento) : ''}</div></div>
-        <div class="row">${ed && v.origen !== 'calc' ? `<button class="btn small" data-editm="${v.id}">${medirAbierto === v.id ? 'Cerrar' : 'Cambiar método'}</button><button class="btn small" data-quitar="${v.id}">Quitar</button>` : ''}</div>
-        <div class="met"><b style="color:var(--ink)">Cómo se mide:</b> ${esc(v.metodo)}${v.ref ? ` <span class="note">· Fuente: ${esc(refTxt(v.ref))}</span>` : ''}</div>
+    ${T.posiciones?.length ? posCard(T, ed) : ''}
+    <div class="card">${vis(T).filter(esPrimera).map(v => `<div class="varc"><div><b>${esc(nomBase(T, v))}</b> ${v.unidad ? `<span class="note">(${esc(v.unidad)})</span>` : ''} ${v.origen === 'dron' ? '<span class="chip dron">dron</span>' : ''}${v.corte || v.pos ? `<span class="chip acc">${repTxt(T, v)}</span>` : ''}${v.origen === 'calc' ? '<span class="chip neu">se calcula sola</span>' : ''}${v.propio ? '<span class="chip hypo">indicador propio</span>' : ''}
+        <div class="note">${v.calc === 'deriv' ? 'Se calcula sola con ' + derivTxt(v) + ' · no se carga' : v.origen === 'calc' ? 'Se calcula a partir de los cortes · no se carga' : v.tipo === 'escala' ? 'Escala ' + esc((v.escala || []).length ? v.escala[0] + ' … ' + v.escala[v.escala.length - 1] : '') : v.tipo === 'texto' ? 'Observación escrita' : `${v.tipo === 'porcentaje' ? 'Porcentaje' : v.tipo === 'conteo' ? 'Conteo' : 'Número'} · rango ${v.min ?? '—'} a ${v.max ?? '—'}`} · ${v.entrada === 'ms' ? `calculadora de materia seca (${T.parcela.marcos || 2} marcos de ${T.parcela.marco || 0.25} m²)` : v.entrada === 'rend' || v.entrada === 'rend13' ? `calculadora de rendimiento a ${humBase(T)} % de humedad` : v.sub > 1 ? v.sub + ' submuestras por parcela (se promedian)' : '1 valor por parcela'}${v.momento && !v.corte ? ' · ' + esc(v.momento) : ''}</div></div>
+        <div class="row">${ed && v.origen !== 'calc' ? `<button class="btn small" data-editm="${v.id}">${medirAbierto === v.id ? 'Cerrar' : 'Cambiar método'}</button><button class="btn small" data-quitar="${v.id}">Quitar</button>` : ed && v.calc === 'deriv' ? `<button class="btn small" data-quitar="${v.id}">Quitar</button>` : ''}</div>
+        <div class="met"><b style="color:var(--ink)">Cómo se mide:</b> ${esc(v.metodo)}${v.ref || v.fuente ? ` <span class="note">· Fuente: ${esc([refTxt(v.ref), v.fuente].filter(Boolean).join('; '))}</span>` : ''}</div>
         ${medirAbierto === v.id ? `<div class="met" style="display:grid;gap:8px">${(ALTERNATIVAS[v.id] || []).length ? `<label class="f">Métodos disponibles<select data-alt="${v.id}">${ALTERNATIVAS[v.id].map(a => `<option ${a === v.metodo ? 'selected' : ''}>${esc(a)}</option>`).join('')}</select></label>` : ''}
           <label class="f">O escribí tu método<textarea data-mtxt="${v.id}">${esc(v.metodo)}</textarea></label>
           <div class="row"><label class="f">Submuestras por parcela<input type="number" min="1" max="30" data-msub="${v.id}" value="${v.sub}"></label><label class="f">Momento de evaluación<input type="text" data-mmom="${v.id}" value="${esc(v.momento || '')}" placeholder="Ej.: 21 DDA, R6, 12 meses"></label></div>
           <button class="btn small primary" data-guardarm="${v.id}" style="justify-self:start">Guardar método</button></div>` : ''}</div>`).join('') || '<p class="note">Todavía no hay mediciones.</p>'}</div>
     ${ed ? `<div class="grid2"><div class="card"><h3>Agregar desde el catálogo de ${RUBROS[T.rubro].nombre.toLowerCase()}</h3>
-        ${disponibles.length ? disponibles.map(m => `<div class="varc"><div><b>${esc(m.nombre)}</b> ${m.unidad ? `<span class="note">(${esc(m.unidad)})</span>` : ''}${m.propio ? ' <span class="chip hypo">propio</span>' : ''}</div><button class="btn small" data-agregar="${m.id}">Agregar</button><div class="met">${esc(m.metodo)}</div></div>`).join('') : '<p class="note">Ya usás todas las mediciones del catálogo.</p>'}</div>
+        ${(() => { const td = tipoDef(T.rubro, T.tipo), sug = new Set(td?.variables || []), item = m => `<div class="varc"><div><b>${esc(m.nombre)}</b> ${m.unidad ? `<span class="note">(${esc(m.unidad)})</span>` : ''}${m.propio ? ' <span class="chip hypo">propio</span>' : ''}${sug.has(m.id) ? ' <span class="chip ok">sugerida</span>' : ''}${m.porPosicion && T.posiciones?.length ? ' <span class="chip acc">por posición</span>' : ''}</div><button class="btn small" data-agregar="${m.id}">Agregar</button><div class="met">${esc(m.metodo)}${m.momento ? ' <b>Cuándo:</b> ' + esc(m.momento) : ''}</div></div>`;
+          const va = disponibles.filter(m => vaEnCultivo(m, T.rubro, T.cultivo)).sort((a, b) => sug.has(b.id) - sug.has(a.id)), no = disponibles.filter(m => !vaEnCultivo(m, T.rubro, T.cultivo));
+          return (va.length ? `<p class="note" style="margin:0">Para ${esc(T.cultivo)}${td ? ', primero las sugeridas para ' + esc(td.n.toLowerCase()) : ''}.</p>${va.map(item).join('')}` : '<p class="note">Ya usás todas las mediciones del catálogo para este cultivo.</p>')
+            + (no.length ? `<details><summary class="note" style="cursor:pointer">Mediciones de otros cultivos del rubro (${no.length})</summary>${no.map(item).join('')}</details>` : ''); })()}</div>
       <form class="card" id="f-indic"><h3>Crear un indicador propio</h3>
         <div class="grid2"><label class="f">Nombre<input type="text" id="ci-nombre" required placeholder="Ej.: Vigor visual"></label><label class="f">Unidad<input type="text" id="ci-unidad" placeholder="Ej.: nota, cm, %"></label></div>
         <div class="grid2"><label class="f">Tipo<select id="ci-tipo"><option value="numero">Número</option><option value="porcentaje">Porcentaje</option><option value="conteo">Conteo</option><option value="escala">Escala de notas</option><option value="texto">Observación escrita</option></select></label>
@@ -1863,11 +2034,14 @@ RENDER.medir = T => {
   panel.onclick = e => {
     const q = e.target.closest('[data-quitar]'), a = e.target.closest('[data-agregar]'), em = e.target.closest('[data-editm]'), gm = e.target.closest('[data-guardarm]');
     if (e.target.closest('#btn-corte')) { if (agregarCorte(T)) RENDER.medir(T); return; }
+    if (e.target.closest('#btn-pos-add')) { T.posiciones.push(`Posición ${T.posiciones.length + 1}`); T.posPeso = null; armarCortes(T); RENDER.medir(T); return; }
+    if (e.target.closest('#btn-pos-guardar')) { if (guardarPos(T, panel)) RENDER.medir(T); return; }
     if (q) { const v = T.variables.find(x => x.id === q.dataset.quitar);
-      if (v?.base) { T.porCorte = T.porCorte.filter(b => b !== v.base); T.variables = T.variables.filter(x => x.base !== v.base); armarCortes(T); } else T.variables = T.variables.filter(x => x.id !== q.dataset.quitar); RENDER.medir(T); }
+      if (v?.base) { T.porCorte = (T.porCorte || []).filter(b => b !== v.base); T.porPos = (T.porPos || []).filter(b => b !== v.base); T.variables = T.variables.filter(x => x.base !== v.base); armarCortes(T); } else { T.variables = T.variables.filter(x => x.id !== q.dataset.quitar); recalc(T); } RENDER.medir(T); }
     if (a) { const m = [...MET[T.rubro], ...CUSTOM].find(x => x.id === a.dataset.agregar);
-      if (m.porCorte && T.cortes) { T.porCorte.push(m.id); armarCortes(T); toast(`${m.nombre} agregada a ${T.cortes.length ? 'cada corte' : 'los próximos cortes'}`); }
-      else { T.variables.push(structuredClone(m)); toast(`${m.nombre} agregada`); } RENDER.medir(T); }
+      if ((m.porCorte && T.cortes) || (m.porPosicion && T.posiciones?.length)) { if (m.porCorte && T.cortes) (T.porCorte = T.porCorte || []).push(m.id); if (m.porPosicion && T.posiciones?.length) (T.porPos = T.porPos || []).push(m.id); armarCortes(T);
+        toast(`${m.nombre} agregada${m.porPosicion && T.posiciones?.length ? ' en cada posición' : ''}${m.porCorte && T.cortes ? (T.cortes.length ? ' y en cada corte' : ' a los próximos cortes') : ''}`); }
+      else { T.variables.push(structuredClone(m)); recalc(T); toast(`${m.nombre} agregada`); } RENDER.medir(T); }
     if (em) { medirAbierto = medirAbierto === em.dataset.editm ? null : em.dataset.editm; RENDER.medir(T); }
     if (gm) { const v = T.variables.find(x => x.id === gm.dataset.guardarm), met = panel.querySelector(`[data-mtxt="${v.id}"]`).value.trim() || v.metodo, sub = Math.max(1, +panel.querySelector(`[data-msub="${v.id}"]`).value || 1);
       (v.base ? T.variables.filter(x => x.base === v.base) : [v]).forEach(x => { x.metodo = met; if (!x.entrada) x.sub = sub; });
@@ -2002,20 +2176,22 @@ function listaNotas(T, notas) {
 /* ---------- 7 análisis ---------- */
 let varAnal = null;
 RENDER.anal = T => {
-  const num = vis(T).filter(v => v.tipo !== 'texto'); if (!num.find(v => v.id === varAnal)) varAnal = num[0]?.id;
-  P().innerHTML = `<section class="panel"><h2>Análisis</h2>${T.cortes?.length >= 2 ? graficoCortes(T) : ''}<div class="card row"><label class="f">Variable<select id="var-anal">${num.map(v => `<option value="${v.id}" ${v.id === varAnal ? 'selected' : ''}>${esc(v.nombre)}</option>`).join('')}</select></label><span id="var-est"></span></div><div id="anal-body"></div></section>`;
+  const num = vis(T).filter(v => v.tipo !== 'texto'), pp = gruposPos(T, num);
+  if (!num.find(v => v.id === varAnal) && !pp.find(g => g.id === varAnal)) varAnal = pp[0]?.id || num[0]?.id;
+  P().innerHTML = `<section class="panel"><h2>Análisis</h2>${T.cortes?.length >= 2 ? graficoCortes(T) : ''}<div class="card row"><label class="f">Variable<select id="var-anal">${pp.length ? `<optgroup label="Por posición (parcelas divididas)">${pp.map(g => `<option value="${g.id}" ${g.id === varAnal ? 'selected' : ''}>${esc(g.nombre)}</option>`).join('')}</optgroup><optgroup label="Cada variable por separado">` : ''}${num.map(v => `<option value="${v.id}" ${v.id === varAnal ? 'selected' : ''}>${esc(v.nombre)}</option>`).join('')}${pp.length ? '</optgroup>' : ''}</select></label><span id="var-est"></span></div><div id="anal-body"></div></section>`;
   $('#var-anal').onchange = e => { varAnal = e.target.value; RENDER.anal(T); };
   hoverCortes(T);
+  const g = pp.find(x => x.id === varAnal); if (g) { $('#anal-body').innerHTML = analPosHtml(T, g); return; }
   const v = num.find(x => x.id === varAnal); if (!v) { $('#anal-body').innerHTML = '<div class="card"><p class="note">Agregá mediciones en el paso “Mediciones”.</p></div>'; return; }
-  const falta = T.parcelas.filter(p => p.valores[v.id] == null || p.valores[v.id] === '');
+  const {ps: PS, excl} = parcelasAnal(T, v), falta = PS.filter(p => p.valores[v.id] == null || p.valores[v.id] === '');
   const C = colTrat(T), hip = T.imagen && T.dron && ['rendimiento', 'severidad'].includes(v.id);
   $('#var-est').innerHTML = v.origen === 'dron' ? '<span class="chip dron">Medido del dron</span>' : hip ? '<span class="chip hypo">Dato hipotético</span>' : '';
   if (falta.length) { $('#anal-body').innerHTML = `<div class="callout warn">Faltan ${falta.length} de ${T.parcelas.length} parcelas por cargar (${falta.slice(0, 12).map(p => p.parcela).join(', ')}${falta.length > 12 ? '…' : ''}). El análisis de varianza se calcula cuando todas las parcelas tienen dato.</div>`; return; }
-  const R = anovaDBCA(T.parcelas.map(p => ({y: +p.valores[v.id], trat: p.trat, bloque: p.bloque}))), tk = tukey(R.medias, R.cme, R.gle, R.r), ptr = R.tabla[1].p, dec = v.dec ?? 2;
-  const orden = Object.keys(tk.letras), test = T.tratamientos.find(t => t.testigo)?.cod || orden[orden.length - 1], sig = p => p < 0.01 ? '**' : p < 0.05 ? '*' : 'ns';
+  const R = anovaDBCA(PS.map(p => ({y: +p.valores[v.id], trat: p.trat, bloque: p.bloque}))), tk = tukey(R.medias, R.cme, R.gle, R.r), ptr = R.tabla[1].p, dec = v.dec ?? 2;
+  const orden = Object.keys(tk.letras), test = T.tratamientos.find(t => t.testigo && R.medias[t.cod] != null)?.cod || orden[orden.length - 1], sig = p => p < 0.01 ? '**' : p < 0.05 ? '*' : 'ns';
   const vals = orden.map(k => R.medias[k]), lo = Math.min(0, ...vals), hi = Math.max(...vals) * 1.12 || 1, Wv = 520, Hv = 210, m = {l: 48, r: 10, t: 18, b: 28}, bw = (Wv - m.l - m.r) / orden.length;
   const ys = x => m.t + (Hv - m.t - m.b) * (1 - (x - lo) / (hi - lo)), ticks = [0, .25, .5, .75, 1].map(f => lo + (hi - lo) * f);
-  const menor = /sev|incid|descarte|hormig|chinch|defol|ewrc|saliv|ninfa|maleza/.test(v.id + v.nombre.toLowerCase());
+  const menor = menorEsMejor(v), abb = menor && usaAbbott(T);
   const top = menor ? orden[orden.length - 1] : orden[0], iguales = orden.filter(k => k !== top && [...tk.letras[k]].some(c => tk.letras[top].includes(c)));
   const txt = ptr < 0.05 ? `Se detectaron diferencias ${ptr < 0.01 ? 'altamente significativas' : 'significativas'} entre tratamientos (F = ${fmt(R.tabla[1].F, 2)}; p ${ptr < 0.001 ? '< 0,001' : '= ' + fmt(ptr, 3)}). CV ${fmt(R.cv, 1)} % (${interpretarCV(R.cv)}). ${top} (${esc(tratNom(T, top))}) obtuvo el ${menor ? 'menor' : 'mayor'} valor (${fmt(R.medias[top], dec)} ${esc(v.unidad)})${iguales.length ? `, sin diferir de ${iguales.join(', ')}` : ''} según Tukey (α = 0,05).`
     : `No se detectaron diferencias significativas entre tratamientos (F = ${fmt(R.tabla[1].F, 2)}; p = ${fmt(ptr, 3)}). CV ${fmt(R.cv, 1)} %.${v.origen === 'dron' && T.imagen ? ' Esperable en el ejemplo: los tratamientos son hipotéticos y el índice refleja la variación real del lote.' : ''}`;
@@ -2024,13 +2200,44 @@ RENDER.anal = T => {
     <p class="note" style="margin:0">Media ${fmt(R.media, dec)} ${esc(v.unidad)} · CV ${fmt(R.cv, 1)} % · HSD ${fmt(tk.hsd, dec)}</p></div>
     <div class="card"><h3>Medias y Tukey (α = 0,05)</h3><div class="bars"><svg viewBox="0 0 ${Wv} ${Hv}" role="img" aria-label="Medias por tratamiento">${ticks.map(t => `<line x1="${m.l}" x2="${Wv - m.r}" y1="${ys(t)}" y2="${ys(t)}" stroke="var(--line)"/><text x="${m.l - 6}" y="${ys(t) + 4}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="JetBrains Mono, monospace">${fmt(t, dec >= 3 ? 2 : Math.abs(hi) >= 100 ? 0 : 1)}</text>`).join('')}
       ${orden.map((k, i) => { const x = m.l + i * bw + bw * .18, w = bw * .64, y = ys(R.medias[k]); return `<rect x="${x}" y="${y}" width="${w}" height="${Math.max(0, ys(lo) - y)}" rx="3" fill="${C[k]}"/><text x="${x + w / 2}" y="${y - 5}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--ink)">${ptr < 0.05 ? tk.letras[k] : ''}</text><text x="${x + w / 2}" y="${Hv - 10}" text-anchor="middle" font-size="11" fill="var(--muted)">${k}</text>`; }).join('')}</svg></div>
-    <div class="tw"><table><thead><tr><th>Trat.</th><th>Descripción</th><th class="num">Media</th><th>Tukey</th><th class="num">${menor ? 'Control (Abbott)' : 'vs testigo'}</th></tr></thead><tbody>${orden.map(k => `<tr><td><span class="swatch" style="background:${C[k]}"></span> ${k}</td><td>${esc(tratNom(T, k))}</td><td class="num">${fmt(R.medias[k], dec)}</td><td><b>${ptr < 0.05 ? tk.letras[k] : '—'}</b></td><td class="num">${k === test ? '—' : menor ? fmt((1 - R.medias[k] / (R.medias[test] || 1)) * 100, 1) + ' %' : (R.medias[k] >= R.medias[test] ? '+' : '') + fmt((R.medias[k] - R.medias[test]) / Math.abs(R.medias[test] || 1) * 100, 1) + ' %'}</td></tr>`).join('')}</tbody></table></div></div></div>
-    <div class="callout"><b>Lectura automática.</b> ${txt}${menor && ptr < 0.05 ? ` Control respecto del testigo (Abbott): ${orden.filter(k => k !== test).map(k => `${k} ${fmt((1 - R.medias[k] / (R.medias[test] || 1)) * 100, 0)} %`).join(', ')}.` : ''}</div>`;
+    <div class="tw"><table><thead><tr><th>Trat.</th><th>Descripción</th><th class="num">Media</th><th>Tukey</th><th class="num">${abb ? 'Control (Abbott)' : 'vs testigo'}</th></tr></thead><tbody>${orden.map(k => `<tr><td><span class="swatch" style="background:${C[k]}"></span> ${k}</td><td>${esc(tratNom(T, k))}</td><td class="num">${fmt(R.medias[k], dec)}</td><td><b>${ptr < 0.05 ? tk.letras[k] : '—'}</b></td><td class="num">${k === test ? '—' : abb ? fmt((1 - R.medias[k] / (R.medias[test] || 1)) * 100, 1) + ' %' : (R.medias[k] >= R.medias[test] ? '+' : '') + fmt((R.medias[k] - R.medias[test]) / Math.abs(R.medias[test] || 1) * 100, 1) + ' %'}</td></tr>`).join('')}</tbody></table></div></div></div>
+    <div class="callout"><b>Lectura automática.</b> ${excl.length ? `No entra al análisis ${excl.length > 1 ? 'los tratamientos' : 'el tratamiento'} ${excl.join(', ')} porque no tiene${excl.length > 1 ? 'n' : ''} esta medición (por ejemplo, árboles en el testigo a pleno sol). ` : ''}${txt}${abb && ptr < 0.05 ? ` Control respecto del testigo (Abbott): ${orden.filter(k => k !== test).map(k => `${k} ${fmt((1 - R.medias[k] / (R.medias[test] || 1)) * 100, 0)} %`).join(', ')}.` : ''}</div>`;
 };
 
+/* silvopastoril: análisis por posición (parcelas divididas) */
+// Grupos de variables repetidas por posición: misma base y mismo corte
+function gruposPos(T, vars) { if (!T.posiciones?.length) return [];
+  return vars.filter(v => v.pos === 1 && v.base).map(v => { const vs = vars.filter(x => x.base === v.base && (x.corte || 0) === (v.corte || 0) && x.pos).sort((a, b) => a.pos - b.pos);
+    return {id: `pp:${v.base}|${v.corte || 0}`, base: v.base, corte: v.corte || 0, vars: vs, v, nombre: `${nomBase(T, v)}${v.corte ? ' · corte ' + v.corte : ''} · por posición`}; }); }
+function calcPos(T, g) {
+  const falta = T.parcelas.filter(p => g.vars.some(v => p.valores[v.id] == null || p.valores[v.id] === ''));
+  if (falta.length) return {falta};
+  const datos = T.parcelas.flatMap(p => g.vars.map(v => ({y: +p.valores[v.id], trat: p.trat, bloque: p.bloque, pos: v.pos})));
+  const R = anovaParcelasDivididas(datos), w = pesosPos(T);
+  const tkA = tukey(R.mediasA, R.cmea, R.gea, R.nb * R.np), tkP = tukey(Object.fromEntries(Object.entries(R.mediasP).map(([k, x]) => [T.posiciones[k - 1] ? posCorta(T.posiciones[k - 1]) : k, x])), R.cmeb, R.geb, R.na * R.nb);
+  const pond = Object.fromEntries(T.tratamientos.map(t => [t.cod, g.vars.reduce((s, v, i) => s + (R.mediasAP[t.cod + '|' + v.pos] ?? 0) * (w[i] ?? 0), 0)]));
+  return {R, tkA, tkP, pond};
+}
+function analPosHtml(T, g) {
+  const c = calcPos(T, g), v = g.v, dec = v.dec ?? 2, C = colTrat(T), sig = p => p < 0.01 ? '**' : p < 0.05 ? '*' : 'ns', pf = p => p < 0.0001 ? '< 0,0001' : fmt(p, 4);
+  if (c.falta) return `<div class="callout warn">Faltan datos en ${c.falta.length} de ${T.parcelas.length} parcelas en alguna posición (${c.falta.slice(0, 12).map(p => p.parcela).join(', ')}${c.falta.length > 12 ? '…' : ''}). El análisis en parcelas divididas se calcula cuando todas las posiciones de todas las parcelas tienen dato.</div>`;
+  const {R, tkA, tkP, pond} = c, ordA = Object.keys(tkA.letras), nomP = k => posCorta(T.posiciones[k - 1]);
+  const lect = [`Tratamientos: ${R.pA < 0.05 ? `diferencias ${R.pA < 0.01 ? 'altamente ' : ''}significativas (p ${R.pA < 0.001 ? '< 0,001' : '= ' + fmt(R.pA, 3)}), probadas contra el error a` : `sin diferencias significativas (p = ${fmt(R.pA, 3)})`}.`,
+    `Posición: ${R.pP < 0.05 ? `${esc(nomBase(T, v))} cambia con la distancia a los árboles (p ${R.pP < 0.001 ? '< 0,001' : '= ' + fmt(R.pP, 3)})` : `sin diferencias entre posiciones (p = ${fmt(R.pP, 3)})`}.`,
+    R.pAP < 0.05 ? `La interacción A × P es significativa (p ${R.pAP < 0.001 ? '< 0,001' : '= ' + fmt(R.pAP, 3)}): el efecto del tratamiento depende de la posición, conviene comparar los tratamientos dentro de cada posición.` : `Sin interacción A × P (p = ${fmt(R.pAP, 3)}).`];
+  return `<div style="display:grid;gap:14px"><div class="card"><h3>Parcelas divididas: tratamiento × posición</h3><div class="tw"><table><thead><tr><th>Fuente</th><th class="num">gl</th><th class="num">SC</th><th class="num">CM</th><th class="num">F</th><th class="num">p</th></tr></thead><tbody>
+    ${R.tabla.map(f => `<tr><td>${f.fuente}</td><td class="num">${f.gl}</td><td class="num">${fmt(f.sc, dec + 1)}</td><td class="num">${f.cm != null ? fmt(f.cm, dec + 1) : ''}</td><td class="num">${f.F != null ? fmt(f.F, 2) : ''}</td><td class="num">${f.p != null ? pf(f.p) + ' ' + sig(f.p) : ''}</td></tr>`).join('')}</tbody></table></div>
+    <p class="note" style="margin:0">Media ${fmt(R.media, dec)} ${esc(v.unidad)} · CV (a) ${fmt(R.cva, 1)} % · CV (b) ${fmt(R.cvb, 1)} %. Tratamientos contra el error a; posición y A × P contra el error b. La posición no se sortea: si hay tendencia en el tiempo o autocorrelación, conviene confirmar con un modelo mixto.</p></div>
+    <div class="card"><h3>Medias por tratamiento y posición</h3><div class="tw"><table><thead><tr><th>Trat.</th>${g.vars.map(x => `<th class="num">${esc(nomP(x.pos))}</th>`).join('')}<th class="num">Media</th><th>Tukey</th><th class="num">Potrero (ponderado)</th></tr></thead><tbody>
+      ${ordA.map(k => `<tr><td title="${esc(tratNom(T, k))}"><span class="swatch" style="background:${C[k]}"></span> <b>${k}</b></td>${g.vars.map(x => `<td class="num">${fmt(R.mediasAP[k + '|' + x.pos], dec)}</td>`).join('')}<td class="num"><b>${fmt(R.mediasA[k], dec)}</b></td><td><b>${R.pA < 0.05 ? tkA.letras[k] : ''}</b></td><td class="num">${fmt(c.pond[k], dec)}</td></tr>`).join('')}
+      <tr><td><b>Media de la posición</b></td>${g.vars.map(x => `<td class="num"><b>${fmt(R.mediasP[x.pos], dec)}</b> ${R.pP < 0.05 ? tkP.letras[nomP(x.pos)] || '' : ''}</td>`).join('')}<td></td><td></td><td></td></tr></tbody></table></div>
+      <p class="note" style="margin:0">${ordA.map(k => `<b>${k}</b> ${esc(tratNom(T, k))}`).join(' · ')}</p>
+      <p class="note" style="margin:0">Letras distintas: diferencias por Tukey (α = 0,05). “Potrero (ponderado)” pesa cada posición por la parte del callejón que representa (se cambia en Mediciones → Posiciones de muestreo).</p></div></div>
+    <div class="callout"><b>Lectura automática.</b> ${lect.join(' ')}</div>`;
+}
 /* producción por corte (pasturas): una línea por tratamiento, mismo color que en el croquis */
 function mediasCorte(T) {
-  return T.tratamientos.map(t => ({t, m: T.cortes.map(c => { const xs = T.parcelas.filter(p => p.trat === t.cod).map(p => p.valores['ms_c' + c.n]).filter(x => x != null && x !== '');
+  return T.tratamientos.map(t => ({t, m: T.cortes.map(c => { const xs = T.parcelas.filter(p => p.trat === t.cod).map(p => { const v = p.valores['ms_c' + c.n]; if (v != null && v !== '') return v; const ps = (T.posiciones || []).map((_, k) => p.valores[`ms_c${c.n}_p${k + 1}`]).filter(x => x != null && x !== ''); return ps.length ? ps.reduce((a, x) => a + +x, 0) / ps.length : null; }).filter(x => x != null && x !== '');
     return xs.length ? xs.reduce((a, x) => a + +x, 0) / xs.length : null; })}));
 }
 function graficoCortes(T) {
@@ -2098,23 +2305,28 @@ function analCombinado(T) {
 { const as = RENDER.anal; RENDER.anal = T0 => { const T = S.T || T0; if (esLal(T)) return analLal(T); if (!T.sitios) return as(T); if (S.sitio && S.sitio !== 'todos') { as(vistaS(T)); const h = P().querySelector('h2'); if (h) h.textContent = `Análisis · ${nomSitio(T, S.sitio)}`; return; } analCombinado(T); }; }
 
 /* ---------- 8 exportar ---------- */
+// Parcelas que entran al análisis: si un tratamiento entero no tiene la medición (p. ej. árboles en el testigo a pleno sol), se deja afuera
+function parcelasAnal(T, v) { const sin = x => x == null || x === '' || isNaN(+x);
+  const excl = T.tratamientos.filter(t => { const ps = T.parcelas.filter(p => p.trat === t.cod); return ps.length && ps.every(p => sin(p.valores[v.id])); }).map(t => t.cod);
+  const ok = T.tratamientos.length - excl.length >= 2 ? excl : [];
+  return {ps: T.parcelas.filter(p => !ok.includes(p.trat)), excl: ok}; }
 function analizar(T, v) {
-  const falta = T.parcelas.filter(p => p.valores[v.id] == null || p.valores[v.id] === '' || isNaN(+p.valores[v.id]));
+  const {ps, excl} = parcelasAnal(T, v), falta = ps.filter(p => p.valores[v.id] == null || p.valores[v.id] === '' || isNaN(+p.valores[v.id]));
   if (falta.length) return {ok: false, falta};
-  const R = anovaDBCA(T.parcelas.map(p => ({y: +p.valores[v.id], trat: p.trat, bloque: p.bloque})));
+  const R = anovaDBCA(ps.map(p => ({y: +p.valores[v.id], trat: p.trat, bloque: p.bloque})));
   if (!R || !isFinite(R.cme) || R.cme <= 0) return {ok: false, falta: [], sinVar: true};
-  const tk = tukey(R.medias, R.cme, R.gle, R.r), ptr = R.tabla[1].p, orden = Object.keys(tk.letras), test = T.tratamientos.find(t => t.testigo)?.cod || orden[orden.length - 1];
-  const menor = /sev|incid|descarte|hormig|chinch|defol|ewrc|saliv|ninfa|maleza/.test(v.id + v.nombre.toLowerCase()), dec = v.dec ?? 2;
+  const tk = tukey(R.medias, R.cme, R.gle, R.r), ptr = R.tabla[1].p, orden = Object.keys(tk.letras), test = T.tratamientos.find(t => t.testigo && R.medias[t.cod] != null)?.cod || orden[orden.length - 1];
+  const menor = menorEsMejor(v), abb = menor && usaAbbott(T), dec = v.dec ?? 2;
   const top = menor ? orden[orden.length - 1] : orden[0], iguales = orden.filter(k => k !== top && [...tk.letras[k]].some(c => tk.letras[top].includes(c)));
   const txt = ptr < 0.05 ? `Se detectaron diferencias ${ptr < 0.01 ? 'altamente significativas' : 'significativas'} entre tratamientos (F = ${fmt(R.tabla[1].F, 2)}; p ${ptr < 0.001 ? '< 0,001' : '= ' + fmt(ptr, 3)}). CV ${fmt(R.cv, 1)} % (${interpretarCV(R.cv)}). ${top} (${tratNom(T, top)}) obtuvo el ${menor ? 'menor' : 'mayor'} valor (${fmt(R.medias[top], dec)} ${v.unidad})${iguales.length ? `, sin diferir de ${iguales.join(', ')}` : ''} según Tukey (α = 0,05).`
     : `No se detectaron diferencias significativas entre tratamientos (F = ${fmt(R.tabla[1].F, 2)}; p = ${fmt(ptr, 3)}). CV ${fmt(R.cv, 1)} % (${interpretarCV(R.cv)}).`;
-  const vsT = k => k === test ? '—' : menor ? fmt((1 - R.medias[k] / (R.medias[test] || 1)) * 100, 1) + ' %' : (R.medias[k] >= R.medias[test] ? '+' : '') + fmt((R.medias[k] - R.medias[test]) / Math.abs(R.medias[test] || 1) * 100, 1) + ' %';
-  return {ok: true, R, tk, ptr, orden, test, menor, txt, vsT, dec};
+  const vsT = k => k === test ? '—' : abb ? fmt((1 - R.medias[k] / (R.medias[test] || 1)) * 100, 1) + ' %' : (R.medias[k] >= R.medias[test] ? '+' : '') + fmt((R.medias[k] - R.medias[test]) / Math.abs(R.medias[test] || 1) * 100, 1) + ' %';
+  return {ok: true, R, tk, ptr, orden, test, menor, abb, txt, vsT, dec};
 }
 const nivelNota = (T, n) => n.nivel === 'parcela' ? 'Parcela ' + (T.sitios ? etiq(T, {parcela: +n.ref, sitio: sitioDe(T, +n.ref)?.id}) : n.ref) : n.nivel === 'bloque' ? (String(n.ref).includes('|') ? `Bloque ${String(n.ref).split('|')[1]} (${nomSitio(T, String(n.ref).split('|')[0])})` : 'Bloque ' + n.ref) : n.nivel === 'tratamiento' ? 'Tratamiento ' + n.ref : 'Ensayo';
 const aQue = a => a.trats === 'todos' ? 'Todo el ensayo' : a.trats.join(', ');
 const condTxt = c => c ? `${c.t ?? '—'} °C · HR ${c.hr ?? '—'} % · ${c.viento ?? '—'} km/h` : '';
-function valorTxt(v, x) { if (x == null || x === '') return ''; if (v.tipo === 'texto') return String(x); if (v.tipo === 'escala' && v.escala?.[x - 1]) return v.escala[x - 1]; return +x; }
+function valorTxt(v, x) { if (x == null || x === '') return ''; if (v.tipo === 'texto') return String(x); if (v.tipo === 'escala' && v.escala?.[x - (v.escMin ?? 1)]) return v.escala[x - (v.escMin ?? 1)]; return +x; }
 const esRed = T => !!T.sitios && !T.__vista;
 const apsDe = T => T.__vista ? T.aplicaciones.filter(a => !a.sitio || a.sitio === 'todos' || a.sitio === T.__vista) : T.aplicaciones;
 const notasDe = T => !T.__vista ? T.notas : T.notas.filter(n => n.nivel === 'parcela' ? T.parcelas.some(p => p.parcela == n.ref) : n.nivel === 'bloque' ? String(n.ref).startsWith(T.__vista + '|') : true);
@@ -2147,8 +2359,10 @@ async function bloquesInforme(T) {
   B.push({h1: '1. Objetivo'}, {p: T.objetivo || 'Completar el objetivo en Planificación → Editar datos.'});
   if (T.__vista) B.push({nota: `Informe del lugar ${nomSitio(T, T.__vista)} (${T.sitios.find(x => x.id === T.__vista)?.lugar || ''}), parte de una red de ${T.sitios.length} lugares.`});
   B.push({h1: '2. Materiales y métodos'}, {p: `${esRed(T) ? `Ensayo en red, repetido en ${T.sitios.length} lugares (${T.sitios.map(x => x.nombre + (x.lugar ? ' – ' + x.lugar : '')).join('; ')}). En cada lugar, diseño` : 'Diseño'} en bloques completos al azar con ${T.tratamientos.length} tratamientos y ${T.bloques} repeticiones (${T.parcelas.length} parcelas${esRed(T) ? ' en total' : ''}). Parcela: ${pa.texto || ''} (${fmt(pa.area_m2, 1)} m², útil ${fmt(pa.area_util_m2, 1)} m²). Tipo de ensayo: ${T.tipo}.${esRed(T) ? ' Los lugares se analizaron en conjunto con un ANAVA combinado (lugares al azar, bloques dentro de lugares) y cada lugar por separado.' : ''}${T.cortes?.length ? ` Se realizaron ${T.cortes.length} cortes de evaluación (${T.cortes.map(c => fechaTxt(c.fecha) + ', ' + c.dias + ' días').join('; ')}) después del corte de uniformización del ${fechaTxt(T.uniformizacion)}.` : ''}`});
+  { const ff = fichaFilas(T); if (ff.length) B.push({h2: 'Datos del sitio y del manejo'}, {tabla: {cab: ['Dato', 'Valor'], anchos: [3600, 5400], filas: ff}}); }
+  { const td = tipoDef(T.rubro, T.tipo); if (td?.normativa || td?.analisis) B.push({p: `${td.analisis ? 'Análisis previsto para este tipo de ensayo: ' + td.analisis.replace(/\.+$/, '') + '. ' : ''}${td.normativa ? 'Norma de referencia: ' + td.normativa : ''}`}); }
   B.push({h2: 'Tratamientos'}, {tabla: {cab: ['Trat.', 'Descripción', 'Producto', 'Reg. SENAVE', 'Dosis'], anchos: [800, 2800, 2600, 1200, 1700], filas: T.tratamientos.flatMap(t => (t.productos.length ? t.productos : [null]).map((p, i) => [i ? '' : t.cod, i ? '' : t.nombre + (t.testigo ? ' (testigo)' : ''), p ? p.prod + (p.momento === 'secuencial' ? ' (secuencial)' : '') : '—', p?.reg || '', p ? `${fmt(p.dosis, 2)} ${p.unidad}` : ''])) }});
-  B.push({h2: 'Variables y métodos de medición'}, {tabla: {cab: ['Variable', 'Unidad', 'Cómo se midió', 'Momento'], anchos: [2200, 1100, 4400, 1400], filas: vis(T).filter(v => !v.corte || v.corte === 1).map(v => [v.corte ? v.nombre.replace(/ · corte \d+$/, '') + ' (en cada corte)' : v.nombre, v.unidad || '', v.metodo + (v.sub > 1 ? ` (${v.sub} submuestras por parcela)` : ''), v.corte ? 'Cada corte' : v.momento || ''])}});
+  B.push({h2: 'Variables y métodos de medición'}, {tabla: {cab: ['Variable', 'Unidad', 'Cómo se midió', 'Momento'], anchos: [2200, 1100, 4400, 1400], filas: vis(T).filter(esPrimera).map(v => [nomBase(T, v) + (v.corte || v.pos ? ` (${repTxt(T, v)})` : ''), v.unidad || '', v.metodo + (v.sub > 1 ? ` (${v.sub} submuestras por parcela)` : ''), v.corte ? 'Cada corte' : v.momento || ''])}});
   (await fotoAereaBloques(T.__vista ? Object.getPrototypeOf(T) : T, T)).forEach(x => B.push(x));
   if (esRed(T)) B.push({h2: 'Lugares'}, {tabla: {cab: ['Lugar', 'Ubicación', 'Operador', 'Parcelas', 'Avance'], num: [3, 4], anchos: [1800, 3000, 2000, 1000, 1000], filas: T.sitios.map(x => { const ps = T.parcelas.filter(p => p.sitio === x.id); return [x.nombre, x.lugar || '', (x.ops || []).map(u => USERS[u]?.nombre || u).join(', '), ps.length, Math.round(avance(T, ps) * 100) + ' %']; })}});
   if (apsDe(T).length) B.push({h2: 'Aplicaciones y labores'}, {tabla: {cab: ['Fecha', ...(esRed(T) ? ['Lugar'] : []), 'Tipo', 'A qué', 'Producto / dosis', 'Momento', 'Condiciones', 'Estado'], anchos: esRed(T) ? [1050, 1000, 1300, 1000, 1750, 1150, 1150, 950] : [1180, 1450, 1150, 1950, 1300, 1300, 1050], filas: [...apsDe(T)].sort((a, b) => a.fecha.localeCompare(b.fecha)).map(a => [fechaTxt(a.fecha), ...(esRed(T) ? [!a.sitio || a.sitio === 'todos' ? 'Todos' : nomSitio(T, a.sitio)] : []), a.tipo, aQue(a), a.producto ? a.producto + (a.dosis ? ' · ' + a.dosis : '') : a.tipo === 'Aplicación de tratamientos' ? `Según tratamiento · caldo ${a.caldo || T.caldo || '—'} L/ha` : '', a.estadio || '', condTxt(a.cond), estadoApl(a)[1]])}});
@@ -2157,7 +2371,17 @@ async function bloquesInforme(T) {
   bloquesCalidad(T, B);
   if (T.cortes?.length >= 2) { const D = mediasCorte(T);
     B.push({h2: 'Producción de forraje por corte (kg MS/ha)'}, {tabla: {cab: ['Trat.', ...T.cortes.map(c => `Corte ${c.n}`), 'Total'], num: [...T.cortes.map((_, i) => i + 1), T.cortes.length + 1], filas: D.map(d => [d.t.cod, ...d.m.map(x => fmt(x, 0)), fmt(d.m.every(x => x != null) ? d.m.reduce((a, x) => a + x, 0) : null, 0)])}}); }
+  // silvopastoril: cada medición por posición se informa en parcelas divididas (tratamiento × posición)
+  const gp = esRed(T) ? [] : gruposPos(T, vars);
+  for (const g of gp) { const c = calcPos(T, g), dec = g.v.dec ?? 2; B.push({h2: `${g.nombre.replace(/ · por posición$/, '')} (${g.v.unidad || ''}) · por posición`});
+    if (c.falta) { B.push({nota: 'Faltan datos en alguna posición: no se analizó.'}); continue; }
+    const pf = p => p == null ? '' : p < 0.0001 ? '< 0,0001' : fmt(p, 4);
+    B.push({tabla: {cab: ['Fuente', 'gl', 'SC', 'CM', 'F', 'p'], num: [1, 2, 3, 4, 5], filas: c.R.tabla.map(f => [f.fuente, f.gl, fmt(f.sc, dec + 1), f.cm != null ? fmt(f.cm, dec + 1) : '', f.F != null ? fmt(f.F, 2) : '', pf(f.p)])}},
+      {tabla: {cab: ['Trat.', ...g.vars.map(x => posCorta(T.posiciones[x.pos - 1])), 'Media', 'Tukey', 'Potrero (pond.)'], num: g.vars.map((_, i) => i + 1).concat([g.vars.length + 1, g.vars.length + 3]),
+        filas: Object.keys(c.tkA.letras).map(k => [k, ...g.vars.map(x => fmt(c.R.mediasAP[k + '|' + x.pos], dec)), fmt(c.R.mediasA[k], dec), c.R.pA < 0.05 ? c.tkA.letras[k] : '', fmt(c.pond[k], dec)])}},
+      {nota: `CV (a) ${fmt(c.R.cva, 1)} % · CV (b) ${fmt(c.R.cvb, 1)} %. Tratamientos: p ${pf(c.R.pA)}; posición: p ${pf(c.R.pP)}; interacción: p ${pf(c.R.pAP)}.`}); }
   for (const v of vars) {
+    if (gp.some(g => g.vars.includes(v))) continue;
     if (esRed(T)) { B.push({h2: v.nombre + (v.unidad ? ` (${v.unidad})` : '')}); const a = bloquesRed(T, v, B, C);
       if (a) { const {R, tk, orden, dec} = a;
         try { B.push({img: await graficoBarras({titulo: v.nombre + ' · promedio de la red', unidad: v.unidad, barras: orden.map(k => ({etiqueta: k, valor: R.medias[k], color: C[k], letra: R.pT < 0.05 ? tk.letras[k] : ''}))}), ancho: 15, alto: 7}); } catch (e) { console.warn(e); }
@@ -2172,7 +2396,7 @@ async function bloquesInforme(T) {
     B.push({tabla: {cab: ['Fuente', 'gl', 'SC', 'CM', 'F', 'p'], num: [1, 2, 3, 4, 5], anchos: [1800, 700, 1700, 1700, 1100, 1500], filas: R.tabla.map(f => [f.fuente, f.gl, fmt(f.sc, dec + 1), f.cm != null ? fmt(f.cm, dec + 1) : '', f.F != null ? fmt(f.F, 2) : '', f.p != null ? (f.p < 0.0001 ? '< 0,0001' : fmt(f.p, 4)) + ' ' + sig(f.p) : ''])}});
     B.push({nota: `Media ${fmt(R.media, dec)} ${v.unidad || ''} · CV ${fmt(R.cv, 1)} % · DMS de Tukey ${fmt(tk.hsd, dec)}`});
     try { B.push({img: await graficoBarras({titulo: v.nombre, unidad: v.unidad, barras: orden.map(k => ({etiqueta: k, valor: R.medias[k], color: C[k], letra: ptr < 0.05 ? tk.letras[k] : ''}))}), ancho: 15, alto: 7}); } catch (e) { console.warn(e); }
-    B.push({tabla: {cab: ['Trat.', 'Descripción', 'Media', 'Tukey', a.menor ? 'Control (Abbott)' : 'vs testigo'], num: [2, 4], anchos: [800, 3600, 1500, 1000, 1700], filas: orden.map(k => [k, tratNom(T, k), fmt(R.medias[k], dec), ptr < 0.05 ? tk.letras[k] : '—', a.vsT(k)])}});
+    B.push({tabla: {cab: ['Trat.', 'Descripción', 'Media', 'Tukey', a.abb ? 'Control (Abbott)' : 'vs testigo'], num: [2, 4], anchos: [800, 3600, 1500, 1000, 1700], filas: orden.map(k => [k, tratNom(T, k), fmt(R.medias[k], dec), ptr < 0.05 ? tk.letras[k] : '—', a.vsT(k)])}});
     B.push({p: [{t: 'Lectura: ', b: true}, a.txt]});
   }
   if (notasDe(T).length) B.push({h1: 'Anexo 1 · Notas de campo'}, {tabla: {cab: ['Nivel', 'Nota', 'Autor', 'Fecha'], anchos: [1500, 5200, 1400, 1000], filas: notasDe(T).map(n => [nivelNota(T, n), n.texto, USERS[n.autor]?.nombre || '', n.fecha])}});
@@ -2201,7 +2425,7 @@ async function imprimirInforme(T) {
 async function exportarExcel(T) {
   const vars = vis(T), C = v => v.nombre + (v.unidad ? ` (${v.unidad})` : '');
   const hojas = [
-    {nombre: 'Ensayo', filas: [['Campo', 'Valor'], ['Código', T.id], ['Título', T.titulo], ['Rubro', RUBROS[T.rubro].nombre], ['Tipo', T.tipo], ['Cultivo', T.cultivo], ['Lugar', T.__vista ? `${nomSitio(T, T.__vista)} (${T.sitios.find(x => x.id === T.__vista)?.lugar || ''}) · red de ${T.sitios.length} lugares` : T.lugar], ['Campaña', T.campana || ''], ['Responsable', USERS[T.owner]?.nombre || ''], ['Objetivo', T.objetivo || ''], ['Diseño', `DBCA · ${T.tratamientos.length} tratamientos × ${T.bloques} bloques`], ['Parcela', T.parcela.texto || ''], ['Área parcela (m²)', T.parcela.area_m2], ['Área útil (m²)', T.parcela.area_util_m2], ['Exportado', new Date().toLocaleString('es-PY')]]},
+    {nombre: 'Ensayo', filas: [['Campo', 'Valor'], ['Código', T.id], ['Título', T.titulo], ['Rubro', RUBROS[T.rubro].nombre], ['Tipo', T.tipo], ['Cultivo', T.cultivo], ['Lugar', T.__vista ? `${nomSitio(T, T.__vista)} (${T.sitios.find(x => x.id === T.__vista)?.lugar || ''}) · red de ${T.sitios.length} lugares` : T.lugar], ['Campaña', T.campana || ''], ['Responsable', USERS[T.owner]?.nombre || ''], ['Objetivo', T.objetivo || ''], ['Diseño', `DBCA · ${T.tratamientos.length} tratamientos × ${T.bloques} bloques${T.posiciones?.length ? ` · ${T.posiciones.length} posiciones como subparcelas` : ''}`], ['Parcela', T.parcela.texto || ''], ['Área parcela (m²)', T.parcela.area_m2], ['Área útil (m²)', T.parcela.area_util_m2], ...(T.posiciones?.length ? [['Posiciones de muestreo', T.posiciones.map((x, k) => `${k + 1}. ${x} (${fmt(pesosPos(T)[k] * 100, 0)} %)`).join('; ')]] : []), ...fichaFilas(T), ['Exportado', new Date().toLocaleString('es-PY')]]},
     {nombre: 'Tratamientos', filas: [['Trat.', 'Descripción', 'Testigo', 'Producto', 'Reg. SENAVE', 'Principio activo', 'Dosis', 'Unidad', 'Momento'], ...T.tratamientos.flatMap(t => (t.productos.length ? t.productos : [{}]).map(p => [t.cod, t.nombre, t.testigo ? 'sí' : '', p.prod || '', p.reg || '', p.pa || '', p.dosis ?? '', p.unidad || '', p.momento || '']))]},
     ...(esRed(T) ? [{nombre: 'Lugares', filas: [['Código', 'Lugar', 'Ubicación', 'Operador', 'Parcelas', 'Avance (%)', 'Latitud', 'Longitud'], ...T.sitios.map(x => { const ps = T.parcelas.filter(p => p.sitio === x.id); return [x.id, x.nombre, x.lugar || '', (x.ops || []).map(u => USERS[u]?.nombre || u).join(', '), ps.length, Math.round(avance(T, ps) * 100), x.geo?.lat ?? '', x.geo?.lon ?? '']; })]}] : []),
     {nombre: 'Datos', filas: [[...(T.sitios ? ['Lugar'] : []), 'Parcela', 'Bloque', 'Trat.', 'Tratamiento', 'Asignada a', ...vars.map(C)], ...T.parcelas.map(p => [...(T.sitios ? [nomSitio(T, p.sitio)] : []), p.parcela, p.bloque, p.trat, tratNom(T, p.trat), USERS[T.asig[p.parcela]]?.nombre || USERS[sitioDe(T, p.parcela)?.ops?.[0]]?.nombre || '', ...vars.map(v => valorTxt(v, p.valores[v.id]))])]},
@@ -2325,7 +2549,6 @@ function modal(html, ancho = 980) {
   document.body.append(f); const k = e => { if (e.key === 'Escape') { e.stopPropagation(); cerrar(); } }; document.addEventListener('keydown', k, true);
   const cerrar = () => { f.remove(); document.removeEventListener('keydown', k, true); }; f.addEventListener('click', e => { if (e.target === f || e.target.closest('[data-cerrar]')) cerrar(); }); f.cerrar = cerrar; return f;
 }
-const normT = t => String(t ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 const numero = t => { if (t == null) return null; if (typeof t === 'number') return t; const s = String(t).trim().replace(/\s/g, ''); if (!s) return null; const n = parseFloat(s.includes(',') ? s.replace(/\./g, '').replace(',', '.') : s); return isNaN(n) ? null : n; };
 async function leerOcr(file, prog) { const {reconocerTexto, mensajeProgreso} = await import('./lib/ocr.js'); return reconocerTexto(file, {onProgreso: m => prog(mensajeProgreso(m))}); }
 async function leerPlanilla(file) { const {leerFilasDeArchivo} = await import('./lib/xlsxImport.js'); return leerFilasDeArchivo(file); }
@@ -2452,7 +2675,7 @@ async function enviarPaquete(T, uid) {
 }
 function fusionar(L, R, de) {
   const autor = USERS[de], autoridad = autor && ['dueño', 'gerente'].includes(rolEn(L, autor)), res = {valores: 0, notas: 0, aplic: 0, cambios: 0};
-  if (autoridad) { ['titulo', 'cultivo', 'tipo', 'lugar', 'campana', 'objetivo', 'tratamientos', 'variables', 'asig', 'trabajo', 'compartido', 'invitados', 'porCorte', 'cortes', 'uniformizacion', 'dron', 'caldo', 'parcela', 'equipo'].forEach(k => { if (R[k] !== undefined) L[k] = structuredClone(R[k]); }); }
+  if (autoridad) { ['titulo', 'cultivo', 'tipo', 'lugar', 'campana', 'objetivo', 'tratamientos', 'variables', 'asig', 'trabajo', 'compartido', 'invitados', 'porCorte', 'cortes', 'uniformizacion', 'porPos', 'posiciones', 'ficha', 'dron', 'caldo', 'parcela', 'equipo'].forEach(k => { if (R[k] !== undefined) L[k] = structuredClone(R[k]); }); }
   if (R.sitios) { L.sitios = L.sitios || []; R.sitios.forEach(rs => { const ls = L.sitios.find(x => x.id === rs.id); if (!ls) L.sitios.push(structuredClone(rs)); else if (autoridad) Object.assign(ls, structuredClone(rs)); }); }
   R.parcelas.forEach(rp => { let lp = L.parcelas.find(x => x.parcela === rp.parcela); if (!lp) { L.parcelas.push(structuredClone(rp)); return; }
     lp.ts = lp.ts || {}; lp.sub = lp.sub || {};
@@ -2464,7 +2687,7 @@ function fusionar(L, R, de) {
   const kC = c => [c.fecha, c.usuario, c.parcela, c.variable, JSON.stringify(c.despues)].join('¦'), mapaC = new Map(L.cambios.map(c => [kC(c), c]));
   R.cambios.forEach(c => { const l = mapaC.get(kC(c)); if (!l) { L.cambios.push(structuredClone(c)); res.cambios++; } else if (l.estado === 'pendiente' && c.estado !== 'pendiente') { l.estado = c.estado; l.comentario = c.comentario; } });
   L.cambios.sort((a, b) => { const f = x => { const m = String(x.fecha).match(/(\d+)\/(\d+) (\d+):(\d+)/); return m ? +m[2] * 1e6 + +m[1] * 1e4 + +m[3] * 100 + +m[4] : 0; }; return f(b) - f(a); });
-  if (L.cortes || L.porCorte) armarCortes(L); else recalc(L);
+  if (L.cortes || L.porCorte || L.porPos) armarCortes(L); else recalc(L);
   return res;
 }
 function recibirArchivo() {
@@ -2507,7 +2730,7 @@ function abrirDrawer(pn) {
       campo = `<div class="calc">${ins}<div class="row"><span class="note">Resultado</span><input type="number" step="any" data-m="${v.id}" value="${val ?? ''}" ${dis} style="width:120px;text-align:right;font-family:var(--f-data)"><span class="note">${esc(v.unidad)}</span><span class="note" data-cinfo="${v.id}">${calcInfo(T, v, s)}</span></div></div>`; }
     else if (v.origen === 'calc') campo = `<div class="code" style="font-size:.95rem">${val == null ? '—' : fmt(val, v.dec ?? 2)} ${esc(v.unidad)}</div>`;
     else if (v.tipo === 'texto') campo = `<textarea data-m="${v.id}" ${dis} placeholder="Escribí la observación">${esc(val ?? '')}</textarea>`;
-    else if (v.tipo === 'escala' && v.sub <= 1) campo = `<select data-m="${v.id}" ${dis}><option value="">Elegir nota</option>${(v.escala || []).map((e, i) => `<option value="${i + 1}" ${Number(val) === i + 1 ? 'selected' : ''}>${esc(e)}</option>`).join('')}</select>`;
+    else if (v.tipo === 'escala' && v.sub <= 1) campo = `<select data-m="${v.id}" ${dis}><option value="">Elegir nota</option>${(v.escala || []).map((e, i) => `<option value="${i + (v.escMin ?? 1)}" ${val !== '' && val != null && Number(val) === i + (v.escMin ?? 1) ? 'selected' : ''}>${esc(e)}</option>`).join('')}</select>`;
     else if (v.sub > 1) { const s = p.sub[v.id] || [];
       campo = `<div class="subs">${Array.from({length: v.sub}, (_, i) => `<input type="number" step="any" ${v.min != null ? `min="${v.min}"` : ''} ${v.max != null ? `max="${v.max}"` : ''} data-s="${v.id}" data-i="${i}" value="${s[i] ?? ''}" ${dis} aria-label="${esc(v.nombre)} submuestra ${i + 1}" placeholder="${i + 1}">`).join('')}</div>
         <div class="note" data-prom="${v.id}">Promedio: <b>${val == null ? '—' : fmt(val, v.dec ?? 2)}</b> ${esc(v.unidad)}${val != null && !s.length ? ' (cargado sin submuestras)' : ''}</div>`; }
@@ -2567,16 +2790,18 @@ function abrirDrawer(pn) {
   };
   mapa.redibujar();
 }
-/* calculadoras de carga: materia seca y rendimiento a 13 % */
+/* calculadoras de carga: materia seca y rendimiento a la humedad base del cultivo */
 function leerEntrada(d, v) { const g = k => { const el = d.querySelector(`[data-e="${v.id}"][data-k="${k}"]`); return el && el.value !== '' ? +el.value : null; };
   if (v.entrada === 'ms') return {pv: Array.from({length: S.T.parcela.marcos || 2}, (_, i) => g('pv' + i)), sv: g('sv'), ss: g('ss')};
   return {peso: g('peso'), hum: g('hum')}; }
 function calcEntrada(T, v, s) {
   if (v.entrada === 'ms') { const pv = (s.pv || []).filter(x => x != null); if (!pv.length || !s.sv || s.ss == null) return null; return pv.reduce((a, x) => a + x, 0) / pv.length / (T.parcela.marco || 0.25) * (s.ss / s.sv) * 10; }
-  if (s.peso == null || s.hum == null) return null; return s.peso * (100 - s.hum) / 87 * 10000 / T.parcela.area_util_m2; }
+  if (s.peso == null || s.hum == null) return null; return s.peso * (100 - s.hum) / (100 - humBase(T)) * 10000 / T.parcela.area_util_m2; }
 function calcInfo(T, v, s) {
   if (v.entrada === 'ms') return s.sv && s.ss != null ? `MS ${fmt(s.ss / s.sv * 100, 1)} % · marco de ${T.parcela.marco || 0.25} m²` : 'Cargá los pesos para calcular';
-  return s.peso != null && s.hum != null ? `corregido a 13 % (cosecha al ${fmt(s.hum, 1)} %)` : 'Cargá peso y humedad para calcular'; }
+  return s.peso != null && s.hum != null ? `corregido a ${fmt(humBase(T), 1)} % (cosecha al ${fmt(s.hum, 1)} %)` : 'Cargá peso y humedad para calcular'; }
+// Humedad base del rendimiento: la de la ficha, si no la del cultivo, si no 13 %
+function humBase(T) { const f = +T.ficha?.humedad; if (f > 0 && f < 40) return f; const c = cultDef(T.rubro, T.cultivo); return c?.humedad ?? 13; }
 function cerrarDrawer() { $('#drawer').hidden = true; $('#scrim').hidden = true; if (S.T) { S.sel = null; mapa.redibujar(); } }
 $('#scrim').onclick = cerrarDrawer;
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#drawer').hidden) cerrarDrawer(); });
@@ -2765,6 +2990,10 @@ const TOUR = [
     go: () => { comoUsuario('marta', 'agricola'); irInicio(); }, el: () => cardDe($('#s-inicio [data-abrir="DEMO-AG-02"]'))},
   {g: 'Empezar', t: 'Crear un ensayo nuevo', d: 'Un asistente de 3 pasos: datos (nombre, cultivo, tipo, lugar, si se usa dron y qué operadores trabajan), parcela y tratamientos (sortea el croquis y avisa si faltan grados de libertad) y qué se va a medir.',
     go: () => { comoUsuario('marta', 'agricola'); if ($('#s-inicio').hidden) irInicio(); }, el: () => $('#btn-nuevo')},
+  {g: 'Empezar', t: 'Cada rubro con lo suyo', d: 'Al elegir el tipo de ensayo y el cultivo, la app muestra qué pide ese ensayo (testigos, bloques mínimos, cuándo evaluar, análisis y norma de Paraguay) y completa la parcela típica, los tratamientos de ejemplo y las mediciones sugeridas. Solo aparecen las mediciones que corresponden a ese cultivo.',
+    go: () => { comoUsuario('marta', 'agricola'); nuevoEnsayo(); }, el: () => $('#nv-ficha')},
+  {g: 'Empezar', t: 'Ficha del ensayo', d: 'En Planificación, cada rubro tiene su ficha: fecha de siembra o de plantación, suelo, antecesor, sistema de cultivo, humedad base del rendimiento, plan del INFONA… Se guarda con el ensayo y sale en el informe y en el Excel.',
+    go: () => enEjemplo('plan'), el: () => document.querySelector('#panel details.card')},
   {g: 'Empezar', t: 'Tu equipo', d: 'El gerente ve a su equipo y el código de invitación: los operadores se suman con ese código y desde ahí se les pueden asignar ensayos y parcelas.',
     go: () => { comoUsuario('marta', 'agricola'); if ($('#s-inicio').hidden) irInicio(); }, el: () => cardDe(conTexto('#s-inicio .card h3', 'Equipo'))},
   {g: 'El ensayo', t: 'Encabezado del ensayo', d: 'Código, nombre, rubro, cultivo, lugar y diseño. El gerente o el independiente puede renombrarlo (queda en el historial) y la etiqueta muestra tu rol en este ensayo.',
@@ -2807,7 +3036,7 @@ const TOUR = [
     go: () => enParcela(P1()), el: () => $('#drawer header')},
   {g: 'En el campo', t: 'Submuestras y método', d: 'Las mediciones con varias lecturas (10 folíolos, 8 pesadas) se cargan una por una y la app calcula el promedio. Debajo, “Cómo se mide” explica el método y el momento de evaluación, y avisa si un valor queda fuera de rango.',
     go: () => { enParcela(P1()); const dt = $('[data-med="sev_roya"] details'); if (dt) dt.open = true; }, el: () => $('[data-med="sev_roya"]')},
-  {g: 'En el campo', t: 'Calculadora de rendimiento', d: 'Se carga el peso del grano cosechado y su humedad; la app corrige a 13 % de humedad y lo lleva a kg/ha con el área cosechada de la parcela.',
+  {g: 'En el campo', t: 'Calculadora de rendimiento', d: 'Se carga el peso del grano cosechado y su humedad; la app corrige a la humedad base del cultivo (13 % soja, maíz y trigo; 11 % girasol; editable en la ficha) y lo lleva a kg/ha con el área cosechada de la parcela.',
     go: () => enParcela(P1()), el: () => $('[data-med="rend_kg"]')},
   {g: 'En el campo', t: 'Notas en tres niveles', d: 'Notas de la parcela, del tratamiento (valen para todas sus parcelas) o del bloque entero. Cada nota guarda autor y fecha y sale en el informe.',
     go: () => enParcela(P1()), el: () => $('#seg-nota')?.parentElement},
@@ -2837,6 +3066,10 @@ const TOUR = [
     go: () => enEjemplo('exp'), el: () => $('#ex-qgis')},
   {g: 'Otros rubros y roles', t: 'Pasturas: cortes y producción', d: 'En pasturas se cargan varios cortes: la app calcula la materia seca con los pesos del marco, suma la producción acumulada y la tasa de crecimiento, y grafica la producción por corte de cada cultivar.',
     go: () => { varAnal = null; enEjemplo('anal', PA_()); }, el: () => $('#g-cortes')},
+  {g: 'Otros rubros y roles', t: 'Silvopastoril: posiciones de muestreo', d: 'En silvopastoril el forraje, la luz y el suelo cambian con la distancia a los árboles: se definen posiciones (junto a la hilera, 1/4 y 1/2 del callejón) y esas mediciones se cargan en cada una. El testigo a pleno sol va como un tratamiento más.',
+    go: () => enEjemplo('medir', SP_()), el: () => $('#pos-card')},
+  {g: 'Otros rubros y roles', t: 'Silvopastoril: parcelas divididas', d: 'El análisis por posición es en parcelas divididas: los tratamientos (arreglos de árboles) se prueban contra el error a y la posición y la interacción contra el error b. La tabla da la media de cada posición y el promedio del potrero ponderado.',
+    go: () => { varAnal = 'pp:ms|1'; enEjemplo('anal', SP_()); }, el: () => document.querySelector('#anal-body .card')},
   {g: 'Otros rubros y roles', t: 'Lo que ve un operador', d: 'Ana es operadora: al entrar ve “Mis tareas”, solo con sus parcelas y lo que le falta medir, y las abre directo con “Controlar”.',
     go: () => { cerrarDrawer(); comoUsuario('ana', 'agricola'); irInicio(); }, el: () => cardDe($('#s-inicio [data-abrir="DEMO-AG-02"]'))},
   {g: 'Lado a lado y dron', t: 'Lado a lado en la chacra del productor', d: 'Además del ensayo experimental, se puede crear un lado a lado: el producto que se quiere probar contra el que usa el productor (y si se quiere una franja testigo), en macroparcelas o microparcelas dentro de su lote. No es un ensayo experimental, sirve para probar la eficacia a campo.',

@@ -1,0 +1,4083 @@
+{
+ "agricola": {
+  "nombre": "Agrícola",
+  "texto": "Granos, oleaginosas, algodón, caña de azúcar, mandioca y coberturas.",
+  "ej": "Cultivares, fungicidas, insecticidas, herbicidas, fertilización, inoculantes",
+  "tipos": [
+   {
+    "n": "Cultivares (RNCC/VCU)",
+    "descripcion": "Evaluación agronómica y de calidad (VCU) de variedades o híbridos para inscribirlos en el Registro Nacional de Cultivares Comerciales o para recomendarlos.",
+    "variables": [
+     "rend_kg",
+     "humedad_cosecha",
+     "pmg",
+     "plantas_m",
+     "emerg_pct",
+     "dias_flor",
+     "dias_madurez",
+     "altura_cm",
+     "alt_insercion",
+     "vuelco",
+     "quebrado",
+     "maz_podridas",
+     "chala",
+     "peso_hl",
+     "sev_roya",
+     "sev_roya_peterson",
+     "sev_foliar",
+     "achaparr",
+     "brusone",
+     "fusariosis",
+     "aceite_pct",
+     "proteina_pct",
+     "rend_fibra",
+     "tch",
+     "rend_raiz"
+    ],
+    "testigos": "Mínimo 2 testigos por grupo de madurez o ciclo, de la lista oficial DISE/CTCC, los mismos en los 2 años; el progenitor recurrente si es variedad esencialmente derivada; un testigo susceptible en las parcelas de reacción a enfermedades.",
+    "trat": "Testigo 1 (lista DISE)\nTestigo 2 (lista DISE)\nCultivar candidato A\nCultivar candidato B\n… (máximo 30 entradas por DBCA)",
+    "bloques_min": 3,
+    "momentos": "Emergencia y stand (V2–V3); floración 50 %; sanidad en los momentos de máxima expresión (soja R5–R6, maíz R2–R5, trigo Z75–Z85); madurez fisiológica; cosecha con humedad del grano.",
+    "analisis": "ANAVA por localidad y año → homogeneidad de varianzas (cociente entre el mayor y el menor CME ≤ 5 según SENAVE) → ANAVA conjunto localidad × año × cultivar → Tukey o Scott-Knott; covarianza por stand admitida; % relativo a la media de testigos; estabilidad (opcional).",
+    "normativa": "Ley 385/94; Res. SENAVE 414/2020 (normas mínimas por especie) y fichas NOR-DPUV (maíz 111, poroto 119): ≥ 3 zonas agroecológicas × 2 años consecutivos, DBCA ≥ 3 rep. con ≥ 15 gl del error, máx. 30 entradas, parcela mínima 4 hileras × 5 m (algodón 4 × 10, avena 6 × 5, caña 5 × 8), solicitud de habilitación 30 días antes de la siembra, sin resiembra después de 10 días.",
+    "fuente": "https://www.aprosemp.org.py/docs/normativas/5-Resolucion-SENAVE-414-Normas-minimas-para-ensayos-evaluacion-agronomica-calidad-variedades.pdf ; Proyecto: ensayos_de_campo/08_normativa_paraguay.md (NOR-DPUV-111 y Res. 414/2020 leídas en senave.gov.py el 29-30/09/2026)"
+   },
+   {
+    "n": "Eficacia de fungicida",
+    "descripcion": "Control de enfermedades foliares o de espiga con fungicidas, para registro en SENAVE o para recomendación de programas.",
+    "variables": [
+     "sev_roya",
+     "sev_roya_peterson",
+     "sev_foliar",
+     "incidencia",
+     "fusariosis",
+     "brusone",
+     "defol",
+     "ewrc",
+     "rend_kg",
+     "pmg",
+     "peso_hl"
+    ],
+    "testigos": "Testigo sin aplicar (incluido y aleatorizado en cada bloque) + producto de referencia registrado en SENAVE para el mismo blanco.",
+    "trat": "Testigo sin aplicar\nReferencia registrada\nProducto a dosis baja\nProducto a dosis recomendada\nProducto a 2× (fitotoxicidad)",
+    "bloques_min": 4,
+    "momentos": "Antes de la 1.ª aplicación (0 DAA) y a 7, 14 y 21 DAA de cada aplicación, o por estadio (soja: R1, R3, R5.1–R5.3, R6; maíz: VT–R5; trigo: Z39, Z55–Z65, Z75–Z85). Defoliación en R6–R7. Cosecha del área útil.",
+    "analisis": "ANAVA + Tukey; AACPE (trapecios) por parcela; % de control de Abbott sobre severidad final y sobre AACPE; diferencia de rendimiento respecto del testigo.",
+    "normativa": "Ley 3742/09 (ensayista registrado categoría A.10 y profesional categoría B; registro experimental D.1 y definitivo D.2); Res. MAG 296/03 'Protocolo patrón para ensayos de eficacia agronómica de plaguicidas' (texto no obtenido en esta revisión); Res. 297/03: muestras importadas, período de experimentación de 2 años, en campos del MAG, universidades o entidades habilitadas. Art. 63 Ley 3742: no aplicar con T > 32 °C, HR < 60 % o viento > 10 km/h.",
+    "fuente": "https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/993530/1/EFICIENCIADEFUNGICIDASNOCONTROLEDAFERRUGEMASIATICA.pdf ; https://faolex.fao.org/docs/pdf/par47742.pdf ; https://pp1.eppo.int/standards/PP1-152-4-en.pdf"
+   },
+   {
+    "n": "Eficacia de insecticida",
+    "descripcion": "Control de insectos o ácaros plaga con insecticidas (foliares o sistémicos) frente a un testigo sin tratar.",
+    "variables": [
+     "chinches",
+     "orugas",
+     "dano_cogollero",
+     "chicharrita",
+     "pulgones",
+     "picudo",
+     "diatraea",
+     "insectos_vivos",
+     "defol",
+     "achaparr",
+     "ewrc",
+     "rend_kg",
+     "pmg"
+    ],
+    "testigos": "Testigo sin tratar + insecticida de referencia registrado para la plaga.",
+    "trat": "Testigo sin tratar\nReferencia registrada\nProducto a dosis baja\nProducto a dosis recomendada\nProducto a dosis alta",
+    "bloques_min": 4,
+    "momentos": "Conteo previo (0 DAA, máximo 24 h antes) y a 1–3, 7, 10 y 14 DAA (orugas y chinches); para chicharrita cada 3–4 días entre VE y V8 y achaparramiento en R1–R3.",
+    "analisis": "ANAVA + Tukey (transformar conteos con √(x+0,5) si hace falta); eficacia de Henderson-Tilton si las poblaciones previas difieren entre parcelas, Abbott si son uniformes.",
+    "normativa": "Ley 3742/09; Res. MAG 296/03 y 297/03 (ver fungicida).",
+    "fuente": "https://faolex.fao.org/docs/pdf/par47742.pdf ; Proyecto: ensayos_de_campo/04_ensayos_agricolas.md"
+   },
+   {
+    "n": "Eficacia de herbicida",
+    "descripcion": "Control de malezas (presiembra/desecación, preemergencia o posemergencia) y selectividad para el cultivo.",
+    "variables": [
+     "alam",
+     "ewrc",
+     "dens_malezas",
+     "biomasa_malezas",
+     "plantas_m",
+     "altura_cm",
+     "rend_kg"
+    ],
+    "testigos": "Testigo enmalezado (sin herbicida) + testigo limpio (carpido manual) + herbicida de referencia registrado.",
+    "trat": "Testigo enmalezado\nTestigo limpio (carpido)\nReferencia registrada\nProducto a dosis baja\nProducto a dosis recomendada\nProducto a 2× (selectividad)",
+    "bloques_min": 4,
+    "momentos": "Densidad de malezas por especie antes de aplicar; control visual (ALAM) a 7, 14, 21 y 28 DAA y, para residualidad de preemergentes, a 35, 45 y 60 DAA; fitotoxicidad (EWRC) a 7, 14 y 21 DAA; biomasa de malezas a 28–45 DAA o al cierre del cultivo; rendimiento.",
+    "analisis": "ANAVA + Tukey por especie de maleza; % de control sobre densidad o biomasa respecto del testigo enmalezado; pérdida por competencia = (testigo limpio − tratamiento) / testigo limpio × 100; residualidad = último DAA con control ≥ 80 %.",
+    "normativa": "Ley 3742/09; Res. MAG 296/03. Registrar especies y biotipos resistentes (Amaranthus, Conyza, Digitaria insularis, Eleusine indica).",
+    "fuente": "https://digital.cic.gba.gob.ar/bitstreams/19969ed2-720a-4f44-94a8-4657a5800c70/download ; https://rd.uffs.edu.br/bitstream/prefix/6089/1/COPATTI.pdf ; Proyecto: ensayos_de_campo/04_ensayos_agricolas.md"
+   },
+   {
+    "n": "Fertilización (dosis-respuesta)",
+    "descripcion": "Respuesta del rendimiento a dosis, fuentes o momentos de un nutriente, para recomendación o registro de fertilizantes.",
+    "variables": [
+     "rend_kg",
+     "pmg",
+     "plantas_m",
+     "altura_cm",
+     "spad",
+     "biomasa_ms",
+     "proteina_pct",
+     "peso_hl",
+     "ewrc",
+     "tch",
+     "rend_raiz"
+    ],
+    "testigos": "Testigo sin el nutriente (dosis 0) + fertilizante de referencia registrado (obligatorio para registro).",
+    "trat": "0 kg/ha\n30 kg/ha\n60 kg/ha\n90 kg/ha\n120 kg/ha\nReferencia registrada",
+    "bloques_min": 4,
+    "momentos": "Análisis de suelo antes de sembrar; SPAD o análisis foliar en el estado diagnóstico (soja: trifolio en R2; maíz: hoja de la espiga en R1; trigo: hoja bandera en Z39–Z45); biomasa en floración; rendimiento.",
+    "analisis": "Regresión por dosis (lineal, cuadrática o lineal-meseta) con dosis óptima económica; ANAVA + Tukey para fuentes o momentos; eficiencia agronómica (kg grano / kg nutriente).",
+    "normativa": "Para registro: Res. MAG 277/03 — fertilizante a prueba en 3 dosis (baja, recomendada, alta) + referencia + testigo, ≥ 5 repeticiones con ≥ 12 gl del error, 3 regiones agrológicas, ≥ 2 años, análisis de suelo, ANAVA al 5 % con CV. Res. 564/10 y 065/12 (control y registro).",
+    "fuente": "https://faolex.fao.org/docs/pdf/par48151.pdf (citada en Proyecto: ensayos_de_campo/08_normativa_paraguay.md (NOR-DPUV-111 y Res. 414/2020 leídas en senave.gov.py el 29-30/09/2026))"
+   },
+   {
+    "n": "Inoculante / bioinsumo",
+    "descripcion": "Eficacia de inoculantes (Bradyrhizobium, Azospirillum), coinoculación y otros bioinsumos sobre nodulación, crecimiento y rendimiento.",
+    "variables": [
+     "nod_num",
+     "nod_ms",
+     "biomasa_ms",
+     "plantas_m",
+     "emerg_pct",
+     "spad",
+     "rend_kg",
+     "pmg",
+     "proteina_pct"
+    ],
+    "testigos": "Testigo sin inocular + inoculante de referencia registrado; opcional testigo con N mineral (testigo nitrogenado).",
+    "trat": "Sin inocular\nInoculante de referencia\nProducto nuevo\nProducto nuevo + coinoculación (Azospirillum)\nTestigo con N mineral",
+    "bloques_min": 4,
+    "momentos": "Emergencia y stand; nodulación en V4–R1 (10 plantas arrancadas con pala por parcela); biomasa en R2; rendimiento y proteína.",
+    "analisis": "ANAVA + Tukey; contrastes ortogonales (inoculado vs. sin inocular; producto vs. referencia).",
+    "normativa": "Res. SENAVE 564/10 (control de fertilizantes, biofertilizantes, inoculantes y enmiendas) y protocolo de Res. 277/03 por analogía. Sembrar primero el testigo sin inocular y limpiar la sembradora entre tratamientos para evitar contaminación.",
+    "fuente": "https://www.cropscience.bayer.us/articles/bayer/evaluation-of-soybean-nodulation ; Proyecto: ensayos_de_campo/04_ensayos_agricolas.md",
+    "cultivos": [
+     "Soja",
+     "Poroto",
+     "Maní",
+     "Maíz",
+     "Trigo",
+     "Abonos verdes y coberturas"
+    ]
+   },
+   {
+    "n": "Tratamiento de semillas",
+    "descripcion": "Fungicidas, insecticidas o bioestimulantes aplicados a la semilla: emergencia, stand, sanidad inicial y rendimiento.",
+    "variables": [
+     "emerg_pct",
+     "plantas_m",
+     "insectos_vivos",
+     "ewrc",
+     "nod_num",
+     "rend_kg"
+    ],
+    "testigos": "Semilla sin tratar + tratamiento de referencia registrado.",
+    "trat": "Sin tratar\nReferencia registrada\nProducto dosis baja\nProducto dosis recomendada",
+    "bloques_min": 4,
+    "momentos": "Conteo diario de emergencia hasta estabilizar (7–14 DDS) para IVE; stand en V2–V3 y a cosecha; plagas iniciales (gusanos de suelo, chinche Dichelops, cogollero) a 7–21 DDE.",
+    "analisis": "ANAVA + Tukey; índice de velocidad de emergencia (Maguire); Abbott sobre plantas dañadas.",
+    "normativa": "Ley 3742/09 (es un plaguicida: mismo marco que fungicida e insecticida).",
+    "fuente": "Proyecto: ensayos_de_campo/04_ensayos_agricolas.md"
+   },
+   {
+    "n": "Densidad, espaciamiento y época de siembra",
+    "descripcion": "Respuesta del cultivo a plantas por hectárea, distancia entre hileras o fecha de siembra, en general por cultivar o grupo de madurez.",
+    "variables": [
+     "plantas_m",
+     "rend_kg",
+     "pmg",
+     "altura_cm",
+     "alt_insercion",
+     "vuelco",
+     "dias_flor",
+     "dias_madurez",
+     "vainas_pl",
+     "espigas_m2"
+    ],
+    "testigos": "La densidad o fecha recomendada para la zona como referencia (no hay testigo sin tratar).",
+    "trat": "200 000 pl/ha\n250 000 pl/ha\n300 000 pl/ha\n350 000 pl/ha\n400 000 pl/ha",
+    "bloques_min": 4,
+    "momentos": "Stand logrado en V2–V3 (la regresión se hace sobre plantas logradas, no sembradas); fenología; componentes en madurez; rendimiento.",
+    "analisis": "Regresión (cuadrática) de rendimiento sobre plantas logradas → densidad óptima; época × cultivar en parcelas divididas (época = parcela principal).",
+    "normativa": "Sin norma específica en Paraguay.",
+    "fuente": "Proyecto: ensayos_de_campo/04_ensayos_agricolas.md"
+   },
+   {
+    "n": "Cultivos de cobertura / abonos verdes",
+    "descripcion": "Producción de biomasa de coberturas o abonos verdes y su efecto sobre malezas, suelo y el cultivo comercial siguiente.",
+    "variables": [
+     "biomasa_ms",
+     "dens_malezas",
+     "biomasa_malezas",
+     "plantas_m",
+     "rend_kg"
+    ],
+    "testigos": "Barbecho sin cobertura (o barbecho químico habitual).",
+    "trat": "Barbecho\nAvena negra\nNabo forrajero\nAvena + nabo\nCrotalaria",
+    "bloques_min": 4,
+    "momentos": "Biomasa en plena floración o al rolado/desecación; cobertura y malezas a la siembra del cultivo siguiente y a 30 DDS; rendimiento del cultivo siguiente.",
+    "analisis": "ANAVA + Tukey por campaña; análisis conjunto de varios años (el efecto es acumulativo).",
+    "normativa": "Sin norma específica (crotalaria y avena sí están en la Res. 414/2020 para cultivares).",
+    "fuente": "Proyecto: ensayos_de_campo/04_ensayos_agricolas.md",
+    "cultivos": [
+     "Abonos verdes y coberturas",
+     "Avena",
+     "Soja",
+     "Maíz",
+     "Trigo"
+    ]
+   },
+   {
+    "n": "Lado a lado (franjas)",
+    "descripcion": "Comparación demostrativa de 2–3 manejos o cultivares en franjas grandes cosechadas a máquina, en varios campos de productores.",
+    "variables": [
+     "rend_kg",
+     "humedad_cosecha",
+     "plantas_m",
+     "pmg"
+    ],
+    "testigos": "Manejo o cultivar habitual del productor.",
+    "trat": "Manejo del productor\nManejo propuesto",
+    "bloques_min": 3,
+    "momentos": "Stand; cosecha con monitor de rendimiento calibrado o pesaje en tolva/balanza.",
+    "analisis": "t pareada o ANAVA con localidades como bloques (mínimo 3 pares por campo o muchas localidades); % de localidades con respuesta positiva.",
+    "normativa": "No sirve para registro en SENAVE (sin aleatorización completa ni repeticiones dentro de la localidad).",
+    "fuente": "Proyecto: ensayos_de_campo/04_ensayos_agricolas.md"
+   }
+  ],
+  "cultivos": [
+   {
+    "n": "Soja",
+    "cientifico": "Glycine max",
+    "grupo": "oleaginosa / leguminosa",
+    "fenologia": "Fehr y Caviness (1977): VE, VC, V1…Vn, R1…R8",
+    "parcela": {
+     "hileras": 4,
+     "dist": 0.45,
+     "largo": 5,
+     "util": 2
+    },
+    "parcelaTxt": "4 hileras a 0,45 m × 5 m (mínimo SENAVE 4 × 5 m); útil: 2 hileras centrales × 4 m (0,5 m de cabecera a cada lado) = 3,6 m²",
+    "notas": "Rendimiento al 13 % (ensayos cooperativos de Embrapa y ensayos publicados en Paraguay). Grupos de madurez usados en Paraguay ~5 a 7. Enfermedades clave: roya asiática (Phakopsora pachyrhizi; escala Godoy et al. 2006), mancha anillada (Corynespora cassiicola), antracnosis (Colletotrichum truncatum; incidencia en vainas/tallos), tizón y mancha púrpura (Cercospora kikuchii), mancha marrón (Septoria glycines), mildiu, podredumbre carbonosa (Macrophomina) en sequía, nematodos (Pratylenchus brachyurus, Heterodera glycines). Plagas: chinches (Euschistus heros, Piezodorus guildinii, Dichelops spp.), orugas (Anticarsia gemmatalis, Chrysodeixis includens, Rachiplusia nu, Helicoverpa), mosca blanca, trips, ácaros. Datos propios: GM, hábito (determinado/indeterminado), tecnología (RR, Intacta, Enlist, etc.), inoculación y coinoculación.",
+    "humedad": 13
+   },
+   {
+    "n": "Maíz",
+    "cientifico": "Zea mays",
+    "grupo": "cereal",
+    "fenologia": "Ritchie y Hanway: VE, V1…Vn, VT, R1…R6 (capa negra = madurez fisiológica)",
+    "parcela": {
+     "hileras": 4,
+     "dist": 0.7,
+     "largo": 5,
+     "util": 2
+    },
+    "parcelaTxt": "4 hileras × 5 m (mínimo SENAVE), entre hileras 0,45–0,80 m según sembradora; útil: 2 centrales × 4 m; pasillos ≤ 1 m entre bloques",
+    "notas": "SENAVE (NOR-DPUV-111) exige rendimiento al 13 %; el comercio regional usa 14,5 % (norma argentina XII), por eso la base debe declararse. Zafra y zafriña (siembra tras soja) se deben registrar en la ficha. Ciclos SENAVE: súper precoz < 125 d, precoz 126–135 d, normal > 136 d. Densidad mínima válida SENAVE: 2 pl/m a 45 cm. Enfermedades: tizón (Exserohilum turcicum), roya polysora y roya común, mancha blanca (Phaeosphaeria/Pantoea), mancha gris (Cercospora zeae-maydis), podredumbres de tallo y espiga (Fusarium, Diplodia, Gibberella), achaparramiento (Spiroplasma, fitoplasma) y virosis transmitidas por Dalbulus maidis. Plagas: cogollero (Spodoptera frugiperda), chicharrita (Dalbulus maidis), Helicoverpa zea en espiga, barrenador (Diatraea saccharalis), chinche Dichelops en emergencia. Datos propios: tecnología Bt/tolerancia a herbicidas, refugio.",
+    "humedad": 13
+   },
+   {
+    "n": "Trigo",
+    "cientifico": "Triticum aestivum",
+    "grupo": "cereal de invierno",
+    "fenologia": "Zadoks (Z00–Z99)",
+    "parcela": {
+     "hileras": 6,
+     "dist": 0.17,
+     "largo": 5,
+     "util": 4
+    },
+    "parcelaTxt": "6 hileras a 0,17 m × 5 m; útil: 4 hileras centrales sin 0,5 m de cabecera (≈ 2,7 m²); o 6–8 hileras para cosecha con microcosechadora",
+    "notas": "Base de humedad: el anexo de trigo de la Res. 414/2020 no se pudo leer (no verificado). Ensayos publicados en Paraguay usan 13 % o 14 % (UNI, 2023, a 14 %); la norma argentina de comercialización usa 14 %. Dejar 13 % por defecto y obligar a declarar la base. Enfermedades: brusone (Pyricularia oryzae, endémica en el sur y noreste de Paraguay), mancha amarilla (Drechslera tritici-repentis), roya de la hoja (Puccinia triticina), fusariosis de la espiga (Fusarium graminearum), oídio, manchas foliares. Plagas: pulgones (Schizaphis graminum, Rhopalosiphum padi, Metopolophium dirhodum, Sitobion avenae), orugas (Pseudaletia), chinches. Calidad: peso hectolítrico, proteína, gluten y falling number (laboratorio).",
+    "humedad": 13
+   },
+   {
+    "n": "Girasol",
+    "cientifico": "Helianthus annuus",
+    "grupo": "oleaginosa",
+    "fenologia": "Schneiter y Miller (1981): VE, V1…Vn, R1…R9",
+    "parcela": {
+     "hileras": 4,
+     "dist": 0.7,
+     "largo": 6,
+     "util": 2
+    },
+    "parcelaTxt": "4 hileras a 0,70 m × 6 m; útil: 2 centrales × 5 m (no verificado: no se pudo leer el anexo SENAVE de girasol)",
+    "notas": "11 % es la base de la norma argentina IX (tolerancia de recibo 14 %). Cultivo importante en el Chaco y en el sur de la Región Oriental. Variables propias: diámetro de capítulo, % aceite, daño por pájaros, vuelco y quebrado. Enfermedades: podredumbre del capítulo (Sclerotinia), mancha negra (Alternaria/Phoma), mildiu (Plasmopara halstedii), roya negra. Plagas: Helicoverpa, chinches, gusanos de suelo.",
+    "humedad": 11
+   },
+   {
+    "n": "Canola",
+    "cientifico": "Brassica napus",
+    "grupo": "oleaginosa de invierno",
+    "fenologia": "BBCH para colza (Lancashire et al. 1991)",
+    "parcela": {
+     "hileras": 4,
+     "dist": 0.34,
+     "largo": 5,
+     "util": 2
+    },
+    "parcelaTxt": "Mínimo SENAVE 4 hileras × 5 m; entre hileras 0,17–0,40 m según sembradora; útil: 2 centrales (no verificado el espaciamiento)",
+    "notas": "Humedad de comercialización NO verificada para Paraguay: pedir la humedad de recibo del acopiador en la ficha. Densidad mínima válida SENAVE: 7 pl/m lineal. Datos propios: dehiscencia/desgrane de silicuas, % aceite, glucosinolatos y erúcico (calidad 'canola'). Enfermedades: mancha negra (Alternaria), pie negro (Leptosphaeria/Phoma lingam), Sclerotinia. Plagas: polilla de las crucíferas (Plutella xylostella), pulgones."
+   },
+   {
+    "n": "Arroz",
+    "cientifico": "Oryza sativa",
+    "grupo": "cereal",
+    "fenologia": "Counce, Keisling y Mitchell (2000): S0–S3, V1–Vn, R0–R9",
+    "parcela": {
+     "hileras": 4,
+     "dist": 0.2,
+     "largo": 5,
+     "util": 2
+    },
+    "parcelaTxt": "Mínimo SENAVE 4 hileras × 5 m; en línea a 0,17–0,20 m con riego por inundación; útil: 2 centrales (o 4 en siembra densa) sin cabeceras",
+    "notas": "13 % es la base habitual en ensayos; no verificada para comercio en Paraguay. SENAVE tiene zonas propias para arroz y densidad mínima válida de 7 pl/m lineal. Sistema: riego por inundación (Misiones, Ñeembucú, Itapúa, Caazapá). Datos propios: panojas/m², % de vaneo, rendimiento de molino (% grano entero), días a floración. Enfermedades: brusone (Pyricularia oryzae), mancha de la vaina (Rhizoctonia), mancha marrón. Plagas: gorgojo acuático (Oryzophagus), chinches (Tibraca, Oebalus).",
+    "humedad": 13
+   },
+   {
+    "n": "Sésamo",
+    "cientifico": "Sesamum indicum",
+    "grupo": "oleaginosa",
+    "fenologia": "BBCH general (Meier 2001) o etapas de Langham (no verificada su adopción en Paraguay)",
+    "parcela": {
+     "hileras": 4,
+     "dist": 0.6,
+     "largo": 5,
+     "util": 2
+    },
+    "parcelaTxt": "4 hileras a 0,50–0,70 m × 5 m; útil: 2 centrales × 4 m (orientativo; no se pudo leer el anexo SENAVE de sésamo)",
+    "notas": "Humedad de comercialización no verificada: declarar la del acopiador/exportador. Rubro de agricultura familiar (San Pedro, Concepción, Canindeyú). Datos propios: dehiscencia (variedades dehiscentes e indehiscentes), cápsulas por planta, altura a la primera cápsula, color de grano, % aceite. Cosecha manual en emparvado: pesar grano limpio. Enfermedades: Macrophomina y Fusarium (marchitez), mancha angular/bacteriosis. Plagas: mosca blanca, Antigastra catalaunalis (no verificado como principal en Paraguay)."
+   },
+   {
+    "n": "Chía",
+    "cientifico": "Salvia hispanica",
+    "grupo": "oleaginosa de especialidad",
+    "fenologia": "BBCH general (no hay escala específica verificada)",
+    "parcela": {
+     "hileras": 4,
+     "dist": 0.5,
+     "largo": 5,
+     "util": 2
+    },
+    "parcelaTxt": "4 hileras a 0,45–0,70 m × 5 m; útil: 2 centrales × 4 m (orientativo)",
+    "notas": "Paraguay es exportador importante, pero no se encontraron normas de humedad ni protocolos SENAVE propios (no está en la Res. 414/2020). Día corto: la fecha de siembra define el ciclo y debe ir en la ficha. Datos propios: espigas por planta, largo de espiga, PMG (~1 g, usar 2 decimales), % aceite y omega-3, vuelco. Plagas y enfermedades poco documentadas en el país (no verificado)."
+   },
+   {
+    "n": "Algodón",
+    "cientifico": "Gossypium hirsutum",
+    "grupo": "fibra / oleaginosa",
+    "fenologia": "Marur y Ruano (2001): V, B (pimpollo), F (flor), C (capullo); o BBCH",
+    "parcela": {
+     "hileras": 4,
+     "dist": 0.9,
+     "largo": 10,
+     "util": 2
+    },
+    "parcelaTxt": "4 hileras a 0,90 m × 10 m (mínimo SENAVE 4 × 10 m); útil: 2 centrales × 9 m",
+    "notas": "Rendimiento en algodón en bruto (en rama), sin corrección de humedad; fibra por desmote de una muestra (20 capullos/parcela según SENAVE). Densidad mínima válida SENAVE: 7 pl/m lineal. Ciclos SENAVE: precoz, medio, tardío. Variables propias: capullos por planta, peso de capullo, % de fibra, calidad HVI. Plagas: picudo (Anthonomus grandis), Helicoverpa/Heliothis, Spodoptera, mosca blanca, pulgón (vector de enfermedad azul), ácaros. Enfermedades: ramularia (Ramularia areola), mancha angular."
+   },
+   {
+    "n": "Sorgo",
+    "cientifico": "Sorghum bicolor",
+    "grupo": "cereal",
+    "fenologia": "Vanderlip y Reeves (1972): etapas 0–9",
+    "parcela": {
+     "hileras": 4,
+     "dist": 0.52,
+     "largo": 5,
+     "util": 2
+    },
+    "parcelaTxt": "4 hileras a 0,45–0,70 m × 5 m; útil: 2 centrales × 4 m",
+    "notas": "La norma argentina de comercialización usa 15 % (norma XVIII); en ensayos se usa 13 % (declarar la base). Granífero y forrajero/silero (para silo medir materia seca total, no grano). Plagas: pulgón amarillo (Melanaphis sacchari; su presencia en Paraguay no se verificó), cogollero, mosquita del sorgo (Stenodiplosis), pájaros. Enfermedades: antracnosis, tizón.",
+    "humedad": 13
+   },
+   {
+    "n": "Caña de azúcar",
+    "cientifico": "Saccharum spp.",
+    "grupo": "industrial",
+    "fenologia": "Fases: brotación, macollaje, gran crecimiento, maduración (o BBCH)",
+    "parcela": {
+     "hileras": 5,
+     "dist": 1.5,
+     "largo": 8,
+     "util": 3
+    },
+    "parcelaTxt": "5 surcos × 8 m (mínimo SENAVE), surcos a 1,4–1,5 m; útil: 3 surcos centrales",
+    "notas": "Está en la Res. 414/2020. Rendimiento en t de tallos/ha (TCH), no en kg de grano. Calidad: Brix, Pol y azúcar recuperable (laboratorio del ingenio). Ensayos de caña planta y socas (varios cortes). Plagas: barrenador (Diatraea saccharalis), salivazo (Mahanarva). Enfermedades: carbón (Sporisorium scitamineum), roya."
+   },
+   {
+    "n": "Poroto",
+    "cientifico": "Phaseolus vulgaris / Vigna unguiculata",
+    "grupo": "leguminosa de grano",
+    "fenologia": "CIAT (Fernández et al. 1986): V0–V4, R5–R9",
+    "parcela": {
+     "hileras": 4,
+     "dist": 0.5,
+     "largo": 5,
+     "util": 2
+    },
+    "parcelaTxt": "4 hileras a 0,45–0,50 m × 5 m; útil: 2 centrales × 4 m",
+    "notas": "Nuevo. SENAVE tiene norma propia NOR-DPUV-119 (no se pudo abrir en esta revisión: base de humedad 13 % no verificada). Rubro de agricultura familiar (poroto y kumanda/caupí). Variables: vainas por planta, granos por vaina, peso de 100 granos, hábito de crecimiento. Enfermedades: antracnosis, mancha angular, bacteriosis, virus del mosaico dorado (mosca blanca).",
+    "humedad": 13
+   },
+   {
+    "n": "Maní",
+    "cientifico": "Arachis hypogaea",
+    "grupo": "leguminosa oleaginosa",
+    "fenologia": "Boote (1982): VE, V1…Vn, R1…R8",
+    "parcela": {
+     "hileras": 4,
+     "dist": 0.6,
+     "largo": 5,
+     "util": 2
+    },
+    "parcelaTxt": "4 hileras a 0,45–0,70 m × 5 m; útil: 2 centrales × 4 m (arrancado manual)",
+    "notas": "Nuevo; está en la Res. 414/2020. Rendimiento en vaina y en grano (relación grano/vaina); humedad base no verificada. Enfermedades: viruela/mancha de la hoja (Cercospora arachidicola, Nothopassalora personata), Sclerotium. Plagas: trips, gusanos de suelo."
+   },
+   {
+    "n": "Mandioca",
+    "cientifico": "Manihot esculenta",
+    "grupo": "raíz / industrial",
+    "fenologia": "Meses después de plantación (fases: brotación, raíces tuberosas, engrosamiento, reposo)",
+    "parcela": {
+     "hileras": 4,
+     "dist": 1.0,
+     "largo": 6,
+     "util": 2
+    },
+    "parcelaTxt": "4 hileras a 1,0 m × 6 plantas a 1,0 m (24 m²); útil: 2 hileras centrales sin la primera y última planta (8 plantas) (orientativo)",
+    "notas": "Nuevo; está en la Res. 414/2020 (anexo no leído). Rendimiento de raíces frescas (t/ha) y % de materia seca o almidón (método de la balanza hidrostática); cosecha a 8–12 meses. Usa estacas, no semilla: la ficha debe pedir largo de estaca y origen. Muy cultivada en todo el país."
+   },
+   {
+    "n": "Avena",
+    "cientifico": "Avena sativa / A. strigosa",
+    "grupo": "cereal de invierno / cobertura",
+    "fenologia": "Zadoks (Z00–Z99)",
+    "parcela": {
+     "hileras": 6,
+     "dist": 0.17,
+     "largo": 5,
+     "util": 4
+    },
+    "parcelaTxt": "6 hileras × 5 m (mínimo SENAVE) a 0,17–0,20 m; útil: 4 centrales sin cabeceras",
+    "notas": "Nuevo; está en la Res. 414/2020 (densidad mínima válida 60 pl/m). Se usa para grano, forraje y sobre todo cobertura (avena negra) en siembra directa. Si es para cobertura o forraje usar biomasa seca (kg MS/ha) y pasar a 'Cultivos de cobertura'. Enfermedades: roya de la hoja (Puccinia coronata), helmintosporiosis.",
+    "humedad": 13
+   },
+   {
+    "n": "Abonos verdes y coberturas",
+    "cientifico": "Crotalaria spp., Mucuna spp., Canavalia, avena negra, nabo forrajero (Raphanus sativus)",
+    "grupo": "cobertura",
+    "fenologia": "Días desde siembra y estado de plena floración (momento de corte o rolado)",
+    "parcela": {
+     "hileras": 10,
+     "dist": 0.5,
+     "largo": 5,
+     "util": 6
+    },
+    "parcelaTxt": "Parcelas de 5 × 5 m (al voleo o en hileras); muestreo de biomasa con 2 marcos de 0,25–1 m² por parcela",
+    "notas": "Rendimiento = biomasa seca (kg MS/ha) secada a 60–65 °C, no grano. Medir cobertura del suelo (%), supresión de malezas y rendimiento del cultivo comercial siguiente. Crotalaria está en la Res. 414/2020."
+   }
+  ],
+  "ficha": [
+   {
+    "id": "zona",
+    "campo": "Zona SENAVE",
+    "tipo": "lista",
+    "opciones": [
+     "Región Oriental · Norte",
+     "Región Oriental · Centro",
+     "Región Oriental · Sur",
+     "Región Occidental"
+    ]
+   },
+   {
+    "id": "epoca",
+    "campo": "Época",
+    "tipo": "lista",
+    "opciones": [
+     "Zafra",
+     "Zafriña",
+     "Invierno"
+    ]
+   },
+   {
+    "id": "siembra",
+    "campo": "Fecha de siembra",
+    "tipo": "fecha"
+   },
+   {
+    "id": "emergencia",
+    "campo": "Fecha de emergencia",
+    "tipo": "fecha"
+   },
+   {
+    "id": "cultivar",
+    "campo": "Cultivar o híbrido base, grupo de madurez o ciclo y tecnología (RR, Intacta, Bt…)",
+    "tipo": "texto"
+   },
+   {
+    "id": "densidad",
+    "campo": "Densidad objetivo (semillas/m)",
+    "tipo": "numero"
+   },
+   {
+    "id": "siembra_sist",
+    "campo": "Sistema de siembra",
+    "tipo": "lista",
+    "opciones": [
+     "Siembra directa",
+     "Convencional"
+    ]
+   },
+   {
+    "id": "antecesor",
+    "campo": "Cultivo antecesor y cobertura",
+    "tipo": "texto"
+   },
+   {
+    "id": "suelo",
+    "campo": "Suelo: textura y análisis (pH, MO, P, K, Ca, Mg, Al, V %)",
+    "tipo": "texto"
+   },
+   {
+    "id": "historial",
+    "campo": "Historial de soja e inoculación del lote",
+    "tipo": "texto"
+   },
+   {
+    "id": "semilla_trat",
+    "campo": "Tratamiento de semillas e inoculante de todo el ensayo",
+    "tipo": "texto"
+   },
+   {
+    "id": "fert_base",
+    "campo": "Fertilización de base",
+    "tipo": "texto"
+   },
+   {
+    "id": "riego",
+    "campo": "Riego",
+    "tipo": "lista",
+    "opciones": [
+     "Secano",
+     "Riego complementario",
+     "Inundación (arroz)"
+    ]
+   },
+   {
+    "id": "humedad",
+    "campo": "Humedad base para corregir el rendimiento (%)",
+    "tipo": "numero",
+    "ayuda": "Se completa con la del cultivo; cambiala si el comprador o la norma usa otra."
+   },
+   {
+    "id": "presion",
+    "campo": "Plaga, enfermedad o malezas objetivo y presión inicial",
+    "tipo": "texto"
+   },
+   {
+    "id": "senave",
+    "campo": "N.º de habilitación SENAVE y registro del ensayista",
+    "tipo": "texto"
+   },
+   {
+    "id": "clima",
+    "campo": "Lluvias y eventos (granizo, helada, sequía)",
+    "tipo": "texto"
+   },
+   {
+    "id": "cosecha",
+    "campo": "Fecha de cosecha",
+    "tipo": "fecha"
+   }
+  ],
+  "calculadoras": [
+   {
+    "n": "Corrección de rendimiento por humedad",
+    "formula": "kg/ha = P(kg) × (100 − H medida) ÷ (100 − H base) × 10 000 ÷ área cosechada (m²)",
+    "por_que": "Reemplaza el '÷ 87' fijo actual; la base cambia por cultivo."
+   },
+   {
+    "n": "Plantas por hectárea",
+    "formula": "pl/ha = pl/m × 10 000 ÷ distancia entre hileras (m)",
+    "por_que": "Los conteos se hacen por metro y las recomendaciones se dan por hectárea."
+   },
+   {
+    "n": "Semillas a sembrar por metro",
+    "formula": "sem/m = pl/ha objetivo × distancia (m) ÷ 10 000 ÷ (germinación % × eficiencia de emergencia % ÷ 10 000)",
+    "por_que": "Para instalar ensayos de densidad y para que la parcela cumpla la densidad mínima SENAVE."
+   },
+   {
+    "n": "Rendimiento estimado por componentes (soja)",
+    "formula": "kg/ha = pl/m² × vainas/pl × granos/vaina × PMG(g) ÷ 1000 × 10",
+    "por_que": "Permite estimar antes de cosecha y diagnosticar qué componente explica diferencias."
+   },
+   {
+    "n": "AACPE (área bajo la curva de progreso de la enfermedad)",
+    "formula": "AACPE = Σ [(yᵢ + yᵢ₊₁) ÷ 2 × (tᵢ₊₁ − tᵢ)]",
+    "por_que": "Resume varias lecturas de severidad en un número; base del % de control en fungicidas."
+   },
+   {
+    "n": "Índice de McKinney",
+    "formula": "IS % = Σ(nᵢ × gradoᵢ) ÷ (N × grado máximo) × 100",
+    "por_que": "Para escalas por grados (1–5, 0–4, 1–9)."
+   },
+   {
+    "n": "Índice de fusariosis",
+    "formula": "IF = incidencia (%) × severidad (%) ÷ 100",
+    "por_que": "Variable estándar de fusariosis de la espiga en trigo."
+   },
+   {
+    "n": "Índice de velocidad de emergencia (Maguire)",
+    "formula": "IVE = Σ (Nᵢ ÷ Dᵢ), Nᵢ = plántulas nuevas el día Dᵢ",
+    "por_que": "Tratamiento de semillas e inoculantes."
+   },
+   {
+    "n": "Pérdida por competencia de malezas",
+    "formula": "Pérdida % = (Rend. testigo limpio − Rend. tratamiento) ÷ Rend. testigo limpio × 100",
+    "por_que": "Traduce el control de malezas a rendimiento."
+   },
+   {
+    "n": "Dosis óptima económica (regresión cuadrática)",
+    "formula": "Y = a + b·D + c·D² → DOE = (r − b) ÷ (2c), r = precio del nutriente ÷ precio del grano (c < 0); eficiencia agronómica = (Y dosis − Y 0) ÷ dosis",
+    "por_que": "Salida práctica de los ensayos de dosis-respuesta."
+   },
+   {
+    "n": "Bloques mínimos por gl del error",
+    "formula": "gl error = (tratamientos − 1) × (bloques − 1) ≥ 12 (eficacia, EPPO PP1/152; fertilizantes Res. 277/03) o ≥ 15 (cultivares SENAVE)",
+    "por_que": "La app puede avisar al planificar si faltan bloques."
+   },
+   {
+    "n": "Homogeneidad de varianzas para análisis conjunto",
+    "formula": "F máx = CME mayor ÷ CME menor entre localidades/años; SENAVE admite el ANAVA conjunto si ≤ 5",
+    "por_que": "Paso obligatorio del análisis de cultivares RNCC."
+   }
+  ]
+ },
+ "horticola": {
+  "nombre": "Hortícola",
+  "texto": "Hortalizas y frutales, a campo o bajo cubierta.",
+  "ej": "Híbridos, sanidad, fertirriego, sustratos, injertos, poscosecha",
+  "tipos": [
+   {
+    "n": "Cultivares / híbridos",
+    "descripcion": "Comparar cultivares o híbridos en las mismas condiciones de manejo; base de la recomendación y del registro de cultivares (RNCC).",
+    "variables": [
+     "rendimiento",
+     "rend_com",
+     "descarte",
+     "frutos_pl",
+     "peso_fruto",
+     "diam_fruto",
+     "dias_cosecha",
+     "brix",
+     "acidez",
+     "firmeza",
+     "espesor_pulpa",
+     "peso_cabeza",
+     "tipburn",
+     "espigado",
+     "diam_bulbo",
+     "bulbos_dobles",
+     "long_raiz",
+     "raices_defect",
+     "tuberculos_pl",
+     "severidad",
+     "incidencia",
+     "virosis"
+    ],
+    "testigos": "Al menos 2 cultivares testigo de uso local (para RNCC, los de la lista oficial DISE/CTCC por grupo de madurez)",
+    "trat": "Testigo 1 (cultivar más plantado)\nTestigo 2\nHíbrido A\nHíbrido B\nHíbrido C\nHíbrido D",
+    "bloques_min": 4,
+    "momentos": "Trasplante; recorridas sanitarias cada 7–14 días; todas las cosechas; calidad en 1–2 cosechas intermedias.",
+    "analisis": "ANAVA + Tukey por localidad sobre el total acumulado; curva de cosecha acumulada (precocidad); análisis conjunto de localidades y años si el cociente entre el mayor y el menor CME ≤ 5.",
+    "normativa": "Ley 385/94 de semillas y Res. SENAVE 414/2020 (tomate, melón, frutilla, papa y mandioca entre las especies con norma): DBCA con ≥ 3 repeticiones, ≥ 15 gl del error, 3 zonas, 2 años, ≥ 2 testigos; habilitación 30 días antes de la siembra. Con 6 entradas, 4 bloques dan 15 gl. Anexos de cada especie hortícola no consultados: verificar parcela y variables exigidas.",
+    "fuente": "Proyecto: ensayos_de_campo/08_normativa_paraguay.md; https://www.aprosemp.org.py/docs/normativas/5-Resolucion-SENAVE-414-Normas-minimas-para-ensayos-evaluacion-agronomica-calidad-variedades.pdf"
+   },
+   {
+    "n": "Eficacia de fungicidas",
+    "descripcion": "Medir el control de una enfermedad por fungicidas, bactericidas o biofungicidas frente a un testigo sin aplicar y una referencia registrada.",
+    "variables": [
+     "severidad",
+     "incidencia",
+     "fitotox",
+     "rendimiento",
+     "rend_com",
+     "descarte"
+    ],
+    "testigos": "Testigo sin aplicar + producto de referencia registrado en SENAVE para ese cultivo y enfermedad",
+    "trat": "Testigo sin aplicar\nReferencia registrada\nProducto a dosis baja\nProducto a dosis de etiqueta\nProducto a dosis doble (fitotoxicidad)",
+    "bloques_min": 4,
+    "momentos": "0 DAA (antes de la 1.ª aplicación) y cada 7 días (tizón tardío cada 5–7) hasta 14–21 días después de la última; fitotoxicidad a 3, 7 y 14 DAA; cosechas.",
+    "analisis": "ANAVA + Tukey por fecha; AACPE; % de control de Abbott sobre severidad o AACPE respecto del testigo.",
+    "normativa": "Ley 3742/09: ensayista registrado (A.10) y registro experimental (D.1); protocolo patrón Res. MAG 296/03 (texto no consultado). Guías: EPPO PP1/152 y PP1/181 y las normas por patógeno (PP1/002 tizón tardío, PP1/263 Alternaria, PP1/057 oídio, PP1/065 mildiu, PP1/054 y PP1/016 Botrytis).",
+    "fuente": "EPPO PP1 (lista de normas): https://pp1.eppo.int/standards/all"
+   },
+   {
+    "n": "Eficacia de insecticidas y acaricidas",
+    "descripcion": "Medir el control de insectos o ácaros (químicos o biológicos) contando la plaga antes y después de cada aplicación.",
+    "variables": [
+     "mosca_blanca",
+     "tuta_foliolos",
+     "trips",
+     "acaros",
+     "frutos_danados",
+     "virosis",
+     "fitotox",
+     "rendimiento",
+     "rend_com"
+    ],
+    "testigos": "Testigo sin aplicar + insecticida o acaricida de referencia registrado en SENAVE",
+    "trat": "Testigo sin aplicar\nReferencia registrada\nProducto dosis baja\nProducto dosis de etiqueta\nProducto dosis alta",
+    "bloques_min": 4,
+    "momentos": "Precuento (0 DAA) y 3, 7 y 14 días después de cada aplicación (ácaros también 21); frutos dañados en cada cosecha.",
+    "analisis": "Conteos con √(x + 0,5) o modelo de Poisson; ANAVA + Tukey por fecha; % de control de Henderson-Tilton si el precuento difiere entre parcelas, Abbott si es homogéneo.",
+    "normativa": "Ley 3742/09 y Res. MAG 296/03 (no consultada). Guías EPPO: PP1/036 mosca blanca, PP1/275 Tuta absoluta, PP1/085 trips, PP1/037 arañuela, PP1/300 pulgones en solanáceas y cucurbitáceas, PP1/339 Spodoptera.",
+    "fuente": "EPPO PP1 (lista de normas): https://pp1.eppo.int/standards/all; Cáceres S., INTA EEA Bella Vista, Guía de identificación y manejo de plagas del tomate: https://repositorio.inta.gob.ar/xmlui/bitstream/handle/20.500.12123/8591/INTA_EEABellaVista_Libros_CaceresS_GuiaIdentificaci%C3%B3nManejoPlagasTomate.pdf"
+   },
+   {
+    "n": "Eficacia de herbicidas",
+    "descripcion": "Control de malezas y selectividad en cultivos de siembra densa o trasplante (cebolla, zanahoria, papa, batata, mandioca, piña).",
+    "variables": [
+     "malezas_cob",
+     "fitotox",
+     "rendimiento",
+     "rend_com",
+     "diam_bulbo",
+     "raices_defect"
+    ],
+    "testigos": "Testigo enmalezado + testigo carpido (limpio a mano) + herbicida de referencia registrado",
+    "trat": "Testigo enmalezado\nTestigo carpido\nReferencia\nHerbicida dosis 1\nHerbicida dosis 2",
+    "bloques_min": 4,
+    "momentos": "Antes de aplicar; 15, 30 y 45 días después de la aplicación; cosecha.",
+    "analisis": "ANAVA + Tukey; % de control respecto del enmalezado; rendimiento relativo al carpido.",
+    "normativa": "Ley 3742/09 y Res. MAG 296/03 (no consultada).",
+    "fuente": "ABC Rural, Investigaciones en cebolla de bulbo (IPTA): https://www.abc.com.py/edicion-impresa/suplementos/abc-rural/investigaciones-en-cebolla-de-bulbo---ing-agr-edgar-salinas--1540416.html",
+    "cultivos": [
+     "Cebolla",
+     "Zanahoria",
+     "Papa",
+     "Batata",
+     "Mandioca de mesa",
+     "Piña",
+     "Tomate",
+     "Repollo"
+    ]
+   },
+   {
+    "n": "Control de nematodos",
+    "descripcion": "Nematicidas químicos o biológicos, portainjertos o rotaciones contra Meloidogyne en hortalizas.",
+    "variables": [
+     "agallas",
+     "rendimiento",
+     "rend_com",
+     "raices_defect",
+     "incidencia",
+     "fitotox",
+     "long_raiz"
+    ],
+    "testigos": "Testigo sin tratar + nematicida de referencia registrado",
+    "trat": "Testigo\nReferencia\nProducto A\nProducto B (biológico)",
+    "bloques_min": 4,
+    "momentos": "Muestreo de suelo antes (Pi) y al final (Pf); índice de agallas al final del ciclo; cosechas.",
+    "analisis": "ANAVA + Tukey; índice de agallas con Kruskal-Wallis si no hay normalidad; factor de reproducción FR = Pf / Pi.",
+    "normativa": "Ley 3742/09; guías EPPO PP1/321 (a campo) y PP1/322 (hortalizas de fruto bajo cubierta).",
+    "fuente": "EPPO PP1 (lista de normas): https://pp1.eppo.int/standards/all",
+    "cultivos": [
+     "Tomate",
+     "Locote",
+     "Zanahoria",
+     "Lechuga",
+     "Melón",
+     "Sandía",
+     "Pepino",
+     "Papa",
+     "Batata",
+     "Frutilla"
+    ]
+   },
+   {
+    "n": "Fertilización y bioestimulantes",
+    "descripcion": "Dosis, fuentes y momentos de fertilizantes de base o foliares, enmiendas y bioestimulantes.",
+    "variables": [
+     "rendimiento",
+     "rend_com",
+     "descarte",
+     "peso_fruto",
+     "diam_fruto",
+     "brix",
+     "peso_cabeza",
+     "tipburn",
+     "diam_bulbo",
+     "tuberculos_pl",
+     "fitotox",
+     "ce_drenaje"
+    ],
+    "testigos": "Testigo sin el fertilizante + fertilizante de referencia registrado + manejo del productor",
+    "trat": "Testigo sin aplicar\nReferencia\nDosis baja\nDosis media (recomendada)\nDosis alta",
+    "bloques_min": 5,
+    "momentos": "Análisis de suelo antes; cosechas; calidad en cosechas intermedias.",
+    "analisis": "ANAVA + Tukey; regresión por dosis (dosis de máximo rendimiento y dosis económica).",
+    "normativa": "Res. MAG 277/03 (registro de fertilizantes): 3 dosis + referencia + testigo, ≥ 5 repeticiones, ≥ 12 gl del error, 2 años, 3 regiones.",
+    "fuente": "Proyecto: ensayos_de_campo/08_normativa_paraguay.md; https://faolex.fao.org/docs/pdf/par48151.pdf"
+   },
+   {
+    "n": "Fertirriego",
+    "descripcion": "Láminas de riego, soluciones nutritivas o frecuencias en riego por goteo, a campo, bajo cubierta o en sustrato.",
+    "variables": [
+     "lamina",
+     "drenaje_pct",
+     "ce_drenaje",
+     "rendimiento",
+     "rend_com",
+     "descarte",
+     "peso_fruto",
+     "brix",
+     "tipburn",
+     "fitotox"
+    ],
+    "testigos": "Manejo del productor o solución estándar de referencia",
+    "trat": "Lámina 60 % ETc\nLámina 80 % ETc\nLámina 100 % ETc\nLámina 120 % ETc",
+    "bloques_min": 4,
+    "momentos": "Registro diario o semanal de agua y drenaje; CE y pH semanal; cosechas.",
+    "analisis": "ANAVA + Tukey; regresión por lámina o dosis; eficiencia de uso del agua (kg/m³). Si el riego se maneja por sector, parcelas divididas con el riego en la parcela principal.",
+    "normativa": "Sin norma específica en Paraguay.",
+    "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md §3.6; Vida Rural 168 (2003), control del drenaje en cultivo sin suelo: https://www.mapa.gob.es/ministerio/pags/biblioteca/revistas/pdf_vrural/Vrural_2003_168_30_33.pdf"
+   },
+   {
+    "n": "Sustratos",
+    "descripcion": "Comparar sustratos o mezclas (turba, fibra de coco, compost, cáscara de arroz) para plantines o cultivo en maceta.",
+    "variables": [
+     "sust_pt",
+     "sust_ca",
+     "sust_ph",
+     "sust_ce",
+     "emergencia",
+     "altura_pl",
+     "diam_cuello",
+     "ps_aereo",
+     "ps_raiz",
+     "iqd",
+     "drenaje_pct",
+     "ce_drenaje"
+    ],
+    "testigos": "Sustrato comercial de referencia",
+    "trat": "Sustrato comercial\nMezcla 1\nMezcla 2\nMezcla 3",
+    "bloques_min": 4,
+    "momentos": "Propiedades al inicio; emergencia diaria; plantín al trasplante.",
+    "analisis": "ANAVA + Tukey (DCA, o DBCA por posición en la mesada); unidad = bandeja o grupo de 10–20 macetas.",
+    "normativa": "Sin norma específica en Paraguay.",
+    "fuente": "Método 1:5 v/v y mesa de tensión (IN SDA 17/2007, Brasil), en Horticultura Brasileira: https://www.redalyc.org/pdf/908/90822247009.pdf; Agronomía Costarricense (UCR), propiedades físicas de fibra de coco, cita a Abad et al. (1993): https://www.revistas.ucr.ac.cr/index.php/agrocost/article/view/52044/52194"
+   },
+   {
+    "n": "Cobertura del suelo",
+    "descripcion": "Mulching plástico (negro, plata/negro, blanco), rastrojo o paja frente a suelo desnudo.",
+    "variables": [
+     "temp_suelo",
+     "malezas_cob",
+     "lamina",
+     "rendimiento",
+     "rend_com",
+     "descarte",
+     "peso_fruto",
+     "peso_cabeza",
+     "virosis",
+     "dias_cosecha"
+    ],
+    "testigos": "Suelo desnudo con carpida + cobertura usada por el productor",
+    "trat": "Suelo desnudo\nMulching negro\nMulching plata/negro\nPaja o rastrojo",
+    "bloques_min": 4,
+    "momentos": "Temperatura del suelo las primeras 6–8 semanas; malezas a 15, 30 y 45 días; cosechas.",
+    "analisis": "ANAVA + Tukey; en factorial con cultivar o riego, parcelas divididas con la cobertura en la parcela principal.",
+    "normativa": "Sin norma específica.",
+    "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md §2"
+   },
+   {
+    "n": "Densidad, marco y conducción",
+    "descripcion": "Distancias de plantación, número de tallos, poda y tutorado.",
+    "variables": [
+     "rendimiento",
+     "rend_com",
+     "descarte",
+     "frutos_pl",
+     "peso_fruto",
+     "diam_fruto",
+     "peso_cabeza",
+     "diam_bulbo",
+     "bulbos_dobles",
+     "long_raiz",
+     "tuberculos_pl"
+    ],
+    "testigos": "Marco o sistema de conducción del productor",
+    "trat": "1 tallo\n2 tallos\n3 tallos\nMarco del productor",
+    "bloques_min": 4,
+    "momentos": "Cosechas; calibre en cosechas intermedias.",
+    "analisis": "ANAVA + Tukey; regresión por densidad; analizar por planta y por hectárea (≥ 10 plantas útiles por parcela).",
+    "normativa": "Sin norma específica.",
+    "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md §2"
+   },
+   {
+    "n": "Injerto y portainjertos",
+    "descripcion": "Portainjertos contra marchitez, nematodos o estrés (tomate, locote, cucurbitáceas) y portainjertos de cítricos.",
+    "variables": [
+     "rendimiento",
+     "rend_com",
+     "frutos_pl",
+     "peso_fruto",
+     "brix",
+     "incidencia",
+     "virosis",
+     "agallas",
+     "altura_pl",
+     "diam_cuello"
+    ],
+    "testigos": "Planta sin injertar (pie franco) + autoinjerto",
+    "trat": "Sin injertar\nAutoinjerto\nPortainjerto A\nPortainjerto B",
+    "bloques_min": 4,
+    "momentos": "Prendimiento a 7–14 días; marchitez cada 7–14 días; cosechas.",
+    "analisis": "ANAVA + Tukey; incidencia acumulada de marchitez.",
+    "normativa": "Sin norma específica; si el portainjerto se comercializa como cultivar, aplica la Ley 385/94.",
+    "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md",
+    "cultivos": [
+     "Tomate",
+     "Locote",
+     "Sandía",
+     "Melón",
+     "Pepino",
+     "Cítricos"
+    ]
+   },
+   {
+    "n": "Ambiente protegido",
+    "descripcion": "Comparar invernadero, túnel, media sombra o campo, o tipos de cubierta y malla.",
+    "variables": [
+     "rendimiento",
+     "rend_com",
+     "descarte",
+     "peso_fruto",
+     "dias_cosecha",
+     "severidad",
+     "incidencia",
+     "virosis",
+     "temp_suelo",
+     "tipburn",
+     "espigado",
+     "brix"
+    ],
+    "testigos": "Cultivo a campo o la cubierta habitual",
+    "trat": "Campo abierto\nMedia sombra 35 %\nInvernadero",
+    "bloques_min": 3,
+    "momentos": "Clima continuo (temperatura, HR, radiación) con un registrador por ambiente; cosechas.",
+    "analisis": "Si cada ambiente es una sola estructura no hay repeticiones reales: analizar como lado a lado (Welch) o repetir en ≥ 3 estructuras o localidades y hacer un análisis conjunto. Dentro de una estructura, los bloques solo controlan gradientes.",
+    "normativa": "Sin norma específica.",
+    "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md §1"
+   },
+   {
+    "n": "Poscosecha",
+    "descripcion": "Vida en estante, almacenamiento, recubrimientos, curado y envases.",
+    "variables": [
+     "perdida_peso",
+     "vida_estante",
+     "firmeza",
+     "brix",
+     "acidez",
+     "descarte",
+     "incidencia",
+     "peso_fruto"
+    ],
+    "testigos": "Sin tratamiento, a temperatura ambiente (y/o el manejo comercial)",
+    "trat": "Testigo\nRecubrimiento A\nRecubrimiento B\nRefrigeración",
+    "bloques_min": 4,
+    "momentos": "Día 0 y cada 2–3 días (cebolla y papa cada 7–15 días) hasta el fin de la vida útil.",
+    "analisis": "DCA factorial tratamiento × días; regresión de la pérdida de peso con los días (comparar pendientes); vida en estante con análisis de supervivencia.",
+    "normativa": "Sin norma específica; calidad con las normas MERCOSUR de tomate y cebolla.",
+    "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md §2 y §4"
+   },
+   {
+    "n": "Plantines",
+    "descripcion": "Calidad de plantín según bandeja, sustrato, fertilización, bioestimulante o edad al trasplante.",
+    "variables": [
+     "emergencia",
+     "altura_pl",
+     "diam_cuello",
+     "ps_aereo",
+     "ps_raiz",
+     "iqd",
+     "dias_cosecha",
+     "rendimiento"
+    ],
+    "testigos": "Manejo comercial del almaciguero",
+    "trat": "Bandeja 128 celdas\nBandeja 200 celdas\nBandeja 288 celdas",
+    "bloques_min": 4,
+    "momentos": "Emergencia diaria; plantín al trasplante; opcional: seguir a campo hasta la cosecha.",
+    "analisis": "ANAVA + Tukey (DCA o DBCA por posición en la mesada).",
+    "normativa": "Sin norma específica.",
+    "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md §3.4"
+   }
+  ],
+  "cultivos": [
+   {
+    "n": "Tomate",
+    "cientifico": "Solanum lycopersicum",
+    "grupo": "hortaliza de fruto (solanácea)",
+    "fenologia": "BBCH solanáceas (Meier); a campo e invernadero se usan además días desde trasplante y número de racimo floral",
+    "parcela": {
+     "hileras": 1,
+     "entre": 1.1,
+     "largo": 5,
+     "sobre": 0.4,
+     "util": 1,
+     "bordeP": 1
+    },
+    "parcelaTxt": "Invernadero: 1 hilera de 12 plantas a 0,40 m (≈ 5 m), hileras a 1,0–1,2 m; útiles: 10 plantas centrales (1 planta de borde en cada extremo). A campo: 2 hileras × 6 m; útil: 1 hilera sin la primera y la última planta.",
+    "notas": "Mediciones propias: rendimiento total y comercial por cosechas, frutos por planta, peso medio, diámetro → calibre Res. GMC 26/17 (1: < 35 mm solo cherry; 2: 35–< 50; 3: 50–< 70; 4: 70–< 100; 5: ≥ 100 mm), descarte por causa, °Brix, acidez, firmeza, días a 1.ª cosecha. Criterio de cosecha a declarar (color: verde maduro, pintón, rojo). Enfermedades clave: tizón tardío (Phytophthora infestans), tizón temprano (Alternaria spp.), mancha bacteriana (Xanthomonas), marchitez bacteriana (Ralstonia), virosis por begomovirus (mosca blanca) y tospovirus (trips), oídio (Leveillula/Oidium) en invernadero. Plagas: polilla del tomate (Tuta absoluta), mosca blanca (Bemisia tabaci), trips, ácaro del bronceado (Aculops lycopersici), arañuela (Tetranychus urticae), perforador del fruto (Neoleucinodes elegantalis), Helicoverpa; nematodos de agallas (Meloidogyne). Registro: incluido en Res. SENAVE 414/2020 (anexo de tomate no consultado: verificar parcela y variables exigidas). Parcela (orientativo: no verificado con una norma paraguaya; ajustar al sistema del productor)."
+   },
+   {
+    "n": "Locote",
+    "cientifico": "Capsicum annuum",
+    "grupo": "hortaliza de fruto (solanácea)",
+    "fenologia": "BBCH solanáceas (Meier)",
+    "parcela": {
+     "hileras": 1,
+     "entre": 1.0,
+     "largo": 5,
+     "sobre": 0.4,
+     "util": 1,
+     "bordeP": 1
+    },
+    "parcelaTxt": "1 hilera de 12 plantas a 0,40 m, hileras a 1,0 m; útiles: 10 plantas centrales.",
+    "notas": "Igual que tomate más espesor de pericarpio y color a cosecha (verde o rojo, declarar). Sin norma MERCOSUR de calibre consultada: usar peso medio y diámetro. Enfermedades: Phytophthora capsici (podredumbre de cuello), antracnosis (Colletotrichum), mancha bacteriana, virosis (tospovirus, potyvirus), oídio (Leveillula taurica). Plagas: trips, ácaro blanco (Polyphagotarsonemus latus), pulgones, mosca blanca, perforadores de fruto; nematodos. IPTA presentó en 2025–2026 un locote/morrón nacional. Parcela (orientativo: no verificado con una norma paraguaya; ajustar al sistema del productor)."
+   },
+   {
+    "n": "Lechuga",
+    "cientifico": "Lactuca sativa",
+    "grupo": "hortaliza de hoja",
+    "fenologia": "BBCH verduras que forman (o no) cabeza (Meier); días desde trasplante",
+    "parcela": {
+     "hileras": 4,
+     "entre": 0.3,
+     "largo": 3,
+     "sobre": 0.3,
+     "util": 2,
+     "bordeP": 1
+    },
+    "parcelaTxt": "Cantero de 1,2 m con 4 hileras a 0,30 m y plantas a 0,30 m, 3 m de largo; útiles: 2 hileras centrales sin 0,5 m en cada extremo (≈ 14 plantas).",
+    "notas": "Mediciones propias: peso fresco de cabeza (como se vende), % comercial, espigado, tipburn (quemado de bordes). No aplican frutos, °Brix, firmeza ni calibre de fruto. Enfermedades: mildiu (Bremia lactucae), Septoria, podredumbres (Sclerotinia, Rhizoctonia), tospovirus. Plagas: pulgones, trips, lagartas, minador. En verano paraguayo es clave el espigado y el tipburn. Parcela (orientativo: no verificado con una norma paraguaya; ajustar al sistema del productor)."
+   },
+   {
+    "n": "Repollo",
+    "cientifico": "Brassica oleracea var. capitata",
+    "grupo": "hortaliza de hoja (crucífera)",
+    "fenologia": "BBCH verduras que forman cabeza (Meier)",
+    "parcela": {
+     "hileras": 4,
+     "entre": 0.6,
+     "largo": 5,
+     "sobre": 0.4,
+     "util": 2,
+     "bordeP": 1
+    },
+    "parcelaTxt": "4 hileras a 0,60 m × 5 m, plantas a 0,40 m; útiles: 2 hileras centrales sin la primera y la última planta (≈ 20 plantas).",
+    "notas": "Peso de cabeza, % comercial, cabezas rajadas (en descarte), tipburn interno, espigado. Plagas clave: polilla de las crucíferas (Plutella xylostella), pulgones, lagartas; enfermedades: podredumbre negra (Xanthomonas campestris), alternaria. Parcela (orientativo: no verificado con una norma paraguaya; ajustar al sistema del productor)."
+   },
+   {
+    "n": "Cebolla",
+    "cientifico": "Allium cepa",
+    "grupo": "hortaliza de bulbo",
+    "fenologia": "BBCH hortalizas bulbosas (Meier); madurez = % de plantas con tallo caído",
+    "parcela": {
+     "hileras": 4,
+     "entre": 0.3,
+     "largo": 4,
+     "sobre": 0.12,
+     "util": 2,
+     "bordeP": 1
+    },
+    "parcelaTxt": "Cantero de 1,2 m con 4 hileras a 0,30 m y plantas a 0,12 m (marco IPTA), 4 m de largo; útil: 2 hileras centrales × 3 m (≈ 50 plantas).",
+    "notas": "Mediciones propias: rendimiento, diámetro ecuatorial del bulbo → calibre MERCOSUR (P.Res. 06/19, proyecto: 1: 25–40 mm; 2: > 40–< 55; 3: 55–< 75; 4: 75–< 90; 5: ≥ 90), bulbos dobles, florecidos (tallo floral), días al 50 % de tallos caídos, conservación poscosecha (pérdida de peso, brotado). Variedades IPTA citadas: Catarina (precoz) y Dorada (tardía); rendimiento medio de referencia 15–18 t/ha. Enfermedades: antracnosis (Colletotrichum), mancha púrpura (Alternaria porri), mildiu (Peronospora destructor). Plaga clave: trips (Thrips tabaci). Ensayos de herbicidas frecuentes."
+   },
+   {
+    "n": "Zanahoria",
+    "cientifico": "Daucus carota",
+    "grupo": "hortaliza de raíz",
+    "fenologia": "BBCH hortalizas de raíz y tubérculo (Meier)",
+    "parcela": {
+     "hileras": 5,
+     "entre": 0.2,
+     "largo": 4,
+     "sobre": 0.05,
+     "util": 3,
+     "bordeP": 1
+    },
+    "parcelaTxt": "Cantero de 1 m con 5 hileras a 0,20 m, raleo a 5 cm, 4 m de largo; muestreo: 2 tramos de 1 m en hileras centrales (sin 0,5 m de cabecera).",
+    "notas": "Peso y longitud de raíz, diámetro de hombro, % comerciales, rajadas, bifurcadas, hombro verde; espigado. Enfermedades: tizón foliar (Alternaria dauci, Cercospora carotae); nematodos de agallas (bifurcación). Herbicidas de preemergencia frecuentes. Parcela (orientativo: no verificado con una norma paraguaya; ajustar al sistema del productor)."
+   },
+   {
+    "n": "Papa",
+    "cientifico": "Solanum tuberosum",
+    "grupo": "hortaliza de tubérculo",
+    "fenologia": "BBCH papa (Meier)",
+    "parcela": {
+     "hileras": 4,
+     "entre": 0.8,
+     "largo": 5,
+     "sobre": 0.3,
+     "util": 2,
+     "bordeP": 1
+    },
+    "parcelaTxt": "4 hileras a 0,80 m × 5 m, plantas a 0,30 m; útil: 2 hileras centrales × 4 m (≈ 26 plantas).",
+    "notas": "Tubérculos por planta, rendimiento total y comercial, distribución por calibre de diámetro (referencia CEAGESP: < 34 mm 2.ª; 34–42 mm 1.ª; 43–70 mm especial; > 70 mm), defectos (verdeo, rajado, podredumbre). Enfermedades: tizón tardío (Phytophthora infestans; severidad de follaje y AACPE), tizón temprano (Alternaria), virosis. Plagas: vaquita (Diabrotica), pulguilla, polilla de la papa. Registro: incluida en Res. SENAVE 414/2020 (anexo no consultado). Parcela (orientativo: no verificado con una norma paraguaya; ajustar al sistema del productor)."
+   },
+   {
+    "n": "Batata",
+    "cientifico": "Ipomoea batatas",
+    "grupo": "hortaliza de raíz",
+    "fenologia": "Sin escala BBCH en la monografía consultada; usar días desde plantación",
+    "parcela": {
+     "hileras": 4,
+     "entre": 0.9,
+     "largo": 5,
+     "sobre": 0.3,
+     "util": 2,
+     "bordeP": 1
+    },
+    "parcelaTxt": "4 hileras (camellones) a 0,90 m × 5 m, guías a 0,30 m; útil: 2 hileras centrales × 4 m.",
+    "notas": "Raíces comerciales por planta, rendimiento comercial, peso medio de raíz, defectos (rajadas, daño de insectos de suelo como Diabrotica y gorgojo). Parcela (orientativo: no verificado con una norma paraguaya; ajustar al sistema del productor)."
+   },
+   {
+    "n": "Mandioca de mesa",
+    "cientifico": "Manihot esculenta",
+    "grupo": "raíz (mesa)",
+    "fenologia": "Sin BBCH en la monografía consultada; meses desde plantación (cosecha 8–12 meses)",
+    "parcela": {
+     "hileras": 4,
+     "entre": 1.0,
+     "largo": 6,
+     "sobre": 0.9,
+     "util": 2,
+     "bordeP": 1
+    },
+    "parcelaTxt": "4 hileras a 1,0 m × 6 m, plantas a 0,80–1,0 m; útil: 2 hileras centrales sin la primera y la última planta.",
+    "notas": "Raíces comerciales por planta, rendimiento de raíz fresca, % de raíces comerciales; calidad culinaria (tiempo de cocción) como medición propia si se pide. Incluida en Res. SENAVE 414/2020 y con variedades IPTA inscriptas en enero de 2026. Coordinar con el rubro agrícola para que no se duplique (si el uso es industrial va en agrícola). Parcela (orientativo: no verificado con una norma paraguaya; ajustar al sistema del productor)."
+   },
+   {
+    "n": "Frutilla",
+    "cientifico": "Fragaria × ananassa",
+    "grupo": "frutal menor (hortícola)",
+    "fenologia": "BBCH frutilla (Meier)",
+    "parcela": {
+     "hileras": 2,
+     "entre": 0.4,
+     "largo": 1.5,
+     "sobre": 0.3,
+     "util": 2,
+     "bordeP": 1
+    },
+    "parcelaTxt": "Cantero con doble hilera a tres bolillos, 0,40 m entre hileras y 0,30 m entre plantas; 10 plantas por unidad experimental (ensayo de Encarnación, 4 repeticiones). Sugerido: 10–20 plantas útiles más 1 planta de borde por extremo.",
+    "notas": "Cosechas 1–2 veces por semana: rendimiento acumulado (g/planta y por mes), frutos por planta, peso medio de fruto, % descarte (pequeños, deformes, Botrytis), °Brix, acidez, firmeza; precocidad (días a 1.ª cosecha). Zona productora: Areguá e Itapúa; cultivares citados: Camarosa, Sweet Charlie, Dover, Festival, San Andreas. Enfermedades: moho gris (Botrytis cinerea), antracnosis (Colletotrichum), mancha de la hoja (Mycosphaerella fragariae). Plagas: arañuela (Tetranychus urticae), trips en flor, pulgones. Incluida en Res. SENAVE 414/2020 (anexo no consultado)."
+   },
+   {
+    "n": "Melón",
+    "cientifico": "Cucumis melo",
+    "grupo": "hortaliza de fruto (cucurbitácea)",
+    "fenologia": "BBCH cucurbitáceas (Meier)",
+    "parcela": {
+     "hileras": 3,
+     "entre": 2.0,
+     "largo": 6,
+     "sobre": 0.6,
+     "util": 1,
+     "bordeP": 1
+    },
+    "parcelaTxt": "3 hileras a 2,0 m × 6 m, plantas a 0,6 m; útil: hilera central sin la primera y la última planta (≈ 8 plantas).",
+    "notas": "Frutos por planta, peso de fruto (kg), °Brix en el centro de la pulpa en la sección ecuatorial (referencia UE: ≥ 8 °Brix; ≥ 10 en Charentais), espesor de pulpa, forma, rendimiento comercial. Enfermedades: oídio, mildiu (Pseudoperonospora cubensis), cancro gomoso (Didymella bryoniae), virosis (potyvirus, begomovirus). Plagas: mosca blanca, pulgón, trips, minador, barrenador del fruto (Diaphania). Incluido en Res. SENAVE 414/2020; IPTA inscribió un melón nacional en 2026. Necesita polinizadores: anotar colmenas. Parcela (orientativo: no verificado con una norma paraguaya; ajustar al sistema del productor)."
+   },
+   {
+    "n": "Sandía",
+    "cientifico": "Citrullus lanatus",
+    "grupo": "hortaliza de fruto (cucurbitácea)",
+    "fenologia": "BBCH cucurbitáceas (Meier)",
+    "parcela": {
+     "hileras": 3,
+     "entre": 2.75,
+     "largo": 8,
+     "sobre": 1.0,
+     "util": 1,
+     "bordeP": 1
+    },
+    "parcelaTxt": "3 hileras a 2,5–3,0 m × 8 m, plantas a 1,0 m; útil: hilera central sin la primera y la última planta (≈ 6 plantas; preferir más largo si hay pocos frutos).",
+    "notas": "Peso de fruto (kg), frutos por planta, °Brix en el centro y cerca de la cáscara, espesor de cáscara, corazón hueco y descarte. Enfermedades: antracnosis, cancro gomoso, oídio, mildiu, fusariosis, virosis. Plagas: pulgón, trips, ácaros, mosca blanca. Parcela (orientativo: no verificado con una norma paraguaya; ajustar al sistema del productor)."
+   },
+   {
+    "n": "Zapallo / zapallito",
+    "cientifico": "Cucurbita moschata, C. maxima, C. pepo",
+    "grupo": "hortaliza de fruto (cucurbitácea)",
+    "fenologia": "BBCH cucurbitáceas (Meier)",
+    "parcela": {
+     "hileras": 3,
+     "entre": 1.5,
+     "largo": 6,
+     "sobre": 0.8,
+     "util": 1,
+     "bordeP": 1
+    },
+    "parcelaTxt": "3 hileras a 1,5 m × 6 m, plantas a 0,8 m; útil: hilera central sin extremos.",
+    "notas": "Zapallito: cosechas frecuentes, frutos por planta y peso medio; zapallo: peso de fruto y °Brix. Oídio, virosis (mosaicos), mosca blanca, pulgones. Parcela (orientativo: no verificado con una norma paraguaya; ajustar al sistema del productor)."
+   },
+   {
+    "n": "Pepino",
+    "cientifico": "Cucumis sativus",
+    "grupo": "hortaliza de fruto (cucurbitácea)",
+    "fenologia": "BBCH cucurbitáceas (Meier)",
+    "parcela": {
+     "hileras": 1,
+     "entre": 1.1,
+     "largo": 5,
+     "sobre": 0.4,
+     "util": 1,
+     "bordeP": 1
+    },
+    "parcelaTxt": "Tutorado: 1 hilera de 12 plantas a 0,40 m, hileras a 1,0–1,2 m; útiles: 10 plantas centrales.",
+    "notas": "Cosechas frecuentes: frutos por planta, peso medio, longitud y diámetro, descarte (curvos, deformes). Enfermedades: oídio, mildiu, mancha diana (Corynespora cassiicola), virosis. Plagas: mosca blanca, trips, ácaros. Parcela (orientativo: no verificado con una norma paraguaya; ajustar al sistema del productor)."
+   },
+   {
+    "n": "Cítricos",
+    "cientifico": "Citrus spp.",
+    "grupo": "frutal perenne",
+    "fenologia": "BBCH cítricos (Meier)",
+    "parcela": {
+     "hileras": 1,
+     "entre": 6.5,
+     "largo": 20,
+     "sobre": 3.5,
+     "util": 1,
+     "bordeP": 1
+    },
+    "parcelaTxt": "Marco 6–7 m × 3–4 m; parcela de 3–5 árboles útiles en la hilera con 1 árbol de borde a cada lado (o hileras de borde entre tratamientos si hay deriva).",
+    "notas": "Ensayos plurianuales: kg/árbol, frutos/árbol, diámetro de fruto, °Brix, acidez, ratio (SST/AT), % de jugo. Enfermedades y plagas: HLB y su vector Diaphorina citri (incidencia, verificar estado oficial con SENAVE), cancro cítrico, sarna, mancha negra; ácaros, minador. Portainjertos como tipo de ensayo. Parcela (orientativo: no verificado con una norma paraguaya; ajustar al sistema del productor)."
+   },
+   {
+    "n": "Banana",
+    "cientifico": "Musa spp. (AAA)",
+    "grupo": "frutal perenne",
+    "fenologia": "Sin escala BBCH en la monografía consultada; registrar días de emisión de la bellota a cosecha y ciclo (planta madre, 1.ª soca)",
+    "parcela": {
+     "hileras": 2,
+     "entre": 3.0,
+     "largo": 10,
+     "sobre": 2.0,
+     "util": 2,
+     "bordeP": 1
+    },
+    "parcelaTxt": "Marco 3 × 2 m (o 2,5 × 2,5 m); 6–10 plantas útiles por parcela con plantas de borde.",
+    "notas": "Peso del racimo (se carga en peso de fruto, en g o pasar a kg), número de manos, dedos por racimo, largo del dedo; ciclo. Enfermedades: Sigatoka (severidad por hoja), mal de Panamá (Fusarium; incidencia). Plagas: picudo negro (Cosmopolites sordidus). Parcela (orientativo: no verificado con una norma paraguaya; ajustar al sistema del productor)."
+   },
+   {
+    "n": "Piña",
+    "cientifico": "Ananas comosus",
+    "grupo": "frutal semiperenne",
+    "fenologia": "Sin escala BBCH en la monografía consultada; días desde plantación y desde la inducción floral",
+    "parcela": {
+     "hileras": 2,
+     "entre": 0.4,
+     "largo": 5,
+     "sobre": 0.3,
+     "util": 2,
+     "bordeP": 1
+    },
+    "parcelaTxt": "Camellón de doble hilera (0,40 m entre hileras, 0,30 m entre plantas, 0,90 m entre camellones), 5 m de largo; útil: centro del camellón sin 0,5 m de cada extremo.",
+    "notas": "Un fruto por planta: peso de fruto (con y sin corona), °Brix, acidez, % de frutos comerciales, % de plantas que respondieron a la inducción. Enfermedades/plagas: fusariosis, cochinilla harinosa y marchitez asociada. Parcela (orientativo: no verificado con una norma paraguaya; ajustar al sistema del productor)."
+   },
+   {
+    "n": "Mburucuyá",
+    "cientifico": "Passiflora edulis",
+    "grupo": "frutal perenne (trepadora)",
+    "fenologia": "Sin escala BBCH en la monografía consultada; días desde trasplante y a floración",
+    "parcela": {
+     "hileras": 1,
+     "entre": 2.75,
+     "largo": 14,
+     "sobre": 3.5,
+     "util": 1,
+     "bordeP": 1
+    },
+    "parcelaTxt": "Espaldera, hileras a 2,5–3,0 m y plantas a 3–4 m; 3–4 plantas útiles por parcela con plantas de borde.",
+    "notas": "Frutos por planta, peso de fruto, % de jugo (pulpa), °Brix, acidez. Enfermedades: virosis (endurecimiento del fruto), bacteriosis (Xanthomonas), antracnosis, Fusarium. Polinización por abejorros (Xylocopa). Parcela (orientativo: no verificado con una norma paraguaya; ajustar al sistema del productor)."
+   }
+  ],
+  "ficha": [
+   {
+    "id": "sistema",
+    "campo": "Sistema de cultivo",
+    "tipo": "lista",
+    "opciones": [
+     "A campo",
+     "Invernadero",
+     "Túnel",
+     "Media sombra",
+     "Hidroponía",
+     "Sustrato en maceta o bolsa"
+    ]
+   },
+   {
+    "id": "estructura",
+    "campo": "Estructura: cubierta, orientación, ventilación y medidas",
+    "tipo": "texto"
+   },
+   {
+    "id": "almacigo",
+    "campo": "Fecha de siembra del almácigo",
+    "tipo": "fecha"
+   },
+   {
+    "id": "trasplante",
+    "campo": "Fecha de trasplante o siembra directa",
+    "tipo": "fecha"
+   },
+   {
+    "id": "plantin",
+    "campo": "Origen y edad del plantín (y portainjerto si es injertado)",
+    "tipo": "texto"
+   },
+   {
+    "id": "area_base",
+    "campo": "Área base del rendimiento",
+    "tipo": "lista",
+    "opciones": [
+     "Área cultivada (canteros)",
+     "Área total (con pasillos)"
+    ]
+   },
+   {
+    "id": "conduccion",
+    "campo": "Conducción: tallos por planta, poda, tutorado",
+    "tipo": "texto"
+   },
+   {
+    "id": "riego",
+    "campo": "Riego: sistema, caudal y goteros por planta; CE y pH del agua",
+    "tipo": "texto"
+   },
+   {
+    "id": "mulching",
+    "campo": "Cobertura del suelo usada",
+    "tipo": "lista",
+    "opciones": [
+     "Sin cobertura",
+     "Mulching plástico negro",
+     "Mulching plateado o blanco",
+     "Rastrojo o paja",
+     "Otra"
+    ]
+   },
+   {
+    "id": "suelo",
+    "campo": "Análisis de suelo o sustrato",
+    "tipo": "texto"
+   },
+   {
+    "id": "antecesor",
+    "campo": "Cultivo antecesor (historial de solanáceas o cucurbitáceas)",
+    "tipo": "texto"
+   },
+   {
+    "id": "cosecha_crit",
+    "campo": "Criterio y frecuencia de cosecha (estado de madurez)",
+    "tipo": "texto"
+   },
+   {
+    "id": "norma_calibre",
+    "campo": "Norma de calibre y calidad usada",
+    "tipo": "lista",
+    "opciones": [
+     "MERCOSUR",
+     "Del comprador",
+     "Propia"
+    ]
+   },
+   {
+    "id": "precuento",
+    "campo": "Presión inicial de plaga o enfermedad (precuento) e inoculación",
+    "tipo": "texto"
+   },
+   {
+    "id": "polinizacion",
+    "campo": "Polinización (colmenas, abejorros)",
+    "tipo": "texto"
+   },
+   {
+    "id": "clima",
+    "campo": "Clima del ambiente (temperatura máx./mín., HR, radiación, lluvia)",
+    "tipo": "texto"
+   },
+   {
+    "id": "almacen",
+    "campo": "Poscosecha: temperatura y HR de almacenamiento",
+    "tipo": "texto"
+   },
+   {
+    "id": "senave",
+    "campo": "N.º de habilitación SENAVE (ensayos de registro)",
+    "tipo": "texto"
+   }
+  ],
+  "calculadoras": [
+   {
+    "n": "Plantas por hectárea",
+    "formula": "pl/ha = 10 000 ÷ (distancia entre hileras × distancia entre plantas); en canteros: 10 000 × hileras por cantero ÷ (ancho de cantero + pasillo) ÷ distancia entre plantas",
+    "por_que": "Base para llevar kg/planta a t/ha."
+   },
+   {
+    "n": "Rendimiento desde la parcela",
+    "formula": "t/ha = kg del área útil ÷ m² útiles × 10; o kg/planta × pl/ha ÷ 1000",
+    "por_que": "Unifica cosechas múltiples y parcelas de distinto tamaño."
+   },
+   {
+    "n": "Distribución por calibre",
+    "formula": "Clasifica cada diámetro según la norma (tomate Res. GMC 26/17; cebolla P.Res. 06/19; papa tabla del comprador) y da % en número y en peso por calibre",
+    "por_que": "El valor comercial depende del calibre, no solo del rendimiento."
+   },
+   {
+    "n": "Precocidad",
+    "formula": "% precoz = rendimiento de las primeras 4 cosechas (o del primer mes) ÷ rendimiento total × 100",
+    "por_que": "Los primeros kilos son los mejor pagados."
+   },
+   {
+    "n": "AACPE y AACPE relativa",
+    "formula": "AACPE = Σ [(yᵢ + yᵢ₊₁) ÷ 2 × (tᵢ₊₁ − tᵢ)]; relativa = AACPE ÷ (100 × días totales); escala CIP de susceptibilidad: Sx = Sy × (AACPEx ÷ AACPEy), con Sy = 8 para el testigo susceptible",
+    "por_que": "Resume las evaluaciones de severidad en un solo número."
+   },
+   {
+    "n": "Eficacia de Abbott y de Henderson-Tilton",
+    "formula": "Abbott: E % = (T − t) ÷ T × 100; Henderson-Tilton: E % = [1 − (Ta × Cb) ÷ (Tb × Ca)] × 100 (T y C = tratado y testigo; b y a = antes y después)",
+    "por_que": "Henderson-Tilton corrige diferencias de población inicial en conteos de insectos y ácaros."
+   },
+   {
+    "n": "Índice de calidad de Dickson",
+    "formula": "IQD = PST ÷ (H/D + PSA/PSR)",
+    "por_que": "Integra altura, diámetro y biomasa del plantín."
+   },
+   {
+    "n": "Lámina y porcentaje de drenaje",
+    "formula": "mm = L aplicados ÷ m²; % drenaje = L drenados ÷ L aportados × 100",
+    "por_que": "Control diario del fertirriego."
+   },
+   {
+    "n": "Eficiencia de uso del agua",
+    "formula": "EUA (kg/m³) = kg cosechados ÷ m³ aplicados (= t/ha ÷ (mm × 10) × 1000)",
+    "por_que": "Compara láminas y sistemas de riego."
+   },
+   {
+    "n": "Ratio de madurez",
+    "formula": "Ratio = °Brix ÷ acidez titulable (%)",
+    "por_que": "Indicador de sabor y de madurez en tomate, frutilla, cítricos y mburucuyá."
+   },
+   {
+    "n": "Pérdida de peso",
+    "formula": "% = (Pᵢ − P_f) ÷ Pᵢ × 100; tasa diaria = pendiente de la regresión % vs días",
+    "por_que": "Ensayos de poscosecha."
+   },
+   {
+    "n": "Factor de reproducción de nematodos",
+    "formula": "FR = Pf ÷ Pi",
+    "por_que": "Resistencia de portainjertos y efecto de nematicidas."
+   },
+   {
+    "n": "Grados-día",
+    "formula": "GD = Σ [(Tmáx + Tmín) ÷ 2 − Tbase], con Tbase 10 °C para tomate (valor habitual, no verificado)",
+    "por_que": "Compara ciclos entre invernadero y campo o entre épocas."
+   }
+  ]
+ },
+ "forestal": {
+  "nombre": "Forestal",
+  "texto": "Plantaciones de eucalipto, pino y nativas; viveros.",
+  "ej": "Clones, procedencias, progenies, espaciamiento, vivero",
+  "tipos": [
+   {
+    "n": "Clones (ensayo clonal)",
+    "descripcion": "Compara clones comerciales o candidatos frente a clones testigo por crecimiento, sobrevivencia, forma, sanidad y madera. Primero selección (parcelas chicas, muchas repeticiones) y luego ensayo de producción en parcelas grandes.",
+    "variables": [
+     "sobrev",
+     "dac",
+     "dap",
+     "altura_m",
+     "altura_com",
+     "altura_dom",
+     "area_basal",
+     "vol_arbol",
+     "vol_ha",
+     "ima",
+     "forma",
+     "bifurcacion",
+     "roya_inc",
+     "roya_sev",
+     "chinche_dano",
+     "helada",
+     "def_boro",
+     "enfermedades_inc",
+     "densidad_madera"
+    ],
+    "testigos": "1–2 clones comerciales de referencia de la zona (los más plantados) y, si se usa, un lote de semilla de E. grandis",
+    "trat": "Clon testigo comercial A\nClon testigo comercial B\nClon candidato 1\nClon candidato 2\nClon candidato 3",
+    "bloques_min": 4,
+    "momentos": "Sobrevivencia a 30–90 días; 6 y 12 meses (altura, DAC, sanidad); 24 meses y luego anual (DAP, altura, forma, G, V, IMA) hasta el turno; densidad de madera pre-raleo o turno",
+    "analisis": "ANAVA por edad sobre medias de parcela + Tukey; volumen/ha con covarianza por árboles vivos; en selección clonal: REML/BLUP y repetibilidad (H² = σ²clon / (σ²clon + σ²e)); análisis conjunto de sitios para interacción clon × ambiente",
+    "normativa": "Plantación inscripta en el Registro Público Forestal del INFONA (Ley 3464/08) si se acoge a beneficios de la Ley 536/95. Registro de clones en el RNCC (Ley 385/94): no verificado para especies forestales (la Res. SENAVE 414/2020 no incluye especies forestales)",
+    "fuente": "https://agrocienciauruguay.uy/index.php/agrociencia/article/view/1275",
+    "cultivos": [
+     "Eucalyptus grandis",
+     "Eucalyptus urograndis (clones)",
+     "Otros clones híbridos de eucalipto",
+     "Eucalyptus camaldulensis",
+     "Eucalyptus dunnii"
+    ]
+   },
+   {
+    "n": "Especies y procedencias",
+    "descripcion": "Compara especies u orígenes de semilla para elegir el material mejor adaptado al sitio (clima, heladas, suelo).",
+    "variables": [
+     "sobrev",
+     "dac",
+     "dap",
+     "altura_m",
+     "area_basal",
+     "vol_ha",
+     "ima",
+     "forma",
+     "bifurcacion",
+     "ramosidad",
+     "helada",
+     "hormigas",
+     "enfermedades_inc",
+     "hypsipyla",
+     "densidad_madera"
+    ],
+    "testigos": "Especie o procedencia comercial más plantada en la zona",
+    "trat": "E. grandis (procedencia comercial)\nE. grandis (otra procedencia)\nE. camaldulensis\nE. dunnii\nClon testigo",
+    "bloques_min": 4,
+    "momentos": "30–90 días, 6, 12, 24 meses y anual; heladas: evaluar después de cada evento",
+    "analisis": "ANAVA DBCA por edad + Tukey; sobrevivencia con GLM binomial o arcoseno √p; análisis conjunto si hay varios sitios",
+    "normativa": "INFONA (registro de plantación, si corresponde). Origen de semilla documentado (vivero inscripto en el Registro de Viveros Forestales del INFONA, código 019)",
+    "fuente": "https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/280582/1/higa.pdf"
+   },
+   {
+    "n": "Progenies",
+    "descripcion": "Familias de medios hermanos o hermanos completos para estimar parámetros genéticos (heredabilidad, ganancia) y seleccionar padres e individuos; base de huertos semilleros.",
+    "variables": [
+     "sobrev",
+     "dap",
+     "altura_m",
+     "vol_arbol",
+     "forma",
+     "bifurcacion",
+     "ramosidad",
+     "helada",
+     "roya_sev"
+    ],
+    "testigos": "Semilla comercial (lote testigo) incluida como una familia más",
+    "trat": "Familia 1\nFamilia 2\n…\nFamilia n\nTestigo comercial",
+    "bloques_min": 20,
+    "momentos": "Sobrevivencia a 30–90 días; altura a 12 meses; DAP, altura, forma y bifurcación a 24–36 meses (selección temprana) y a la edad de selección definitiva",
+    "analisis": "Modelos mixtos REML/BLUP (SELEGEN, ASReml, R sommer/lme4): h² individual, h² de medias de familia, exactitud, CVg/CVe, ganancia por selección; índice de selección (volumen + forma)",
+    "normativa": "Sin norma específica verificada en Paraguay",
+    "fuente": "https://www.ipef.br/publicacoes/scientia/nr112/cap19.pdf",
+    "cultivos": [
+     "Eucalyptus grandis",
+     "Eucalyptus camaldulensis",
+     "Eucalyptus dunnii",
+     "Pinus taeda",
+     "Pinus elliottii",
+     "Paraíso gigante",
+     "Toona",
+     "Lapacho",
+     "Peterevy",
+     "Cedro",
+     "Yvyra pytã",
+     "Otras nativas"
+    ]
+   },
+   {
+    "n": "Espaciamiento / densidad",
+    "descripcion": "Define la densidad de plantación según el producto (leña/biomasa, celulosa, aserrío, silvopastoril).",
+    "variables": [
+     "sobrev",
+     "dap",
+     "altura_m",
+     "altura_dom",
+     "area_basal",
+     "vol_arbol",
+     "vol_ha",
+     "ima",
+     "biomasa_ha",
+     "copa_diam",
+     "ramosidad"
+    ],
+    "testigos": "Espaciamiento comercial de la zona (p. ej. 3 × 2 m = 1 667 árb/ha)",
+    "trat": "3 × 1,5 m (2 222 árb/ha)\n3 × 2 m (1 667 árb/ha)\n3 × 3 m (1 111 árb/ha)\n4 × 3 m (833 árb/ha)",
+    "bloques_min": 3,
+    "momentos": "Anual desde los 24 meses hasta el turno",
+    "analisis": "ANAVA + regresión sobre densidad (árb/ha); curvas IMA–ICA para turno técnico; diseño Nelder (sistemático) analizado por regresión",
+    "normativa": "Ley 536/95 y Decreto 9425/95: densidades de plantación de 400–2 000 pl/ha según sistema para bonificación",
+    "fuente": "https://minasyenergia.mopc.gov.py/pdf/biomasa/base/13.%20Densidades%20de%20plantacion%20en%20produccion%20de%20carbon.pdf"
+   },
+   {
+    "n": "Fertilización",
+    "descripcion": "Respuesta a N-P-K, boro, zinc y encalado en la plantación o en la base.",
+    "variables": [
+     "sobrev",
+     "dac",
+     "dap",
+     "altura_m",
+     "area_basal",
+     "vol_ha",
+     "ima",
+     "def_boro"
+    ],
+    "testigos": "Testigo sin fertilizar + fertilización comercial de referencia",
+    "trat": "Testigo sin fertilizar\nReferencia comercial (NPK de base)\nNPK + B\nDosis baja\nDosis media\nDosis alta",
+    "bloques_min": 4,
+    "momentos": "6, 12, 24 meses y anual; síntomas de boro después de períodos secos",
+    "analisis": "ANAVA + Tukey; regresión por dosis (cuadrática o Mitscherlich); factorial si se combinan nutrientes",
+    "normativa": "Si es para registro de un fertilizante: Res. MAG 277/03 (≥ 5 repeticiones, ≥ 12 gl del error, 3 dosis, referencia registrada y testigo, 2 años, 3 regiones) y Res. 564/10",
+    "fuente": "https://faolex.fao.org/docs/pdf/par48151.pdf"
+   },
+   {
+    "n": "Preparación de suelo y control de malezas",
+    "descripcion": "Subsolado, rastra, coronamiento y herbicidas pre y post-plantación; mide competencia y fitotoxicidad.",
+    "variables": [
+     "sobrev",
+     "dac",
+     "altura_m",
+     "malezas_cob",
+     "fitotox",
+     "dap"
+    ],
+    "testigos": "Testigo con control manual (carpida/coronamiento) + manejo comercial; testigo enmalezado opcional",
+    "trat": "Coronamiento manual\nHerbicida pre-emergente en la línea\nHerbicida post-emergente dirigido\nSubsolado + herbicida",
+    "bloques_min": 4,
+    "momentos": "Malezas y fitotoxicidad a 15, 30, 60 días de cada aplicación; crecimiento a 6 y 12 meses",
+    "analisis": "ANAVA + Tukey; % de control de malezas respecto del testigo enmalezado",
+    "normativa": "Herbicidas: registro SENAVE (Ley 3742/09); ensayos de eficacia con fines de registro por ensayista habilitado",
+    "fuente": "ensayos_de_campo/06_ensayos_forestales.md §1"
+   },
+   {
+    "n": "Control de hormigas cortadoras",
+    "descripcion": "Eficacia de cebos y otros formicidas sobre nidos de Atta (ysaú) y Acromyrmex (akeké); el nido es la unidad experimental.",
+    "variables": [
+     "nidos_activos",
+     "hormigas",
+     "sobrev"
+    ],
+    "testigos": "Nidos sin tratar (testigo) + formicida de referencia registrado",
+    "trat": "Testigo sin tratar\nCebo de referencia\nProducto a dosis baja\nProducto a dosis recomendada\nProducto a dosis alta",
+    "bloques_min": 4,
+    "momentos": "Actividad de nidos a 3, 30, 90 y 150 días de la aplicación; plantas atacadas en cada recorrida de sobrevivencia",
+    "analisis": "% de nidos inactivos (eficiencia) por tratamiento; corrección de Abbott con nidos testigo; GLM binomial o χ²; dosis por m² de tierra suelta",
+    "normativa": "Formicidas: registro SENAVE (Ley 3742/09); ensayos con fines de registro por ensayista habilitado (cat. A.10)",
+    "fuente": "https://www.ipef.br/publicacoes/stecnica/nr48/ipef-sertec-48-063.pdf"
+   },
+   {
+    "n": "Plagas y enfermedades (termitas, chinche, roya)",
+    "descripcion": "Eficacia de tratamientos (plantín tratado contra termitas, insecticidas para chinche bronceada, fungicidas para roya) o tolerancia de materiales.",
+    "variables": [
+     "termitas",
+     "chinche_trampa",
+     "chinche_dano",
+     "roya_inc",
+     "roya_sev",
+     "enfermedades_inc",
+     "hypsipyla",
+     "sobrev",
+     "altura_m"
+    ],
+    "testigos": "Testigo sin tratar + producto de referencia registrado",
+    "trat": "Testigo sin tratar\nReferencia registrada\nProducto dosis baja\nProducto dosis alta",
+    "bloques_min": 4,
+    "momentos": "Termitas: 15, 30, 60, 90 días post-plantación. Chinche: trampas cada 15 días (7 si se saturan). Roya: antes de aplicar y a 7, 14, 21 días",
+    "analisis": "ANAVA + Tukey; % de control de Abbott sobre el testigo; AACPE para roya si hay ≥ 3 evaluaciones",
+    "normativa": "Fitosanitarios: registro SENAVE (Ley 3742/09, Res. 296/03 protocolo de eficacia)",
+    "fuente": "https://www.infoteca.cnptia.embrapa.br/infoteca/bitstream/doc/1014681/1/CT337Leonardo.pdf"
+   },
+   {
+    "n": "Establecimiento y sobrevivencia post-plantación",
+    "descripcion": "Tipo y tamaño de plantín, hidrogel, riego de plantación, época y método de plantación.",
+    "variables": [
+     "sobrev",
+     "dac",
+     "altura_m",
+     "termitas",
+     "hormigas",
+     "helada"
+    ],
+    "testigos": "Práctica comercial de la empresa o productor",
+    "trat": "Plantación comercial\nCon hidrogel\nCon riego de plantación\nPlantín de mayor tamaño",
+    "bloques_min": 4,
+    "momentos": "Semanal el primer mes, 30, 60, 90 días y 6 meses",
+    "analisis": "Sobrevivencia con GLM binomial (vivos de plantados) o ANAVA con arcoseno √p; crecimiento con ANAVA + Tukey",
+    "normativa": "Decreto 9425/95 (Ley 536/95): la bonificación exige prendimiento ≥ 80 % de la densidad del Plan de Manejo",
+    "fuente": "https://faolex.fao.org/docs/pdf/par17513.pdf"
+   },
+   {
+    "n": "Raleo, poda y manejo de rebrote",
+    "descripcion": "Intensidad y momento de raleo, altura de poda y conducción de rebrotes (monte bajo de eucalipto, descepe de kiri).",
+    "variables": [
+     "dap",
+     "altura_m",
+     "altura_dom",
+     "area_basal",
+     "altura_com",
+     "vol_ha",
+     "ima",
+     "altura_poda",
+     "ramosidad",
+     "brotes_cepa",
+     "copa_diam"
+    ],
+    "testigos": "Sin raleo / sin poda, o el régimen comercial",
+    "trat": "Sin raleo\nRaleo 30 % del área basal\nRaleo 50 % del área basal\nPoda hasta 2,5 m\nPoda hasta 50 % de la altura",
+    "bloques_min": 3,
+    "momentos": "Antes y después de cada intervención; anual hasta el turno",
+    "analisis": "ANAVA por edad con DAP o G inicial como covariable; ICA entre mediciones",
+    "normativa": "Las intervenciones deben figurar en el Plan de Manejo aprobado por el INFONA si la plantación está registrada",
+    "fuente": "https://www.magyp.gob.ar/sitio/areas/desarrollo-foresto-industrial/silvicultura/_archivos2/Cultivo-del-genero-Paulownia-KIRI-en-Argentina.pdf"
+   },
+   {
+    "n": "Vivero: calidad de plantines",
+    "descripcion": "Sustratos, tubetes, fertilización, sombreado y rustificación de plantines de semilla o clonales.",
+    "variables": [
+     "alt_plantin",
+     "dc_plantin",
+     "rel_hd",
+     "ps_aerea",
+     "ps_raiz",
+     "iqd",
+     "cepellon",
+     "sobrev",
+     "roya_inc"
+    ],
+    "testigos": "Protocolo comercial del vivero",
+    "trat": "Sustrato comercial\nSustrato alternativo 1\nSustrato alternativo 2\nFertilización de liberación lenta",
+    "bloques_min": 4,
+    "momentos": "Quincenal y a la expedición (orientativo 90–120 días); sobrevivencia a campo a 30–90 días",
+    "analisis": "ANAVA (DCA o DBCA por mesada) + Tukey; regresión si son dosis",
+    "normativa": "Vivero inscripto en el Registro de Viveros Forestales del INFONA (Registro Público Forestal, código 019)",
+    "fuente": "https://www.redalyc.org/pdf/744/74418613005.pdf"
+   },
+   {
+    "n": "Propagación clonal (miniestacas)",
+    "descripcion": "Enraizamiento de miniestacas o estacas: clon, tipo de miniestaca, dosis de AIB, sustrato, ambiente.",
+    "variables": [
+     "enraiz",
+     "sobrev_mini",
+     "alt_plantin",
+     "dc_plantin"
+    ],
+    "testigos": "Protocolo comercial (sin AIB o dosis usual)",
+    "trat": "AIB 0 mg/L\nAIB 2 000 mg/L\nAIB 4 000 mg/L",
+    "bloques_min": 3,
+    "momentos": "Salida del invernadero (~30 días) y salida del sombreado (~40 días); expedición",
+    "analisis": "ANAVA factorial (clon × tratamiento) con arcoseno √p o GLM binomial; Tukey",
+    "normativa": "Vivero inscripto en el INFONA",
+    "fuente": "https://www.redalyc.org/pdf/488/48819140006.pdf",
+    "cultivos": [
+     "Eucalyptus grandis",
+     "Eucalyptus urograndis (clones)",
+     "Otros clones híbridos de eucalipto",
+     "Eucalyptus camaldulensis",
+     "Eucalyptus dunnii"
+    ]
+   },
+   {
+    "n": "Silvopastoril (componente arbóreo)",
+    "descripcion": "Densidad y arreglo de árboles en potreros; la app mide aquí los árboles; el forraje y el ganado se cargan en el rubro Pasturas. Mide solo el componente arbóreo; para evaluar el sistema completo (árbol, pasto por posición, luz y animales) usá el rubro Silvopastoril.",
+    "variables": [
+     "sobrev",
+     "dap",
+     "altura_m",
+     "copa_diam",
+     "vol_ha",
+     "ima",
+     "altura_poda",
+     "hormigas"
+    ],
+    "testigos": "Arreglo comercial de la zona",
+    "trat": "Hileras simples 12 × 2 m\nHileras dobles (3 × 2) + 20 m\nÁrboles dispersos",
+    "bloques_min": 3,
+    "momentos": "30–90 días, 12 meses y anual",
+    "analisis": "ANAVA con potrero como unidad experimental (cuidado con la pseudorrepetición); volumen por hectárea de potrero",
+    "normativa": "Ley 536/95 y Decreto 9425/95 (densidad mínima según sistema para bonificación)",
+    "fuente": "ensayos_de_campo/06_ensayos_forestales.md §1 y §4.2"
+   }
+  ],
+  "cultivos": [
+   {
+    "n": "Eucalyptus grandis",
+    "cientifico": "Eucalyptus grandis W. Hill ex Maiden",
+    "grupo": "eucalipto (semilla)",
+    "fenologia": "No usa escala fenológica: se registra edad en meses desde la plantación",
+    "parcela": {
+     "filas": 7,
+     "columnas": 7,
+     "e1": 3,
+     "e2": 2,
+     "borde": 1
+    },
+    "parcelaTxt": "7 filas × 7 plantas a 3 × 2 m (49 árboles, 294 m²); útil: 5 × 5 = 25 árboles centrales (150 m²), 1 fila de borde con el mismo tratamiento",
+    "notas": "Especie de semilla más plantada para celulosa/laminado; cortas a ~9 años según encuestas JICA. Sensible a heladas en plantas jóvenes y a roya en vivero y primeros 2 años. 3 × 2 m = 1 667 árb/ha."
+   },
+   {
+    "n": "Eucalyptus urograndis (clones)",
+    "cientifico": "Eucalyptus urophylla × E. grandis",
+    "grupo": "eucalipto clonal",
+    "fenologia": "Edad en meses desde la plantación",
+    "parcela": {
+     "filas": 7,
+     "columnas": 7,
+     "e1": 3,
+     "e2": 2,
+     "borde": 1
+    },
+    "parcelaTxt": "Ensayo clonal de producción: 7 × 7 plantas a 3 × 2 m con 1 fila de borde (25 útiles). Selección clonal temprana: parcela lineal de 4–6 plantas o de un solo árbol con muchas repeticiones",
+    "notas": "Base de las plantaciones industriales y del mejoramiento privado (Caaguazú, San Pedro, Concepción). Productividad informada por el sector: ~38 m³/ha/año (dato de prensa, no de ensayo). Fuerte interacción clon × sitio: recomendar por zona."
+   },
+   {
+    "n": "Otros clones híbridos de eucalipto",
+    "cientifico": "E. urophylla × E. camaldulensis (urocam), E. grandis × E. camaldulensis (grancam) y otros",
+    "grupo": "eucalipto clonal",
+    "fenologia": "Edad en meses",
+    "parcela": {
+     "filas": 7,
+     "columnas": 7,
+     "e1": 3,
+     "e2": 2,
+     "borde": 1
+    },
+    "parcelaTxt": "Igual que urograndis: 7 × 7 a 3 × 2 m, 25 útiles",
+    "notas": "Clones con camaldulensis se usan buscando tolerancia a déficit hídrico (norte de la Región Oriental y Chaco). Ensayo en Hernandarias comparó urograndis i144 y urocam vm01."
+   },
+   {
+    "n": "Eucalyptus camaldulensis",
+    "cientifico": "Eucalyptus camaldulensis Dehnh.",
+    "grupo": "eucalipto (semilla/clon)",
+    "fenologia": "Edad en meses",
+    "parcela": {
+     "filas": 6,
+     "columnas": 6,
+     "e1": 3,
+     "e2": 2.5,
+     "borde": 1
+    },
+    "parcelaTxt": "6 × 6 plantas a 3 × 2,5 m (36 árboles, 270 m²); útil 4 × 4 = 16 árboles. Progenies: parcela de un árbol, ≥ 20 repeticiones",
+    "notas": "Especie para el Chaco (Bajo Chaco: 3 × 2,5 m, turno de 7 años para carbón, IMA ~19 m³/ha/año según estudio MOPC/ACEPAR). Incluir aquí también E. tereticornis si se usa."
+   },
+   {
+    "n": "Eucalyptus dunnii",
+    "cientifico": "Eucalyptus dunnii Maiden",
+    "grupo": "eucalipto (semilla)",
+    "fenologia": "Edad en meses",
+    "parcela": {
+     "filas": 7,
+     "columnas": 7,
+     "e1": 3,
+     "e2": 2,
+     "borde": 1
+    },
+    "parcelaTxt": "7 × 7 a 3 × 2 m, 25 útiles",
+    "notas": "No verificado su uso comercial en Paraguay. Tiene sentido solo en el sur (Itapúa) por tolerancia a heladas; dejarlo como especie opcional."
+   },
+   {
+    "n": "Pinus taeda",
+    "cientifico": "Pinus taeda L.",
+    "grupo": "conífera",
+    "fenologia": "Edad en años",
+    "parcela": {
+     "filas": 7,
+     "columnas": 7,
+     "e1": 3,
+     "e2": 2.5,
+     "borde": 1
+    },
+    "parcelaTxt": "7 × 7 plantas a 3 × 2,5 m (no verificado para PY; espaciamiento usual regional), útil 5 × 5",
+    "notas": "Plantaciones en Alto Paraná e Itapúa; según JICA el pino aportaba la mayor parte del volumen cortado de plantaciones. Turno 18–25 años para aserrío con raleos y podas. Ramosidad y poda son variables clave."
+   },
+   {
+    "n": "Pinus elliottii",
+    "cientifico": "Pinus elliottii Engelm.",
+    "grupo": "conífera",
+    "fenologia": "Edad en años",
+    "parcela": {
+     "filas": 7,
+     "columnas": 7,
+     "e1": 3,
+     "e2": 2.5,
+     "borde": 1
+    },
+    "parcelaTxt": "Igual que P. taeda",
+    "notas": "Mismas zonas que P. taeda (Alto Paraná, Itapúa)."
+   },
+   {
+    "n": "Paraíso gigante",
+    "cientifico": "Melia azedarach L. (selección 'gigante')",
+    "grupo": "latifoliada de rápido crecimiento",
+    "fenologia": "Edad en años; caducifolio (medir en reposo)",
+    "parcela": {
+     "filas": 5,
+     "columnas": 5,
+     "e1": 4,
+     "e2": 4,
+     "borde": 1
+    },
+    "parcelaTxt": "5 × 5 plantas a 4 × 4 m (no verificado; espaciamiento orientativo), útil 3 × 3 = 9",
+    "notas": "Muy valorado para laminado y mueble; cortas ~11 años (JICA). Requiere poda de formación; bifurcación y ramosidad son críticas. Estudio de biomasa en Vaquería (Caaguazú)."
+   },
+   {
+    "n": "Kiri",
+    "cientifico": "Paulownia spp. (P. elongata × P. fortunei, P. tomentosa)",
+    "grupo": "latifoliada de rápido crecimiento",
+    "fenologia": "Edad en años; caducifolio",
+    "parcela": {
+     "filas": 4,
+     "columnas": 4,
+     "e1": 5,
+     "e2": 5,
+     "borde": 1
+    },
+    "parcelaTxt": "4 × 4 plantas a 5 × 5 m o más (100–400 árb/ha), útil 2 × 2 = 4; preferir parcelas lineales con más repeticiones",
+    "notas": "Manejo con descepe al año (corte a ~5 cm) y desbrote para lograr fuste recto; sensible a heladas tardías y a Fusarium. En Misiones (AR) turno ~12 años. Uso en Paraguay: no verificado a escala comercial."
+   },
+   {
+    "n": "Grevillea",
+    "cientifico": "Grevillea robusta A. Cunn.",
+    "grupo": "latifoliada",
+    "fenologia": "Edad en años",
+    "parcela": {
+     "filas": 5,
+     "columnas": 5,
+     "e1": 3,
+     "e2": 3,
+     "borde": 1
+    },
+    "parcelaTxt": "5 × 5 plantas a 3 × 3 m (orientativo, no verificado), útil 3 × 3",
+    "notas": "Uso en cortinas, sombra y sistemas agroforestales; superficie comercial en Paraguay no verificada."
+   },
+   {
+    "n": "Toona",
+    "cientifico": "Toona ciliata M. Roem.",
+    "grupo": "latifoliada (Meliaceae)",
+    "fenologia": "Edad en años",
+    "parcela": {
+     "filas": 5,
+     "columnas": 5,
+     "e1": 4,
+     "e2": 3,
+     "borde": 1
+    },
+    "parcelaTxt": "5 × 5 plantas a 4 × 3 m (≈ 830 árb/ha; rango usual 500–800), útil 3 × 3",
+    "notas": "Sustituto del cedro por resistencia a Hypsipyla grandella; sensible a heladas. No podar más del 50 % de la altura total. Uso en Paraguay no verificado a escala comercial."
+   },
+   {
+    "n": "Lapacho",
+    "cientifico": "Handroanthus heptaphyllus / H. impetiginosus",
+    "grupo": "nativa",
+    "fenologia": "Edad en años",
+    "parcela": {
+     "filas": 5,
+     "columnas": 5,
+     "e1": 3,
+     "e2": 3,
+     "borde": 1
+    },
+    "parcelaTxt": "5 × 5 plantas a 3 × 3 m o líneas de enriquecimiento; útil 3 × 3",
+    "notas": "Crecimiento lento: medir DAC y altura los primeros 2–3 años; DAP recién cuando la mayoría pase 1,30 m."
+   },
+   {
+    "n": "Peterevy",
+    "cientifico": "Cordia trichotoma (Vell.) Arráb. ex Steud.",
+    "grupo": "nativa",
+    "fenologia": "Edad en años",
+    "parcela": {
+     "filas": 5,
+     "columnas": 5,
+     "e1": 3,
+     "e2": 3,
+     "borde": 1
+    },
+    "parcelaTxt": "5 × 5 plantas a 3 × 3 m; útil 3 × 3",
+    "notas": "Nativa valiosa para aserrío; evaluar forma y poda natural."
+   },
+   {
+    "n": "Cedro",
+    "cientifico": "Cedrela fissilis Vell.",
+    "grupo": "nativa (Meliaceae)",
+    "fenologia": "Edad en años",
+    "parcela": {
+     "filas": 5,
+     "columnas": 5,
+     "e1": 3,
+     "e2": 3,
+     "borde": 1
+    },
+    "parcelaTxt": "Plantación mixta o bajo dosel / enriquecimiento; 5 × 5 a 3 × 3 m, útil 3 × 3",
+    "notas": "La variable decisiva es el ataque del barrenador del brote (Hypsipyla grandella), que produce bifurcación. En monocultivo a pleno sol suele fracasar."
+   },
+   {
+    "n": "Yvyra pytã",
+    "cientifico": "Peltophorum dubium (Spreng.) Taub.",
+    "grupo": "nativa",
+    "fenologia": "Edad en años",
+    "parcela": {
+     "filas": 5,
+     "columnas": 5,
+     "e1": 3,
+     "e2": 3,
+     "borde": 1
+    },
+    "parcelaTxt": "5 × 5 plantas a 3 × 3 m; útil 3 × 3",
+    "notas": "Nativa de crecimiento relativamente rápido; usada en restauración y enriquecimiento."
+   },
+   {
+    "n": "Otras nativas",
+    "cientifico": "Timbó (Enterolobium contortisiliquum), kurupa'y (Anadenanthera colubrina), guatambú (Balfourodendron riedelianum) y otras",
+    "grupo": "nativa",
+    "fenologia": "Edad en años",
+    "parcela": {
+     "filas": 5,
+     "columnas": 5,
+     "e1": 3,
+     "e2": 3,
+     "borde": 1
+    },
+    "parcelaTxt": "Igual que nativas: 5 × 5 a 3 × 3 m o líneas de enriquecimiento",
+    "notas": "Campo libre para cargar la especie; útil para restauración y enriquecimiento de bosques."
+   }
+  ],
+  "ficha": [
+   {
+    "id": "plantacion",
+    "campo": "Fecha de plantación",
+    "tipo": "fecha",
+    "ayuda": "La edad de cada medición se cuenta desde esta fecha."
+   },
+   {
+    "id": "material",
+    "campo": "Material genético: especie, clon, procedencia o familia (con lote)",
+    "tipo": "texto"
+   },
+   {
+    "id": "vivero",
+    "campo": "Vivero de origen y n.º de inscripción en el INFONA",
+    "tipo": "texto"
+   },
+   {
+    "id": "plantin",
+    "campo": "Tipo de plantín",
+    "tipo": "lista",
+    "opciones": [
+     "Seminal en tubete",
+     "Clonal en tubete",
+     "En bolsa",
+     "Raíz desnuda"
+    ]
+   },
+   {
+    "id": "objetivo_prod",
+    "campo": "Objetivo de producción",
+    "tipo": "lista",
+    "opciones": [
+     "Leña o biomasa",
+     "Celulosa",
+     "Aserrío",
+     "Laminado",
+     "Silvopastoril",
+     "Restauración"
+    ]
+   },
+   {
+    "id": "sistema",
+    "campo": "Sistema",
+    "tipo": "lista",
+    "opciones": [
+     "Plantación pura",
+     "Enriquecimiento",
+     "Cortina rompevientos",
+     "Silvopastoril"
+    ]
+   },
+   {
+    "id": "suelo",
+    "campo": "Suelo: textura, análisis, profundidad, drenaje y pendiente",
+    "tipo": "texto"
+   },
+   {
+    "id": "uso_anterior",
+    "campo": "Uso anterior del suelo",
+    "tipo": "lista",
+    "opciones": [
+     "Pastura",
+     "Agricultura",
+     "Plantación anterior",
+     "Campo natural"
+    ]
+   },
+   {
+    "id": "preparacion",
+    "campo": "Preparación de suelo (subsolado, rastra, hoyado) y control de malezas",
+    "tipo": "texto"
+   },
+   {
+    "id": "fert_base",
+    "campo": "Fertilización de base (producto, dosis, fecha)",
+    "tipo": "texto"
+   },
+   {
+    "id": "hormigas",
+    "campo": "Control de hormigas previo y de mantenimiento",
+    "tipo": "texto"
+   },
+   {
+    "id": "riego",
+    "campo": "Riego de plantación o hidrogel",
+    "tipo": "texto"
+   },
+   {
+    "id": "replantes",
+    "campo": "Replantes (fecha y cantidad)",
+    "tipo": "texto"
+   },
+   {
+    "id": "heladas",
+    "campo": "Heladas registradas (fecha y mínima)",
+    "tipo": "texto"
+   },
+   {
+    "id": "intervenciones",
+    "campo": "Podas, raleos y desbrotes (fecha, criterio, intensidad)",
+    "tipo": "texto"
+   },
+   {
+    "id": "ff",
+    "campo": "Factor de forma para el volumen",
+    "tipo": "numero",
+    "ayuda": "0,45 por defecto (volumen total con corteza); 0,46 total y 0,54 comercial en urograndis. Si usás una ecuación local, anotala en observaciones."
+   },
+   {
+    "id": "infona",
+    "campo": "Plantación inscripta en el INFONA / Plan de manejo (n.º)",
+    "tipo": "texto"
+   }
+  ],
+  "calculadoras": [
+   {
+    "n": "Árboles por hectárea",
+    "formula": "N = 10 000 / (distancia entre filas × distancia entre plantas)",
+    "por_que": "3 × 2 m → 1 667 árb/ha; base de todos los valores por hectárea."
+   },
+   {
+    "n": "DAP desde CAP y diámetro equivalente",
+    "formula": "DAP = CAP / π; árbol con varios fustes: DAPeq = √(Σ DAP²)",
+    "por_que": "Muchos técnicos miden circunferencia con cinta común; los bifurcados bajo 1,30 m son frecuentes."
+   },
+   {
+    "n": "Área basal por hectárea",
+    "formula": "g = 0,00007854 × DAP²; G = Σ g × 10 000 / área útil",
+    "por_que": "Variable de rodal para raleo y comparación."
+   },
+   {
+    "n": "Volumen individual y por hectárea",
+    "formula": "v = g × h × ff (o ln v = b0 + b1 ln DAP + b2 ln h); V/ha = Σ v × 10 000 / área útil",
+    "por_que": "Permite elegir ff por especie y tipo de volumen (total 0,45–0,50; comercial ~0,54 en urograndis) o cargar una ecuación local."
+   },
+   {
+    "n": "Volumen ajustado por fallas",
+    "formula": "ANCOVA de V/ha con número de árboles vivos como covariable",
+    "por_que": "Evita que una falla de plantación se confunda con efecto del tratamiento."
+   },
+   {
+    "n": "Cubicación rigurosa (Smalian / Huber) y factor de forma real",
+    "formula": "V = (g₁ + g₂)/2 × L por sección; ff = V cubicado / (g × h)",
+    "por_que": "Para ajustar el ff o la ecuación local con árboles muestra."
+   },
+   {
+    "n": "IMA, ICA y turno técnico",
+    "formula": "IMA = V/edad; ICA = (V₂ − V₁)/(t₂ − t₁); turno técnico cuando ICA = IMA",
+    "por_que": "Variables de decisión económica."
+   },
+   {
+    "n": "Diámetro cuadrático y altura dominante",
+    "formula": "dg = √(Σ DAP²/n); H dom = media de los n = área (m²)/100 árboles más gruesos",
+    "por_que": "Descriptores de rodal y base del índice de sitio."
+   },
+   {
+    "n": "Relación hipsométrica",
+    "formula": "h = b0 + b1·ln(DAP) o ln h = b0 + b1/DAP, ajustada por tratamiento",
+    "por_que": "Estimar alturas no medidas cuando se mide submuestra."
+   },
+   {
+    "n": "Curva de crecimiento",
+    "formula": "Chapman-Richards: y = A·(1 − e^(−k·t))^c",
+    "por_que": "Comparar tratamientos a lo largo de las edades."
+   },
+   {
+    "n": "Calidad de plantín",
+    "formula": "H/D = H (cm)/D (mm); IQD = PST / (H/D + PSA/PSR)",
+    "por_que": "Calidad de plantines en ensayos de vivero."
+   },
+   {
+    "n": "Parámetros genéticos y ganancia por selección",
+    "formula": "h²ᵢ = 4σ²f/(σ²f + σ²p + σ²d) (medios hermanos); h²f = σ²f/(σ²f + σ²p/b + σ²d/(n·b)); H² clonal = σ²c/(σ²c + σ²e); GS = i × h² × σP (i: 10 % = 1,755; 5 % = 2,063; 1 % = 2,665)",
+    "por_que": "Progenies y clones; la app puede dar estimaciones por ANAVA y avisar que lo ideal es REML/BLUP."
+   },
+   {
+    "n": "Eficiencia de control de hormigas",
+    "formula": "Eficiencia = 100 − % nidos activos; corregida (Abbott) = (1 − activos_trat/activos_testigo) × 100",
+    "por_que": "Ensayos de formicidas con el nido como unidad."
+   },
+   {
+    "n": "Biomasa y carbono",
+    "formula": "B fuste = V × densidad básica; C = B × 0,47; CO₂e = C × 44/12",
+    "por_que": "Ensayos de energía y proyectos de carbono."
+   },
+   {
+    "n": "Control de prendimiento para bonificación",
+    "formula": "Prendimiento = vivos / densidad del Plan de Manejo × 100; alerta si < 80 %",
+    "por_que": "Umbral del Decreto 9425/95 para la bonificación de la Ley 536/95."
+   }
+  ]
+ },
+ "pasturas": {
+  "nombre": "Pasturas",
+  "texto": "Gramíneas y leguminosas forrajeras, bajo corte o pastoreo.",
+  "ej": "Cultivares, fertilización, frecuencia de corte, mezclas, pastoreo",
+  "tipos": [
+   {
+    "n": "Introducción y adaptación (etapa A)",
+    "descripcion": "Primera evaluación de muchas forrajeras nuevas en un sitio: establecimiento, cobertura, vigor, sanidad y tolerancia a sequía, heladas o encharcamiento, antes de medir producción en serio.",
+    "variables": [
+     "plantas_m2",
+     "cobertura_p",
+     "dias_primer_corte",
+     "vigor",
+     "altura_f",
+     "ms",
+     "saliv_dano",
+     "sev_foliar",
+     "dano_helada",
+     "verdor_seca",
+     "encharcamiento",
+     "dias_flor",
+     "malezas_p"
+    ],
+    "testigos": "Testigo regional (Marandu en Región Oriental, Gatton panic o Buffel en el Chaco)",
+    "trat": "Testigo regional\nAccesión A\nAccesión B\nAccesión C\n…",
+    "bloques_min": 2,
+    "momentos": "Plantas a los 30–45 días; cobertura al primer corte; vigor y sanidad antes de cada corte; helada a los 3–7 días de cada evento; verdor en mitad y fin de la seca",
+    "analisis": "Estadística descriptiva y ranking contra el testigo; ANAVA solo si hay ≥ 3 bloques",
+    "normativa": "Sin norma específica; si el material se importa, autorización fitosanitaria de SENAVE",
+    "fuente": "Toledo (1982) RIEPT, citado en Guía del proyecto ensayos_de_campo/14_ensayos_pasturas.md"
+   },
+   {
+    "n": "Cultivares / especies forrajeras",
+    "descripcion": "Productividad bajo corte, distribución estacional y calidad de cultivares (etapa B); con fines de inscripción en el RNCC sigue la Res. SENAVE 414/2020.",
+    "variables": [
+     "ms",
+     "ms_pct",
+     "altura_f",
+     "hoja",
+     "muerto",
+     "pb",
+     "fdn",
+     "fda",
+     "divms",
+     "plantas_m2",
+     "cobertura_p",
+     "dias_primer_corte",
+     "rebrote",
+     "vigor",
+     "saliv_dano",
+     "sev_foliar",
+     "dano_helada",
+     "verdor_seca",
+     "rend_semilla",
+     "pms",
+     "dias_flor"
+    ],
+    "testigos": "Al menos 2 testigos comerciales por grupo (lista DISE/CTCC para RNCC); fuera del RNCC, el cultivar más usado en la zona",
+    "trat": "Testigo 1 (Marandu)\nTestigo 2 (Xaraés)\nCultivar A\nCultivar B\nCultivar C\nCultivar D",
+    "bloques_min": 3,
+    "momentos": "Corte de uniformización al terminar el establecimiento; cortes cada 35 días en lluvias y 70 días en seca (anexo Brachiaria); calidad en 1 corte de lluvias y 1 de seca",
+    "analisis": "ANAVA del DBCA por corte y de la producción acumulada + Tukey; parcelas divididas en el tiempo (tratamiento × corte); totales por estación lluviosa y seca; análisis combinado de años/localidades si Fmax ≤ 5",
+    "normativa": "Ley 385/94 y RNCC (PRO-DPUV-101); Res. SENAVE 414/2020: anexos Brachiaria, Panicum y Aceven; ≥ 3 zonas, 2 años, DBCA ≥ 3 rep., ≤ 30 entradas, gl error ≥ 15, habilitación 30 días antes de la siembra",
+    "fuente": "https://www.aprosemp.org.py/docs/normativas/5-Resolucion-SENAVE-414-Normas-minimas-para-ensayos-evaluacion-agronomica-calidad-variedades.pdf"
+   },
+   {
+    "n": "Fertilización de pasturas",
+    "descripcion": "Respuesta en producción y calidad a dosis de N, P, K, S o encalado, en implantación o en mantenimiento.",
+    "variables": [
+     "ms",
+     "ms_pct",
+     "altura_f",
+     "hoja",
+     "pb",
+     "fdn",
+     "cobertura_p",
+     "vigor",
+     "plantas_m2"
+    ],
+    "testigos": "Testigo sin fertilizar + fertilizante de referencia registrado (si es ensayo de registro)",
+    "trat": "0 kg N/ha\n50 kg N/ha\n100 kg N/ha\n150 kg N/ha\n200 kg N/ha",
+    "bloques_min": 4,
+    "momentos": "Cada corte durante al menos un año completo (con estación seca); análisis de suelo antes de instalar y al final",
+    "analisis": "ANAVA + Tukey por corte y acumulada; regresión de la MS sobre la dosis (dosis económica); eficiencia de uso del N (kg MS adicional / kg N)",
+    "normativa": "Si el fin es registrar un fertilizante: Res. MAG 277/03 (≥ 2 años, 3 regiones, 3 dosis, testigo y referencia, ≥ 5 repeticiones, ≥ 12 gl del error)",
+    "fuente": "Guía del proyecto ensayos_de_campo/08_normativa_paraguay.md"
+   },
+   {
+    "n": "Frecuencia y altura de corte",
+    "descripcion": "Efecto del intervalo entre cortes (o pastoreos) y de la altura de residuo sobre producción, calidad, macollaje y persistencia.",
+    "variables": [
+     "ms",
+     "ms_pct",
+     "altura_f",
+     "altura_post",
+     "hoja",
+     "muerto",
+     "pb",
+     "fdn",
+     "divms",
+     "cobertura_p",
+     "vigor"
+    ],
+    "testigos": "Manejo recomendado para la especie (p. ej. entrada 35 / salida 15 cm en Marandu)",
+    "trat": "Corte cada 30 d a 15 cm\nCorte cada 30 d a 30 cm\nCorte cada 45 d a 15 cm\nCorte cada 45 d a 30 cm\nCorte cada 90 d a 15 cm\nCorte cada 90 d a 30 cm",
+    "bloques_min": 4,
+    "momentos": "En cada corte; balance anual comparando el mismo período total",
+    "analisis": "Factorial en DBCA (frecuencia × altura) + Tukey; acumulada anual; parcelas divididas en el tiempo",
+    "normativa": "Sin norma específica",
+    "fuente": "https://archivo.revistas.ucr.ac.cr/index.php/agromeso/article/view/34216"
+   },
+   {
+    "n": "Establecimiento y densidad de siembra",
+    "descripcion": "Compara dosis de semilla (puntos de valor cultural), métodos de siembra, tratamientos de semilla o propagación vegetativa.",
+    "variables": [
+     "plantas_m2",
+     "cobertura_p",
+     "suelo_desnudo",
+     "malezas_p",
+     "dias_primer_corte",
+     "ms",
+     "vigor"
+    ],
+    "testigos": "Dosis y método habituales de la zona",
+    "trat": "200 puntos VC/ha\n300 puntos VC/ha\n400 puntos VC/ha\n500 puntos VC/ha",
+    "bloques_min": 4,
+    "momentos": "Plantas a los 30–45 días; cobertura y malezas a los 60–90 días y al primer corte",
+    "analisis": "ANAVA + Tukey; regresión sobre la dosis de semilla",
+    "normativa": "Semilla con análisis de pureza y germinación (Ley 385/94); registrar lote y VC",
+    "fuente": "Guía del proyecto ensayos_de_campo/14_ensayos_pasturas.md"
+   },
+   {
+    "n": "Mezclas gramínea–leguminosa",
+    "descripcion": "Proporción y persistencia de la leguminosa, aporte de N y efecto sobre la producción y calidad de la mezcla; incluye inoculantes.",
+    "variables": [
+     "ms",
+     "comp_leg",
+     "pb",
+     "divms",
+     "plantas_m2",
+     "nodulacion",
+     "plantulas_resiembra",
+     "cobertura_p",
+     "malezas_p",
+     "antracnosis",
+     "vigor"
+    ],
+    "testigos": "Gramínea sola (sin leguminosa, con y sin N si es posible)",
+    "trat": "Gramínea sola\nGramínea + 50 kg N\nGramínea + leguminosa A\nGramínea + leguminosa B",
+    "bloques_min": 4,
+    "momentos": "Nodulación a los 45–60 días; composición antes de cada corte o pastoreo; resiembra al inicio de las lluvias del año siguiente",
+    "analisis": "ANAVA + Tukey de MS y % de leguminosa; evolución de la composición en el tiempo",
+    "normativa": "Inoculantes registrados (Res. SENAVE 564/10)",
+    "fuente": "https://www.produccion-animal.com.ar/produccion_y_manejo_pasturas/pasturas_cultivadas_megatermicas/116-Nac-06-AlbrechtGlatzle.pdf",
+    "cultivos": [
+     "Mezcla gramínea–leguminosa",
+     "Leucaena",
+     "Stylosanthes",
+     "Maní forrajero (Arachis pintoi)",
+     "Alfalfa"
+    ]
+   },
+   {
+    "n": "Control de malezas en pasturas",
+    "descripcion": "Eficacia y selectividad de herbicidas (o control mecánico) sobre malezas herbáceas y renovales leñosos en pasturas.",
+    "variables": [
+     "control_malezas",
+     "malezas_p",
+     "fitotox",
+     "cobertura_p",
+     "ms",
+     "vigor"
+    ],
+    "testigos": "Testigo sin aplicar (enmalezado) + herbicida de referencia registrado para pasturas",
+    "trat": "Testigo sin aplicar\nReferencia registrada\nProducto dosis baja\nProducto dosis recomendada\nProducto dosis doble (selectividad)",
+    "bloques_min": 4,
+    "momentos": "Antes de aplicar (0 DAA) y a 15, 30, 60 DAA; renovales leñosos también a 6 y 12 meses",
+    "analisis": "ANAVA + Tukey del % de control; dosis doble para selectividad",
+    "normativa": "Productos con registro SENAVE para el uso; ensayista registrado (Ley 3742/09, Res. 979/11); Res. MAG 296/03 para registro",
+    "fuente": "Guía del proyecto ensayos_de_campo/08_normativa_paraguay.md"
+   },
+   {
+    "n": "Control de salivazo",
+    "descripcion": "Eficacia de insecticidas, Metarhizium u otros métodos, o resistencia varietal, frente a salivazo (Deois, Notozulia, Mahanarva).",
+    "variables": [
+     "ninfas",
+     "adultos_saliv",
+     "saliv_dano",
+     "ms",
+     "vigor"
+    ],
+    "testigos": "Testigo sin tratar; en resistencia, un testigo susceptible (U. decumbens) y uno resistente",
+    "trat": "Testigo sin tratar\nReferencia registrada\nProducto A\nMetarhizium anisopliae",
+    "bloques_min": 4,
+    "momentos": "Conteo de ninfas y adultos antes de aplicar y a 7, 14 y 21 DAA; daño al final de cada generación de adultos; monitoreo semanal o quincenal en la estación lluviosa",
+    "analisis": "ANAVA + Tukey; % de control de Abbott (o Henderson-Tilton si el conteo previo difiere entre parcelas); en resistencia, comparar ninfas y daño contra los testigos",
+    "normativa": "Producto con registro SENAVE para pasturas; Ley 3742/09",
+    "fuente": "https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/409420/1/MonitoramentoPopulaciona.pdf",
+    "cultivos": [
+     "Urochloa brizantha (Marandu, Xaraés, Piatã)",
+     "Urochloa decumbens (Basilisk)",
+     "Urochloa humidicola",
+     "Urochloa híbrida (Mulato II, Cayman)",
+     "Megathyrsus maximus (Gatton panic)",
+     "Megathyrsus maximus porte alto (Mombaça, Tanzânia, Zuri)",
+     "Digitaria eriantha (Pangola)",
+     "Cynodon (Tifton 85)",
+     "Pennisetum purpureum (Camerún / elefante)"
+    ]
+   },
+   {
+    "n": "Recuperación de pasturas degradadas",
+    "descripcion": "Compara alternativas de recuperación o renovación (fertilización, laboreo, resiembra, integración agricultura-ganadería, leguminosas) sobre pasturas con baja cobertura.",
+    "variables": [
+     "cobertura_p",
+     "suelo_desnudo",
+     "malezas_p",
+     "plantas_m2",
+     "ms",
+     "pb",
+     "comp_leg",
+     "vigor"
+    ],
+    "testigos": "Pastura degradada sin intervención",
+    "trat": "Sin intervención\nFertilización de mantenimiento\nEscarificado + fertilización\nResiembra\nCultivo anual + resiembra",
+    "bloques_min": 4,
+    "momentos": "Línea de base antes de intervenir; cobertura y malezas cada 3 meses; producción en cada corte durante 2 años",
+    "analisis": "ANAVA + Tukey; covarianza con la cobertura inicial",
+    "normativa": "Sin norma específica",
+    "fuente": "Guía del proyecto ensayos_de_campo/14_ensayos_pasturas.md"
+   },
+   {
+    "n": "Diferimiento (heno en pie)",
+    "descripcion": "Cierre de potreros al final de las lluvias para acumular forraje para la seca; compara fechas de cierre, especies o fertilización.",
+    "variables": [
+     "ms",
+     "ms_pct",
+     "hoja",
+     "muerto",
+     "pb",
+     "fdn",
+     "divms",
+     "altura_f"
+    ],
+    "testigos": "Fecha de cierre habitual de la zona",
+    "trat": "Cierre en febrero\nCierre en marzo\nCierre en abril",
+    "bloques_min": 4,
+    "momentos": "Corte de uniformización en la fecha de cierre; muestreo de MS y calidad al uso (julio–septiembre)",
+    "analisis": "ANAVA + Tukey; interacción fecha × especie",
+    "normativa": "Sin norma específica",
+    "fuente": "https://produccion-animal.com.ar/produccion_y_manejo_pasturas/pasturas_cultivadas_megatermicas/121-guia_pastos_chaco.pdf",
+    "cultivos": [
+     "Cenchrus ciliaris (Buffel)",
+     "Megathyrsus maximus (Gatton panic)",
+     "Digitaria eriantha (Pangola)",
+     "Urochloa brizantha (Marandu, Xaraés, Piatã)",
+     "Urochloa decumbens (Basilisk)",
+     "Chloris gayana (Grama Rhodes)",
+     "Panicum coloratum (Bambatsi, Klein)",
+     "Campo natural (Paspalum y otras nativas)"
+    ]
+   },
+   {
+    "n": "Pastoreo y producción animal",
+    "descripcion": "Producción animal por cabeza y por hectárea con distintas pasturas, cargas o sistemas de pastoreo (etapas C y D). La unidad experimental es el potrero.",
+    "variables": [
+     "disponible",
+     "residuo",
+     "altura_f",
+     "altura_post",
+     "gdp",
+     "carga",
+     "pv_ha",
+     "pb",
+     "divms",
+     "comp_leg",
+     "cobertura_p"
+    ],
+    "testigos": "Pastura o manejo regional (p. ej. Gatton panic con carga habitual)",
+    "trat": "Pastura A carga baja\nPastura A carga alta\nPastura B carga baja\nPastura B carga alta",
+    "bloques_min": 2,
+    "momentos": "Pesadas cada 28 días con 12–16 h de ayuno; disponible y remanente al entrar y salir (rotativo) o cada 28 días (continuo)",
+    "analisis": "ANAVA con el potrero como unidad (≥ 2 potreros por tratamiento) o regresión de GDP y kg PV/ha sobre la carga; nunca usar el animal como repetición",
+    "normativa": "Sin norma específica",
+    "fuente": "https://www.crops.org/files/membership/divisions/c06/international-grazing-terminology.pdf"
+   },
+   {
+    "n": "Silvopastoril",
+    "descripcion": "Producción y calidad de la pastura bajo distintos niveles de sombra, especies arbóreas o arreglos espaciales. Mide solo el componente forrajero; para evaluar el sistema completo (árbol, pasto por posición, luz y animales) usá el rubro Silvopastoril.",
+    "variables": [
+     "rfa_transm",
+     "ms",
+     "ms_pct",
+     "hoja",
+     "pb",
+     "fdn",
+     "cobertura_p",
+     "altura_f"
+    ],
+    "testigos": "Pastura a pleno sol",
+    "trat": "Pleno sol\nHileras de árboles a 10 m\nHileras a 20 m\nHileras dobles",
+    "bloques_min": 3,
+    "momentos": "RFA a las 9, 12 y 15 h en días despejados, en lluvias y en seca; cortes por distancia a la hilera de árboles",
+    "analisis": "ANAVA + Tukey; regresión de la MS sobre el % de RFA o la distancia a los árboles; los árboles se miden con el protocolo forestal",
+    "normativa": "Plantación forestal según INFONA si corresponde (no verificado en esta revisión)",
+    "fuente": "https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/596332/1/Radiacao-incidente-e-massa-de-forragem-de-Brachiaria-decumbens.pdf",
+    "cultivos": [
+     "Megathyrsus maximus (Gatton panic)",
+     "Megathyrsus maximus porte alto (Mombaça, Tanzânia, Zuri)",
+     "Urochloa brizantha (Marandu, Xaraés, Piatã)",
+     "Urochloa decumbens (Basilisk)",
+     "Urochloa híbrida (Mulato II, Cayman)",
+     "Leucaena",
+     "Mezcla gramínea–leguminosa"
+    ]
+   },
+   {
+    "n": "Verdeos de invierno",
+    "descripcion": "Cultivares, fechas de siembra o fertilización de avena y raigrás para pastoreo o corte en invierno.",
+    "variables": [
+     "ms",
+     "ms_pct",
+     "altura_f",
+     "pb",
+     "fdn",
+     "divms",
+     "plantas_m2",
+     "sev_foliar",
+     "dias_flor",
+     "rebrote"
+    ],
+    "testigos": "Cultivar más usado en la zona",
+    "trat": "Avena testigo\nAvena cultivar A\nRaigrás testigo\nRaigrás cultivar B",
+    "bloques_min": 4,
+    "momentos": "Primer corte a los 45–60 días o a 25–30 cm de altura (no verificado); luego a intervalos fijos hasta floración",
+    "analisis": "ANAVA del DBCA por corte y de la producción acumulada + Tukey; parcelas divididas en el tiempo (tratamiento × corte); totales por estación lluviosa y seca; análisis combinado de años/localidades si Fmax ≤ 5",
+    "normativa": "Raigrás: Res. SENAVE 414/2020 anexo Aceven para RNCC; el anexo de avena es para grano",
+    "fuente": "https://www.aprosemp.org.py/docs/normativas/5-Resolucion-SENAVE-414-Normas-minimas-para-ensayos-evaluacion-agronomica-calidad-variedades.pdf",
+    "cultivos": [
+     "Avena (verdeo de invierno)",
+     "Raigrás anual (Lolium multiflorum)"
+    ]
+   }
+  ],
+  "cultivos": [
+   {
+    "n": "Urochloa brizantha (Marandu, Xaraés, Piatã)",
+    "cientifico": "Urochloa brizantha (syn. Brachiaria brizantha)",
+    "grupo": "gramínea perenne tropical, macollante",
+    "fenologia": "Vegetativo / encañado / floración (sin escala BBCH de uso corriente); registrar días a floración",
+    "parcela": {
+     "ancho": 3,
+     "largo": 5,
+     "borde": 0.5,
+     "marco": 0.25,
+     "marcos": 2,
+     "altura_corte": 15
+    },
+    "parcelaTxt": "Parcela de corte 3 × 5 m (15 m²) con 0,5 m de borde; área útil 2 × 4 m (8 m²); 2 marcos de 0,25 m² o corte de toda el área útil. Para RNCC: 4 hileras × 5 m, útil las 2 centrales (Res. SENAVE 414/2020, anexo Brachiaria).",
+    "notas": "Testigo regional más común en la Región Oriental y Chaco húmedo. Altura de residuo 15 cm y de entrada 35 cm (IDR-Paraná 2024, para pastoreo rotativo). Marandu es muy sensible al encharcamiento (síndrome de muerte del Marandu: deja de crecer al primer día de anegamiento, Dias-Filho en Franco 2006); en bajos preferir U. humidicola. Susceptible a salivazo (Marandu tiene antibiosis parcial; no verificado en esta revisión)."
+   },
+   {
+    "n": "Urochloa decumbens (Basilisk)",
+    "cientifico": "Urochloa decumbens",
+    "grupo": "gramínea perenne tropical, estolonífera",
+    "fenologia": "Vegetativo / floración",
+    "parcela": {
+     "ancho": 3,
+     "largo": 5,
+     "borde": 0.5,
+     "marco": 0.25,
+     "marcos": 2,
+     "altura_corte": 10
+    },
+    "parcelaTxt": "Parcela de corte 3 × 5 m (15 m²) con 0,5 m de borde; área útil 2 × 4 m (8 m²); 2 marcos de 0,25 m² o corte de toda el área útil. Para RNCC: 4 hileras × 5 m, útil las 2 centrales (Res. SENAVE 414/2020, anexo Brachiaria). Estolonífera: dejar calles de 1 m o recortar bordes.",
+    "notas": "Muy susceptible al salivazo: sirve como testigo susceptible en ensayos de control o resistencia. Altura de corte 10–15 cm (no verificado para Paraguay)."
+   },
+   {
+    "n": "Urochloa humidicola",
+    "cientifico": "Urochloa humidicola",
+    "grupo": "gramínea perenne tropical, estolonífera",
+    "fenologia": "Vegetativo / floración",
+    "parcela": {
+     "ancho": 3,
+     "largo": 5,
+     "borde": 0.5,
+     "marco": 0.25,
+     "marcos": 2,
+     "altura_corte": 10
+    },
+    "parcelaTxt": "Parcela de corte 3 × 5 m (15 m²) con 0,5 m de borde; área útil 2 × 4 m (8 m²); 2 marcos de 0,25 m² o corte de toda el área útil. Para RNCC: 4 hileras × 5 m, útil las 2 centrales (Res. SENAVE 414/2020, anexo Brachiaria). Estolonífera: calles de 1 m.",
+    "notas": "La más tolerante al encharcamiento (0 % de reducción de fotosíntesis con 6 días de anegamiento vs. 89 % en Marandu; Dias-Filho en Franco 2006). INTA Formosa la cita (cv. Llanero) como alternativa en años húmedos. Altura de corte orientativa 10 cm (no verificado)."
+   },
+   {
+    "n": "Urochloa híbrida (Mulato II, Cayman)",
+    "cientifico": "Urochloa ruziziensis × U. decumbens × U. brizantha",
+    "grupo": "gramínea perenne tropical, híbrido apomíctico",
+    "fenologia": "Vegetativo / floración",
+    "parcela": {
+     "ancho": 3,
+     "largo": 5,
+     "borde": 0.5,
+     "marco": 0.25,
+     "marcos": 2,
+     "altura_corte": 15
+    },
+    "parcelaTxt": "Parcela de corte 3 × 5 m (15 m²) con 0,5 m de borde; área útil 2 × 4 m (8 m²); 2 marcos de 0,25 m² o corte de toda el área útil. Para RNCC: 4 hileras × 5 m, útil las 2 centrales (Res. SENAVE 414/2020, anexo Brachiaria).",
+    "notas": "Cayman se promociona como tolerante a suelos mal drenados (dato de semillero, no verificado). Altura de corte 15 cm (asimilada a U. brizantha; no verificado)."
+   },
+   {
+    "n": "Megathyrsus maximus (Gatton panic)",
+    "cientifico": "Megathyrsus maximus (syn. Panicum maximum) cv. Gatton",
+    "grupo": "gramínea perenne tropical, macollante",
+    "fenologia": "Vegetativo / floración",
+    "parcela": {
+     "ancho": 3,
+     "largo": 5,
+     "borde": 0.5,
+     "marco": 0.25,
+     "marcos": 2,
+     "altura_corte": 20
+    },
+    "parcelaTxt": "Parcela de corte 3 × 5 m (15 m²) con 0,5 m de borde; área útil 2 × 4 m (8 m²); 2 marcos de 0,25 m² o corte de toda el área útil. Para RNCC: 4 hileras × 5 m, útil las 2 centrales (Res. SENAVE 414/2020, anexo Brachiaria).",
+    "notas": "Gramínea dominante en desmontes nuevos del Chaco; fácil de establecer en suelo virgen, tolera sombra, no tolera anegamiento y es menos resistente a sequía que el Buffel (Glatzle). En Argentina se probaron 15 y 30 cm de corte: 15 cm con 90 días dio más MS, 30 cm cada 30–45 días más macollos y mejor relación hoja:tallo (Schnellmann et al. 2019). INTA Formosa: ≈ 8000 kg MS/ha/año."
+   },
+   {
+    "n": "Megathyrsus maximus porte alto (Mombaça, Tanzânia, Zuri)",
+    "cientifico": "Megathyrsus maximus",
+    "grupo": "gramínea perenne tropical, macollante de porte alto",
+    "fenologia": "Vegetativo / floración",
+    "parcela": {
+     "ancho": 4,
+     "largo": 5,
+     "borde": 0.5,
+     "marco": 0.25,
+     "marcos": 2,
+     "altura_corte": 40
+    },
+    "parcelaTxt": "Parcela de corte 4 × 5 m (20 m²) con 0,5 m de borde; útil 3 × 4 m. Por el tamaño de las matas conviene cortar toda el área útil con motosegadora.",
+    "notas": "Pastoreo rotativo: Mombaça entrada 90 cm / salida 45–50 cm; Tanzânia 70 / 35–40 cm; Quênia 50–70 / 25–35; Tamani 50 / 20–25 (IDR-Paraná 2024). Exigente en fertilidad. Los Megathyrsus de porte bajo (Massai, Tamani) pueden cargarse aquí indicando su altura."
+   },
+   {
+    "n": "Cenchrus ciliaris (Buffel)",
+    "cientifico": "Cenchrus ciliaris",
+    "grupo": "gramínea perenne tropical, macollante",
+    "fenologia": "Vegetativo / floración",
+    "parcela": {
+     "ancho": 3,
+     "largo": 5,
+     "borde": 0.5,
+     "marco": 0.25,
+     "marcos": 2,
+     "altura_corte": 10
+    },
+    "parcelaTxt": "Parcela de corte 3 × 5 m (15 m²) con 0,5 m de borde; área útil 2 × 4 m (8 m²); 2 marcos de 0,25 m² o corte de toda el área útil. Para RNCC: 4 hileras × 5 m, útil las 2 centrales (Res. SENAVE 414/2020, anexo Brachiaria).",
+    "notas": "Muy tolerante a sequía; rebrote rápido en primavera; buen heno en pie. No apto para suelos arenosos, inundables ni zonas muy lluviosas (Glatzle). INTA Formosa: cultivares Molopo, Biloela, Lucero INTA-Pemán y Orión INTA > 10 t MS/ha/año. Altura de corte 10–15 cm (no verificado)."
+   },
+   {
+    "n": "Chloris gayana (Grama Rhodes)",
+    "cientifico": "Chloris gayana",
+    "grupo": "gramínea perenne tropical, estolonífera",
+    "fenologia": "Vegetativo / floración",
+    "parcela": {
+     "ancho": 3,
+     "largo": 5,
+     "borde": 0.5,
+     "marco": 0.25,
+     "marcos": 2,
+     "altura_corte": 10
+    },
+    "parcelaTxt": "Parcela de corte 3 × 5 m (15 m²) con 0,5 m de borde; área útil 2 × 4 m (8 m²); 2 marcos de 0,25 m² o corte de toda el área útil. Para RNCC: 4 hileras × 5 m, útil las 2 centrales (Res. SENAVE 414/2020, anexo Brachiaria). Estolonífera: calles de 1 m.",
+    "notas": "Callide Rhodes: amplia adaptación en zona de transición y Bajo Chaco; compite en suelos pesados algo salinos con agua estancada (Glatzle). Usada para heno. Altura de corte 10 cm (no verificado)."
+   },
+   {
+    "n": "Panicum coloratum (Bambatsi, Klein)",
+    "cientifico": "Panicum coloratum",
+    "grupo": "gramínea perenne tropical, macollante",
+    "fenologia": "Vegetativo / floración",
+    "parcela": {
+     "ancho": 3,
+     "largo": 5,
+     "borde": 0.5,
+     "marco": 0.25,
+     "marcos": 2,
+     "altura_corte": 10
+    },
+    "parcelaTxt": "Parcela de corte 3 × 5 m (15 m²) con 0,5 m de borde; área útil 2 × 4 m (8 m²); 2 marcos de 0,25 m² o corte de toda el área útil. Para RNCC: 4 hileras × 5 m, útil las 2 centrales (Res. SENAVE 414/2020, anexo Brachiaria).",
+    "notas": "Tolera salinidad, encharcamiento, sequía prolongada y heladas; establecimiento lento; solo arcillas pesadas (Glatzle). Bambatsi > 10 200 kg MS/ha en INTA Formosa. Altura de corte no verificada."
+   },
+   {
+    "n": "Digitaria eriantha (Pangola)",
+    "cientifico": "Digitaria eriantha subsp. pentzii (syn. D. decumbens)",
+    "grupo": "gramínea perenne tropical, estolonífera",
+    "fenologia": "Vegetativo",
+    "parcela": {
+     "ancho": 3,
+     "largo": 5,
+     "borde": 0.5,
+     "marco": 0.25,
+     "marcos": 2,
+     "altura_corte": 7
+    },
+    "parcelaTxt": "Parcela de corte 3 × 5 m (15 m²) con 0,5 m de borde; área útil 2 × 4 m (8 m²); 2 marcos de 0,25 m² o corte de toda el área útil. Para RNCC: 4 hileras × 5 m, útil las 2 centrales (Res. SENAVE 414/2020, anexo Brachiaria). Se planta por estolones: registrar kg o m² de material por parcela.",
+    "notas": "Tolera pastoreo intenso y anegamiento temporal; suelos arenosos (Glatzle). Base de las mezclas con leguminosas del Chaco Central. Altura de corte 5–10 cm (guía 14)."
+   },
+   {
+    "n": "Cynodon (Tifton 85)",
+    "cientifico": "Cynodon spp. (híbrido Tifton 85)",
+    "grupo": "gramínea perenne tropical, estolonífera/rizomatosa",
+    "fenologia": "Vegetativo",
+    "parcela": {
+     "ancho": 3,
+     "largo": 5,
+     "borde": 0.5,
+     "marco": 0.25,
+     "marcos": 2,
+     "altura_corte": 10
+    },
+    "parcelaTxt": "Parcela de corte 3 × 5 m (15 m²) con 0,5 m de borde; área útil 2 × 4 m (8 m²); 2 marcos de 0,25 m² o corte de toda el área útil. Para RNCC: 4 hileras × 5 m, útil las 2 centrales (Res. SENAVE 414/2020, anexo Brachiaria). Propagación vegetativa (≈ 2,5–3 t/ha de mudas, IDR-Paraná).",
+    "notas": "Pastoreo: entrada 25–30 cm, salida 12–15 cm; en cortes para heno se usa 5–10 cm (IDR-Paraná 2024; guía 14). Apta para heno."
+   },
+   {
+    "n": "Pennisetum purpureum (Camerún / elefante)",
+    "cientifico": "Cenchrus purpureus (syn. Pennisetum purpureum)",
+    "grupo": "gramínea perenne tropical de corte",
+    "fenologia": "Vegetativo / encañado",
+    "parcela": {
+     "ancho": 4,
+     "largo": 5,
+     "borde": 0.5,
+     "marco": 0.25,
+     "marcos": 2,
+     "altura_corte": 20
+    },
+    "parcelaTxt": "Surcos a 0,8–1 m: 4 surcos × 5 m; útil los 2 centrales × 4 m. Corte total del área útil con machete o motosegadora.",
+    "notas": "Forrajera de corte (corte y acarreo, ensilaje). Producciones por corte pueden pasar 12 t MS/ha: subir el máximo de la variable ms. Altura de corte y distancia entre surcos: no verificadas en esta revisión."
+   },
+   {
+    "n": "Campo natural (Paspalum y otras nativas)",
+    "cientifico": "Paspalum notatum, Paspalum spp., Axonopus, Andropogon y otras",
+    "grupo": "pastizal natural",
+    "fenologia": "No aplica (comunidad)",
+    "parcela": {
+     "ancho": 5,
+     "largo": 5,
+     "borde": 0.5,
+     "marco": 0.25,
+     "marcos": 2,
+     "altura_corte": 5
+    },
+    "parcelaTxt": "Parcelas de 5 × 5 m o potreros; composición botánica con 20 o más marcos.",
+    "notas": "Ensayos de fertilización, diferimiento o carga en campos naturales (Ñeembucú, Misiones, Chaco). Composición botánica con rango en peso seco. Especies dominantes por zona: no verificadas en esta revisión."
+   },
+   {
+    "n": "Avena (verdeo de invierno)",
+    "cientifico": "Avena sativa / Avena strigosa",
+    "grupo": "gramínea anual invernal",
+    "fenologia": "Zadoks (Z13 a Z31 para pastoreo; Z50+ para heno)",
+    "parcela": {
+     "ancho": 1.2,
+     "largo": 5,
+     "borde": 0.5,
+     "marco": 0.25,
+     "marcos": 2,
+     "altura_corte": 7
+    },
+    "parcelaTxt": "6 hileras a 0,20 m × 5 m; útil las 4 centrales × 4 m. Corte con marco de 0,25 m² o de toda el área útil.",
+    "notas": "El anexo de avena de la Res. SENAVE 414/2020 es para grano (6 hileras × 5 m); para doble propósito o forraje no hay variables forrajeras en el anexo. Altura de corte orientativa 5–10 cm (no verificado)."
+   },
+   {
+    "n": "Raigrás anual (Lolium multiflorum)",
+    "cientifico": "Lolium multiflorum",
+    "grupo": "gramínea anual invernal",
+    "fenologia": "Zadoks / días a pastoreo y a floración plena",
+    "parcela": {
+     "ancho": 1.0,
+     "largo": 5,
+     "borde": 0.5,
+     "marco": 0.25,
+     "marcos": 2,
+     "altura_corte": 5
+    },
+    "parcelaTxt": "4 hileras × 5 m; útil las 2 centrales (Res. SENAVE 414/2020, anexo Aceven).",
+    "notas": "En la Res. 414/2020 figura como Aceven (Lolium multiflorum): rendimiento, días a floración plena, días a pastoreo, PMS, roya y otras enfermedades, PB, NDT y energía digestible. Densidad mínima válida 7 plantas por metro lineal. Distancia entre hileras no verificada."
+   },
+   {
+    "n": "Alfalfa",
+    "cientifico": "Medicago sativa",
+    "grupo": "leguminosa perenne templada",
+    "fenologia": "Estados de Kalu y Fick / % de floración (corte a 10 % de floración o rebrote basal de 5 cm)",
+    "parcela": {
+     "ancho": 1.4,
+     "largo": 5,
+     "borde": 0.5,
+     "marco": 0.25,
+     "marcos": 2,
+     "altura_corte": 5
+    },
+    "parcelaTxt": "Parcela 1,4 × 5 m (7 hileras a 0,20 m); útil las 5 centrales × 4 m. (no verificado para Paraguay)",
+    "notas": "Uso limitado en Paraguay (cuencas lecheras, riego); superficie no verificada. Única especie donde el valor relativo del forraje (VRF) tiene sentido como índice. Requiere inoculante específico (Sinorhizobium meliloti)."
+   },
+   {
+    "n": "Leucaena",
+    "cientifico": "Leucaena leucocephala",
+    "grupo": "leguminosa arbustiva",
+    "fenologia": "No aplica; registrar altura y diámetro del tallo",
+    "parcela": {
+     "ancho": 4,
+     "largo": 6,
+     "borde": 0.5,
+     "marco": 0.25,
+     "marcos": 2,
+     "altura_corte": 90
+    },
+    "parcelaTxt": "Hileras dobles cada 5 m (sistema de Glatzle) o parcelas de 6 × 4 m con útil 6 × 2 m (Sosa Rubio y Zapata 1996). Uniformizar a 50–90 cm.",
+    "notas": "Biomasa comestible = hojas + tallos < 6 mm (Sosa Rubio y Zapata 1996). En el Chaco: Leucaena + Gatton 476 kg PV/ha en 9 meses vs. 211 con Gatton solo; Tarramba es más tolerante a heladas que Cunningham; poda en primavera a 50 cm (Glatzle). Mimosina: inocular el rumen con Synergistes jonesii."
+   },
+   {
+    "n": "Stylosanthes",
+    "cientifico": "Stylosanthes spp. (S. hippocampoides cv. Oxley, S. capitata/S. macrocephala)",
+    "grupo": "leguminosa herbácea perenne",
+    "fenologia": "Vegetativo / floración / semillazón",
+    "parcela": {
+     "ancho": 3,
+     "largo": 5,
+     "borde": 0.5,
+     "marco": 0.25,
+     "marcos": 2,
+     "altura_corte": 10
+    },
+    "parcelaTxt": "Parcela de corte 3 × 5 m (15 m²) con 0,5 m de borde; área útil 2 × 4 m (8 m²); 2 marcos de 0,25 m² o corte de toda el área útil. Para RNCC: 4 hileras × 5 m, útil las 2 centrales (Res. SENAVE 414/2020, anexo Brachiaria).",
+    "notas": "Oxley: la más tolerante a sequía, tolera heladas; suelos arenosos y limosos, no arcillas (Glatzle). Antracnosis (Colletotrichum) con escala 0–9 (Fernandes et al. 2012)."
+   },
+   {
+    "n": "Maní forrajero (Arachis pintoi)",
+    "cientifico": "Arachis pintoi",
+    "grupo": "leguminosa herbácea perenne, estolonífera",
+    "fenologia": "Vegetativo / floración",
+    "parcela": {
+     "ancho": 3,
+     "largo": 5,
+     "borde": 0.5,
+     "marco": 0.25,
+     "marcos": 2,
+     "altura_corte": 5
+    },
+    "parcelaTxt": "Parcela de corte 3 × 5 m (15 m²) con 0,5 m de borde; área útil 2 × 4 m (8 m²); 2 marcos de 0,25 m² o corte de toda el área útil. Para RNCC: 4 hileras × 5 m, útil las 2 centrales (Res. SENAVE 414/2020, anexo Brachiaria).",
+    "notas": "Adaptado a zonas húmedas; uso en Paraguay no verificado en esta revisión (dejar como especie opcional). Se propaga por semilla o estolones."
+   },
+   {
+    "n": "Mezcla gramínea–leguminosa",
+    "cientifico": "Según la mezcla (indicar especies en la ficha)",
+    "grupo": "consociación",
+    "fenologia": "Según componentes",
+    "parcela": {
+     "ancho": 3,
+     "largo": 5,
+     "borde": 0.5,
+     "marco": 0.25,
+     "marcos": 2,
+     "altura_corte": 15
+    },
+    "parcelaTxt": "Parcelas de 3 × 5 m bajo corte o potreros chicos bajo pastoreo; composición con 20 marcos o más.",
+    "notas": "En el Chaco Central la proporción de leguminosa (Alysicarpus, Oxley, Lotononis con Pangola) se estabilizó en 30–40 % y elevó la ganancia de 284 a 464 kg PV/ha/año en el primer año (Glatzle)."
+   }
+  ],
+  "ficha": [
+   {
+    "id": "zona",
+    "campo": "Zona",
+    "tipo": "lista",
+    "opciones": [
+     "Región Oriental · Norte",
+     "Región Oriental · Centro",
+     "Región Oriental · Sur",
+     "Chaco húmedo",
+     "Chaco central",
+     "Chaco seco"
+    ]
+   },
+   {
+    "id": "suelo",
+    "campo": "Análisis de suelo (textura, pH, P, K, MO, Al; salinidad si hay)",
+    "tipo": "texto"
+   },
+   {
+    "id": "drenaje",
+    "campo": "Drenaje del sitio",
+    "tipo": "lista",
+    "opciones": [
+     "Bien drenado",
+     "Bajo",
+     "Anegable"
+    ]
+   },
+   {
+    "id": "historia",
+    "campo": "Historia del lote",
+    "tipo": "lista",
+    "opciones": [
+     "Desmonte nuevo",
+     "Pastura degradada",
+     "Agricultura previa",
+     "Campo natural"
+    ]
+   },
+   {
+    "id": "siembra",
+    "campo": "Fecha de siembra o plantación",
+    "tipo": "fecha"
+   },
+   {
+    "id": "metodo_siembra",
+    "campo": "Método de siembra",
+    "tipo": "lista",
+    "opciones": [
+     "Al voleo",
+     "En líneas",
+     "Estolones o mudas"
+    ]
+   },
+   {
+    "id": "semilla",
+    "campo": "Semilla: pureza %, germinación %, valor cultural, kg/ha",
+    "tipo": "texto"
+   },
+   {
+    "id": "inoculante",
+    "campo": "Inoculante (cepa, dosis) de la leguminosa",
+    "tipo": "texto"
+   },
+   {
+    "id": "fert",
+    "campo": "Fertilización de base y de mantenimiento",
+    "tipo": "texto"
+   },
+   {
+    "id": "criterio_corte",
+    "campo": "Criterio de corte",
+    "tipo": "lista",
+    "opciones": [
+     "Días fijos (35 en lluvias, 70 en seca)",
+     "Altura de entrada",
+     "95 % de intercepción de luz"
+    ]
+   },
+   {
+    "id": "estaciones",
+    "campo": "Meses de lluvias y de seca en el sitio",
+    "tipo": "texto"
+   },
+   {
+    "id": "riego",
+    "campo": "Riego",
+    "tipo": "lista",
+    "opciones": [
+     "Secano",
+     "Riego"
+    ]
+   },
+   {
+    "id": "ua",
+    "campo": "Peso de la unidad animal (kg)",
+    "tipo": "numero",
+    "ayuda": "450 kg por defecto; la definición internacional es 500 kg."
+   },
+   {
+    "id": "pastoreo",
+    "campo": "Pastoreo: sistema, manejo de carga (fija o put-and-take), categoría, raza, probadores por potrero, ayuno",
+    "tipo": "texto"
+   },
+   {
+    "id": "clima",
+    "campo": "Lluvias y heladas (fechas y mínimas)",
+    "tipo": "texto"
+   },
+   {
+    "id": "salivazo",
+    "campo": "Historial de salivazo y malezas dominantes",
+    "tipo": "texto"
+   },
+   {
+    "id": "senave",
+    "campo": "N.º de habilitación SENAVE y testigos oficiales (ensayos RNCC)",
+    "tipo": "texto"
+   }
+  ],
+  "calculadoras": [
+   {
+    "n": "Materia seca por corte (ya existe)",
+    "formula": "MS % = peso seco ÷ peso verde × 100; kg MS/ha = peso verde medio (g) ÷ área del marco (m²) × MS % ÷ 100 × 10",
+    "por_que": "Base de todo ensayo bajo corte; cargar ms y ms_pct a la vez."
+   },
+   {
+    "n": "Tasa de crecimiento",
+    "formula": "Bajo corte: kg MS/ha ÷ días de rebrote. Con jaulas de exclusión: (MS dentro de la jaula al final − MS fuera al inicio) ÷ días",
+    "por_que": "Compara cortes de distinta duración y épocas."
+   },
+   {
+    "n": "Producción acumulada por estación",
+    "formula": "Σ MS de los cortes de lluvias; Σ MS de los cortes de seca; % en seca = MS seca ÷ MS total × 100",
+    "por_que": "La estacionalidad importa tanto como el total."
+   },
+   {
+    "n": "Proteína por hectárea",
+    "formula": "kg PB/ha = kg MS/ha × PB % ÷ 100",
+    "por_que": "Combina cantidad y calidad; a menudo diferencia más que la MS sola."
+   },
+   {
+    "n": "Energía metabolizable",
+    "formula": "EM (Mcal/kg MS) = 3,6 × DIVMS ÷ 100",
+    "por_que": "Traduce la digestibilidad a energía para formular dietas."
+   },
+   {
+    "n": "Relación hoja:tallo",
+    "formula": "Lámina (g secos) ÷ tallo + vaina (g secos)",
+    "por_que": "Exigida en el anexo Brachiaria de la Res. 414/2020; se obtiene de la misma separación de fracciones."
+   },
+   {
+    "n": "Valor relativo del forraje (solo alfalfa y forrajes templados)",
+    "formula": "DMS = 88,9 − 0,779 × FDA; CMS = 120 ÷ FDN; VRF = DMS × CMS ÷ 1,29",
+    "por_que": "Índice comercial de calidad de heno de alfalfa; en tropicales solo para comparar dentro del ensayo."
+   },
+   {
+    "n": "Rango en peso seco",
+    "formula": "% especie = 70,19 × f1 + 21,08 × f2 + 8,73 × f3 (f = fracción de marcos en que ocupó el 1.º, 2.º, 3.º lugar); re-escalar a 100 si faltan rangos",
+    "por_que": "Composición botánica rápida sin separar a mano."
+   },
+   {
+    "n": "Calibración del plato medidor",
+    "formula": "Regresión lineal kg MS/ha = a + b × lectura con 5–10 pares corte/lectura por fecha; mostrar R²",
+    "por_que": "La calibración cambia con especie y estación; hoy no está en la app."
+   },
+   {
+    "n": "Valor cultural y dosis de semilla",
+    "formula": "VC % = pureza % × germinación % ÷ 100; kg/ha = puntos VC/ha ÷ VC %",
+    "por_que": "Iguala la siembra real entre lotes de distinta calidad."
+   },
+   {
+    "n": "Carga, oferta y utilización",
+    "formula": "UA/ha = Σ PV ÷ kg UA ÷ ha; oferta = kg MS disponible ÷ (PV total ÷ 100) ÷ días de ocupación (kg MS/100 kg PV/día); utilización = (disponible − remanente) ÷ disponible × 100",
+    "por_que": "Permite comparar tratamientos a igual presión de pastoreo (definiciones de Allen et al. 2011)."
+   },
+   {
+    "n": "Ganancia y producción de carne",
+    "formula": "GDP (g/d) = (PF − PI) ÷ días × 1000; kg PV/ha = Σ (GDP × animales × días) ÷ 1000 ÷ ha",
+    "por_que": "Resultado final de los ensayos de pastoreo."
+   },
+   {
+    "n": "Ninfas de salivazo por m²",
+    "formula": "ninfas/m² = promedio por marco ÷ área del marco (× 16 con 25 × 25 cm; × 4 con 50 × 50 cm)",
+    "por_que": "Evita errores al cambiar de tamaño de marco."
+   },
+   {
+    "n": "Eficiencia de uso del N",
+    "formula": "(kg MS/ha con N − kg MS/ha testigo) ÷ kg N aplicado",
+    "por_que": "Lectura estándar de los ensayos de fertilización nitrogenada."
+   },
+   {
+    "n": "RFA transmitida y sombra",
+    "formula": "% RFA = RFA bajo árboles ÷ RFA pleno sol × 100; sombra % = 100 − % RFA",
+    "por_que": "Variable explicativa central en silvopastoril."
+   }
+  ]
+ },
+ "silvopastoril": {
+  "nombre": "Silvopastoril",
+  "texto": "Árboles, pastura y animales en el mismo potrero.",
+  "ej": "Arreglo de árboles, sombra, raleo, forrajeras bajo sombra, confort animal",
+  "tipos": [
+   {
+    "n": "Arreglo espacial y densidad de árboles",
+    "descripcion": "Compara arreglos (hileras simples, dobles o triples), anchos de callejón y densidades de árboles por su efecto sobre la madera, la luz y el forraje según la distancia a la hilera.",
+    "variables": [
+     "sobrev",
+     "dap",
+     "altura_m",
+     "copa_diam",
+     "arboles_ha",
+     "area_basal",
+     "vol_ha",
+     "ima",
+     "rfa_transm",
+     "cob_copa",
+     "ms",
+     "ms_pct",
+     "altura_f",
+     "hoja",
+     "cobertura_p",
+     "pb",
+     "fdn",
+     "hum_suelo",
+     "ler",
+     "ingreso_neto"
+    ],
+    "testigos": "Pastura a pleno sol en cada bloque. Para el LER, también la plantación pura de la misma especie y edad (o datos locales declarados).",
+    "trat": "Pleno sol (testigo)\nHileras simples 14 × 2 m (357 árb/ha)\nHileras simples 22 × 2 m (227 árb/ha)\nHileras dobles 3 × 2 m + callejón 14 m\nHileras triples 3 × 1,5 m + callejón 14 m",
+    "bloques_min": 3,
+    "momentos": "Árboles: 30–90 días, 6 y 12 meses y anual. Forraje por posición en cada corte o ciclo (lluvias y seca). Luz 2 veces por año y después de cada poda o raleo. Duración: al menos hasta el primer raleo (4–6 años).",
+    "analisis": "Modelo mixto: bloque y parcela principal como aleatorios; posición como efecto fijo de subparcela (no se sortea, por eso no es un DBCA). Varias fechas: medidas repetidas (AR(1) o sin estructura, elegir por AIC). Tukey de posiciones dentro de cada tratamiento. MS del potrero ponderada por el ancho que representa cada posición. Árboles: ANAVA por parcela principal. LER e ingreso por bloque.",
+    "normativa": "Decreto 9425/95 (reglamenta la Ley 536/95), art. 18: sistemas agroforestales de 200 a 800 pl/ha con prendimiento ≥ 80 % para la bonificación; plan aprobado por el INFONA.",
+    "fuente": "https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/1023426/1/Crescimentoeproducaodocapimpiataemsistemaagrossilvipastorilcomduasdensidadesarboreas.pdf; https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/866583/1/OK-ArborizacaoPastagensEspecies.pdf; https://faolex.fao.org/docs/pdf/par17513.pdf; https://faolex.fao.org/docs/pdf/par17512.pdf",
+    "cultivos": [
+     "Eucalipto + Urochloa brizantha (hileras simples)",
+     "Eucalipto + Megathyrsus maximus (hileras dobles o triples)",
+     "Eucalipto + Axonopus catarinensis (Itapúa y Alto Paraná)",
+     "Pino + pastura",
+     "Grevillea + Urochloa o Axonopus",
+     "Nativas maderables + pastura (Región Oriental)",
+     "Otro sistema (especificar)"
+    ],
+    "unidad_experimental": "Franja o módulo franja + callejón (≥ 23–30 m de largo); potrero si hay animales",
+    "diseno": "DBCA en parcelas divididas: arreglo en la parcela principal y posición respecto de la hilera en la subparcela (Lipsch et al., 2015: 4 bloques, 5 posiciones)",
+    "porPosicion": true
+   },
+   {
+    "n": "Especies arbóreas para silvopastoril",
+    "descripcion": "Compara especies, clones o procedencias arbóreas con el mismo arreglo, por crecimiento, sombra que dan, daño por animales y efecto sobre la pastura.",
+    "variables": [
+     "sobrev",
+     "dap",
+     "altura_m",
+     "copa_diam",
+     "vol_ha",
+     "ima",
+     "ramoneo",
+     "hormigas",
+     "helada",
+     "rfa_transm",
+     "cob_copa",
+     "ms",
+     "pb",
+     "ler"
+    ],
+    "testigos": "Especie o clon comercial de la zona (p. ej. eucalipto clonal) y pastura a pleno sol",
+    "trat": "Eucalipto clonal (testigo)\nGrevillea\nPino taeda\nNativa (p. ej. ybyrá pytá)",
+    "bloques_min": 3,
+    "momentos": "Árboles: 30–90 días, 6 y 12 meses y anual. Ramoneo mensual el primer año con animales. Luz y forraje desde que la copa cierra (2–3 años).",
+    "analisis": "ANAVA + Tukey de especies (variables del árbol, una media por parcela). Forraje: Modelo mixto: bloque y parcela principal como aleatorios; posición como efecto fijo de subparcela (no se sortea, por eso no es un DBCA). Varias fechas: medidas repetidas (AR(1) o sin estructura, elegir por AIC). Tukey de posiciones dentro de cada tratamiento. MS del potrero ponderada por el ancho que representa cada posición.",
+    "normativa": "Plantines de viveros registrados en el INFONA. Decreto 7702/17: un sistema agroforestal con ≥ 40 % de nativas cuenta para la reforestación obligatoria.",
+    "fuente": "https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/866583/1/OK-ArborizacaoPastagensEspecies.pdf; https://ferrere.com/en/news/paraguay-modifica-reglamentacion-de-la-obligacion-de-mantener-bosques-naturales-y-reforestar-propiedades-rurales/",
+    "cultivos": [
+     "Eucalipto + Urochloa brizantha (hileras simples)",
+     "Eucalipto + Megathyrsus maximus (hileras dobles o triples)",
+     "Eucalipto + Axonopus catarinensis (Itapúa y Alto Paraná)",
+     "Pino + pastura",
+     "Grevillea + Urochloa o Axonopus",
+     "Nativas maderables + pastura (Región Oriental)",
+     "Otro sistema (especificar)"
+    ],
+    "unidad_experimental": "Franja o parcela con ≥ 10 árboles útiles",
+    "diseno": "DBCA con especie en la parcela; forraje en parcelas divididas con la posición como subparcela",
+    "porPosicion": true
+   },
+   {
+    "n": "Raleo y poda en silvopastoril",
+    "descripcion": "Intensidad y momento del raleo y altura de poda, para mantener la luz que necesita la pastura y producir madera de calidad.",
+    "variables": [
+     "dap",
+     "altura_m",
+     "altura_poda",
+     "copa_diam",
+     "arboles_ha",
+     "area_basal",
+     "vol_ha",
+     "ima",
+     "rfa_transm",
+     "cob_copa",
+     "ms",
+     "cobertura_p",
+     "ingreso_neto"
+    ],
+    "testigos": "Sin raleo, o con el raleo comercial habitual",
+    "trat": "Sin raleo\nRaleo 30 % al año 4\nRaleo 30 % al año 4 + 30 % a los 6–7 años\nRaleo 50 % al año 4",
+    "bloques_min": 3,
+    "momentos": "Inventario y luz antes y después de cada intervención; forraje los 2 ciclos siguientes y después por estación.",
+    "analisis": "ANAVA con covariable (DAP o área basal previos); regresión de la MS sobre el % de RFA transmitida; Modelo mixto: bloque y parcela principal como aleatorios; posición como efecto fijo de subparcela (no se sortea, por eso no es un DBCA). Varias fechas: medidas repetidas (AR(1) o sin estructura, elegir por AIC). Tukey de posiciones dentro de cada tratamiento. MS del potrero ponderada por el ancho que representa cada posición.",
+    "normativa": "Si la plantación tiene plan aprobado por el INFONA (Ley 536/95, Decreto 9425/95), el raleo debe figurar en él (verificar con el INFONA).",
+    "fuente": "https://www.undp.org/sites/g/files/zskgke326/files/migration/py/UNDP-PY--2020-Recomendaciones-tecnicas-para-sistema-silvopastoril-con-eucalipto.pdf; https://faolex.fao.org/docs/pdf/par17512.pdf",
+    "cultivos": [
+     "Eucalipto + Urochloa brizantha (hileras simples)",
+     "Eucalipto + Megathyrsus maximus (hileras dobles o triples)",
+     "Eucalipto + Axonopus catarinensis (Itapúa y Alto Paraná)",
+     "Pino + pastura",
+     "Grevillea + Urochloa o Axonopus",
+     "Nativas maderables + pastura (Región Oriental)",
+     "Otro sistema (especificar)"
+    ],
+    "unidad_experimental": "Franja o potrero",
+    "diseno": "DBCA (o parcelas divididas con posición) con covariable de la situación previa al raleo",
+    "porPosicion": true
+   },
+   {
+    "n": "Raleo de bosque nativo con ganadería (Chaco)",
+    "descripcion": "En el Chaco, compara intensidades de raleo del bosque nativo (árboles o área basal que se dejan, rolado selectivo) para implantar o mejorar la pastura bajo cubierta.",
+    "variables": [
+     "arboles_ha",
+     "area_basal",
+     "dap",
+     "copa_diam",
+     "cob_copa",
+     "rfa_transm",
+     "ms",
+     "pb",
+     "cobertura_p",
+     "cob_lenosa",
+     "mo_suelo",
+     "cos_suelo",
+     "hum_suelo",
+     "gdp",
+     "carga"
+    ],
+    "testigos": "Retención habitual del establecimiento (antes 30 % de los árboles del inventario según las Res. INFONA 2011–2012). Opcional: bosque sin intervenir y pastura a pleno sol (desmonte ya autorizado).",
+    "trat": "Retención 30 % de árboles\nRetención 50 %\nRetención 70 %\nRolado selectivo de baja intensidad",
+    "bloques_min": 3,
+    "momentos": "Inventario antes y después del raleo; forraje al final de lluvias y de seca; leñosas bajas cada año; suelo: línea de base y cada 4–5 años.",
+    "analisis": "La unidad experimental es el potrero (o la franja), no el animal, el árbol ni el marco: analizar animales o marcos como repeticiones es pseudorrepetición. ≥ 2 potreros por tratamiento; con 1 por tratamiento solo cabe un análisis descriptivo o una regresión sobre un gradiente (varias cargas o densidades). ANAVA o regresión sobre el % de retención; posición como subparcela.",
+    "normativa": "Res. INFONA 1232/2012 (cambio de uso para ganadería en la Región Occidental con sistema silvopastoril; modifica la 771/2012). Plan de uso de la tierra aprobado. Decreto 18831/86: franjas de 100 m entre parcelas ≤ 100 ha y en las márgenes de cauces. Ley 422/73: 25 % de bosque en predios > 20 ha. Palo santo: CITES Apéndice II.",
+    "fuente": "https://faolex.fao.org/docs/pdf/par222081.pdf; https://faolex.fao.org/docs/pdf/par42400.pdf; https://faolex.fao.org/docs/pdf/par222045.pdf; https://intainforma.inta.gob.ar/wp-content/uploads/2016/06/Nota-RIA-SerProductivos.pdf; https://forestlegality.org/node/296",
+    "cultivos": [
+     "Bosque nativo raleado + Gatton panic (Chaco)",
+     "Bosque nativo raleado + Buffel (Chaco seco)",
+     "Franjas de bosque nativo + pastura (Chaco)",
+     "Algarrobo (Prosopis) + Gatton panic o Pangola (Chaco Central)",
+     "Palo santo remanente + pastura (Chaco)"
+    ],
+    "unidad_experimental": "Parcela permanente de 1 ha o potrero",
+    "diseno": "DBCA con 3+ bloques (sitios o potreros) y posición bajo copa / entre copas como subparcela; o regresión sobre el % de retención",
+    "porPosicion": true
+   },
+   {
+    "n": "Forrajeras bajo sombra",
+    "descripcion": "Compara especies o cultivares forrajeros bajo el mismo dosel arbóreo, por producción, calidad y persistencia a la sombra.",
+    "variables": [
+     "ms",
+     "ms_pct",
+     "altura_f",
+     "hoja",
+     "cobertura_p",
+     "pb",
+     "fdn",
+     "divms",
+     "rfa_transm"
+    ],
+    "testigos": "Forrajera más usada en la zona (Marandu o Gatton panic), bajo los árboles y a pleno sol",
+    "trat": "Urochloa brizantha Marandu\nMegathyrsus maximus Massai\nMegathyrsus maximus Mombaça\nAxonopus catarinensis\nGatton panic",
+    "bloques_min": 3,
+    "momentos": "Cortes cada 28–35 días en lluvias y 60–70 en seca; cobertura al final de cada estación; 2 años como mínimo.",
+    "analisis": "Modelo mixto: bloque y parcela principal como aleatorios; posición como efecto fijo de subparcela (no se sortea, por eso no es un DBCA). Varias fechas: medidas repetidas (AR(1) o sin estructura, elegir por AIC). Tukey de posiciones dentro de cada tratamiento. MS del potrero ponderada por el ancho que representa cada posición.",
+    "normativa": "Semilla de cultivares inscriptos (Ley 385/94). Res. SENAVE 414/2020 si el objetivo es inscribir un cultivar (brachiaria, panicum).",
+    "fuente": "https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/866583/1/OK-ArborizacaoPastagensEspecies.pdf; https://www.scielo.br/j/pab/a/q5dpQ3ypwx5CXGNpXXtXzCL/?lang=pt",
+    "cultivos": [
+     "Eucalipto + Urochloa brizantha (hileras simples)",
+     "Eucalipto + Megathyrsus maximus (hileras dobles o triples)",
+     "Eucalipto + Axonopus catarinensis (Itapúa y Alto Paraná)",
+     "Pino + pastura",
+     "Grevillea + Urochloa o Axonopus",
+     "Nativas maderables + pastura (Región Oriental)",
+     "Algarrobo (Prosopis) + Gatton panic o Pangola (Chaco Central)",
+     "Otro sistema (especificar)"
+    ],
+    "unidad_experimental": "Parcela de corte (≥ 3 × 5 m) dentro del callejón",
+    "diseno": "Parcelas divididas: ambiente (bajo árboles / pleno sol) o posición en la parcela principal y forrajera en la subparcela",
+    "porPosicion": true
+   },
+   {
+    "n": "Niveles de sombra con malla",
+    "descripcion": "Respuesta de la forrajera a niveles fijos de sombra con malla de polipropileno sobre parcelas chicas, sin la competencia de raíces de los árboles.",
+    "variables": [
+     "rfa_transm",
+     "ms",
+     "ms_pct",
+     "altura_f",
+     "hoja",
+     "pb",
+     "fdn",
+     "divms",
+     "temp_aire"
+    ],
+    "testigos": "Pleno sol (0 % de sombra)",
+    "trat": "0 % de sombra\n30 % (malla)\n50 % (malla)\n70 % (malla)",
+    "bloques_min": 3,
+    "momentos": "Medir la sombra real de cada malla con ceptómetro al instalar y cada 6 meses; cortes por estación durante ≥ 1 año.",
+    "analisis": "ANAVA de parcelas divididas + regresión (lineal o cuadrática) de la MS y la PB sobre el % de sombra real medido, no el nominal.",
+    "normativa": "Sin norma específica",
+    "fuente": "https://www.scielo.br/j/pab/a/q5dpQ3ypwx5CXGNpXXtXzCL/?lang=pt; https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/1154196/1/Influence-of-shade-on-productivity-and-nutritional-value.pdf",
+    "cultivos": [
+     "Malla de sombra sobre parcelas de pastura (sin árboles)"
+    ],
+    "unidad_experimental": "Parcela bajo malla (sin borde)",
+    "diseno": "Parcelas divididas en bloques: sombra en la parcela principal y especie en la subparcela (Andrade et al., 2004: 0, 30, 50 y 70 %, 3 repeticiones)",
+    "porPosicion": false
+   },
+   {
+    "n": "Fertilización de la pastura bajo árboles",
+    "descripcion": "Dosis de N, P o K en la pastura bajo árboles, comparada con la misma fertilización a pleno sol.",
+    "variables": [
+     "ms",
+     "ms_pct",
+     "pb",
+     "cobertura_p",
+     "rfa_transm",
+     "dap",
+     "altura_m"
+    ],
+    "testigos": "Sin fertilizar, bajo árboles y a pleno sol",
+    "trat": "0 kg N/ha\n50 kg N/ha\n100 kg N/ha\n150 kg N/ha",
+    "bloques_min": 4,
+    "momentos": "Cortes por posición en lluvias; árboles anual.",
+    "analisis": "Regresión por dosis dentro de cada ambiente; eficiencia de uso del N (kg MS/kg N); Modelo mixto: bloque y parcela principal como aleatorios; posición como efecto fijo de subparcela (no se sortea, por eso no es un DBCA). Varias fechas: medidas repetidas (AR(1) o sin estructura, elegir por AIC). Tukey de posiciones dentro de cada tratamiento. MS del potrero ponderada por el ancho que representa cada posición.",
+    "normativa": "Solo si es para registrar un fertilizante: Res. MAG 277/03 (≥ 5 repeticiones, referencia y testigo).",
+    "fuente": "Propuesta del rubro Pasturas (tipo 'Fertilización de pasturas')",
+    "cultivos": [
+     "Eucalipto + Urochloa brizantha (hileras simples)",
+     "Eucalipto + Megathyrsus maximus (hileras dobles o triples)",
+     "Eucalipto + Axonopus catarinensis (Itapúa y Alto Paraná)",
+     "Pino + pastura",
+     "Grevillea + Urochloa o Axonopus",
+     "Nativas maderables + pastura (Región Oriental)",
+     "Algarrobo (Prosopis) + Gatton panic o Pangola (Chaco Central)",
+     "Otro sistema (especificar)"
+    ],
+    "unidad_experimental": "Parcela de corte en el callejón",
+    "diseno": "Parcelas divididas (ambiente × dosis) o factorial con posición",
+    "porPosicion": true
+   },
+   {
+    "n": "Leucaena: hileras y banco de proteína",
+    "descripcion": "Leucaena en hileras dobles con gramínea en el callejón, o en banco de proteína, comparada con la gramínea sola: forraje, proteína y carne por hectárea.",
+    "variables": [
+     "sobrev",
+     "altura_m",
+     "ms_comestible",
+     "ms",
+     "pb",
+     "ramoneo",
+     "helada",
+     "disponible",
+     "gdp",
+     "carga",
+     "pv_ha",
+     "ingreso_neto"
+    ],
+    "testigos": "Gramínea sola (Gatton panic) con el mismo manejo",
+    "trat": "Gatton panic solo\nGatton + leucaena, pares cada 5 m\nGatton + leucaena, pares cada 8 m\nGatton + banco de leucaena (acceso controlado)",
+    "bloques_min": 2,
+    "momentos": "Biomasa comestible antes de cada pastoreo (≈ cada 40 días en lluvias); pesadas cada 28 días; heladas después de cada evento.",
+    "analisis": "La unidad experimental es el potrero (o la franja), no el animal, el árbol ni el marco: analizar animales o marcos como repeticiones es pseudorrepetición. ≥ 2 potreros por tratamiento; con 1 por tratamiento solo cabe un análisis descriptivo o una regresión sobre un gradiente (varias cargas o densidades). Producción por animal y por hectárea; medidas repetidas en los períodos.",
+    "normativa": "Sin norma específica",
+    "fuente": "https://produccion-animal.com.ar/produccion_y_manejo_pasturas/pasturas_cultivadas_megatermicas/109-leucaena_invernada.pdf; https://produccion-animal.com.ar/produccion_y_manejo_pasturas/pasturas_cultivadas_megatermicas/106-leucaena.pdf",
+    "cultivos": [
+     "Leucaena en hileras dobles + Gatton panic",
+     "Banco de proteína de leucaena + pastura base"
+    ],
+    "unidad_experimental": "Potrero",
+    "diseno": "DBCA con potreros (≥ 2 por tratamiento); forraje por posición (hilera / callejón) como subparcela",
+    "porPosicion": true
+   },
+   {
+    "n": "Manejo del pastoreo en silvopastoril",
+    "descripcion": "Manejo del pastoreo dentro del sistema: carga, altura de entrada y salida o método (continuo / rotativo), y su efecto sobre la pastura, los árboles y los animales.",
+    "variables": [
+     "disponible",
+     "residuo",
+     "altura_f",
+     "cobertura_p",
+     "ms",
+     "pb",
+     "ramoneo",
+     "gdp",
+     "carga",
+     "pv_ha",
+     "rp_suelo"
+    ],
+    "testigos": "Manejo habitual del establecimiento",
+    "trat": "Carga baja (fija)\nCarga media (fija)\nCarga alta (fija)\nCarga variable a altura objetivo",
+    "bloques_min": 2,
+    "momentos": "Disponible y remanente en cada entrada y salida; pesadas cada 28 días; ramoneo mensual; ≥ 2 años.",
+    "analisis": "La unidad experimental es el potrero (o la franja), no el animal, el árbol ni el marco: analizar animales o marcos como repeticiones es pseudorrepetición. ≥ 2 potreros por tratamiento; con 1 por tratamiento solo cabe un análisis descriptivo o una regresión sobre un gradiente (varias cargas o densidades). Regresión de la GDP y los kg PV/ha sobre la carga o la oferta de forraje.",
+    "normativa": "Sin norma específica",
+    "fuente": "Guía del proyecto ensayos_de_campo/14_ensayos_pasturas.md",
+    "cultivos": [
+     "Eucalipto + Urochloa brizantha (hileras simples)",
+     "Eucalipto + Megathyrsus maximus (hileras dobles o triples)",
+     "Eucalipto + Axonopus catarinensis (Itapúa y Alto Paraná)",
+     "Pino + pastura",
+     "Grevillea + Urochloa o Axonopus",
+     "Nativas maderables + pastura (Región Oriental)",
+     "Bosque nativo raleado + Gatton panic (Chaco)",
+     "Bosque nativo raleado + Buffel (Chaco seco)",
+     "Franjas de bosque nativo + pastura (Chaco)",
+     "Algarrobo (Prosopis) + Gatton panic o Pangola (Chaco Central)",
+     "Palo santo remanente + pastura (Chaco)",
+     "Leucaena en hileras dobles + Gatton panic",
+     "Otro sistema (especificar)"
+    ],
+    "unidad_experimental": "Potrero",
+    "diseno": "DBCA con potreros; o gradiente de cargas (≥ 3) analizado por regresión cuando no hay repeticiones",
+    "porPosicion": true
+   },
+   {
+    "n": "Producción animal silvopastoril vs. pleno sol",
+    "descripcion": "Ganancia de peso y carne por hectárea del sistema silvopastoril frente a la pastura a pleno sol, con el mismo manejo de carga; suma la madera para el resultado conjunto.",
+    "variables": [
+     "disponible",
+     "residuo",
+     "ms",
+     "pb",
+     "divms",
+     "gdp",
+     "carga",
+     "pv_ha",
+     "ramoneo",
+     "uso_sombra",
+     "rp_suelo",
+     "ler",
+     "ingreso_neto"
+    ],
+    "testigos": "Pastura a pleno sol (declarar si tiene sombra artificial o no)",
+    "trat": "Pleno sol\nSilvopastoril 357 árb/ha\nSilvopastoril 227 árb/ha",
+    "bloques_min": 2,
+    "momentos": "Pesadas cada 28 días; forraje en cada entrada y salida; al menos 2 años completos.",
+    "analisis": "La unidad experimental es el potrero (o la franja), no el animal, el árbol ni el marco: analizar animales o marcos como repeticiones es pseudorrepetición. ≥ 2 potreros por tratamiento; con 1 por tratamiento solo cabe un análisis descriptivo o una regresión sobre un gradiente (varias cargas o densidades). Medidas repetidas en los períodos; LER e ingreso neto por potrero.",
+    "normativa": "Sin norma específica para el ensayo",
+    "fuente": "Guía del proyecto ensayos_de_campo/14_ensayos_pasturas.md; https://www.produccion-animal.com.ar/produccion_y_manejo_pasturas/manejo%20silvopastoril/136-INTA-analisis-sistema-silvopastoril.pdf; https://link.springer.com/article/10.1007/s10457-020-00494-6",
+    "unidad_experimental": "Potrero",
+    "diseno": "DBCA con potreros (≥ 2 por tratamiento); forraje estratificado por posición dentro del potrero",
+    "porPosicion": true
+   },
+   {
+    "n": "Confort térmico y bienestar animal",
+    "descripcion": "Microclima (temperatura, humedad, radiación) y respuesta fisiológica y de comportamiento de los animales bajo los árboles frente a pleno sol.",
+    "variables": [
+     "temp_aire",
+     "hr_aire",
+     "temp_globo",
+     "ith",
+     "itgu",
+     "frec_resp",
+     "temp_rectal",
+     "uso_sombra",
+     "tiempo_pastoreo",
+     "gdp"
+    ],
+    "testigos": "Potrero a pleno sol",
+    "trat": "Pleno sol\nSilvopastoril\nSombra artificial (opcional)",
+    "bloques_min": 2,
+    "momentos": "Clima cada 2 h de 7 a 17 h, 4 días seguidos por estación (o registradores continuos). Frecuencia respiratoria y temperatura rectal a la mañana (6–9 h) y a la tarde (12–15 h), en días de calor.",
+    "analisis": "Medidas repetidas (hora × tratamiento) con el potrero como unidad; % de horas en cada clase de ITH o ITGU. La unidad experimental es el potrero (o la franja), no el animal, el árbol ni el marco: analizar animales o marcos como repeticiones es pseudorrepetición. ≥ 2 potreros por tratamiento; con 1 por tratamiento solo cabe un análisis descriptivo o una regresión sobre un gradiente (varias cargas o densidades).",
+    "normativa": "Sin norma específica; bienestar animal según las normas del establecimiento.",
+    "fuente": "https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/936049/1/indice-temperatura-globo-umidade-2012.pdf; https://apct.sede.embrapa.br/pab/en/article/download/8275/6648; https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/1172655/1/Temperatura-retal-e-frequencia-respiratoria-de-novilhas-mesticas.pdf; https://ams.confex.com/ams/pdfpapers/47453.pdf",
+    "unidad_experimental": "Potrero (los animales son submuestras)",
+    "diseno": "Potreros apareados por tratamiento; medidas repetidas por hora y por día",
+    "porPosicion": false
+   },
+   {
+    "n": "Implantación y protección de árboles",
+    "descripcion": "Formas de proteger los árboles jóvenes y momento de entrada de los animales: cerca eléctrica, ingreso por DAP o altura, categoría animal.",
+    "variables": [
+     "sobrev",
+     "dap",
+     "altura_m",
+     "ramoneo",
+     "hormigas",
+     "helada"
+    ],
+    "testigos": "Sin animales hasta que el DAP llegue a 6 cm (criterio de Embrapa)",
+    "trat": "Sin pastoreo hasta DAP 6 cm\nCerca eléctrica a cada lado de la hilera\nIngreso de terneros con DAP 4 cm\nIngreso de ovinos con 1,5 m de altura",
+    "bloques_min": 3,
+    "momentos": "Mensual el primer año con animales; después en cada pesada.",
+    "analisis": "ANAVA + Tukey; supervivencia acumulada (Kaplan-Meier) si se registra la fecha de muerte de cada árbol.",
+    "normativa": "Decreto 9425/95: prendimiento ≥ 80 % para la bonificación de la Ley 536/95.",
+    "fuente": "https://www.infoteca.cnptia.embrapa.br/infoteca/bitstream/doc/1003751/1/projetosilvipastoril.pdf; https://faolex.fao.org/docs/pdf/par17513.pdf",
+    "cultivos": [
+     "Eucalipto + Urochloa brizantha (hileras simples)",
+     "Eucalipto + Megathyrsus maximus (hileras dobles o triples)",
+     "Eucalipto + Axonopus catarinensis (Itapúa y Alto Paraná)",
+     "Pino + pastura",
+     "Grevillea + Urochloa o Axonopus",
+     "Nativas maderables + pastura (Región Oriental)",
+     "Leucaena en hileras dobles + Gatton panic",
+     "Banco de proteína de leucaena + pastura base",
+     "Otro sistema (especificar)"
+    ],
+    "unidad_experimental": "Franja o potrero",
+    "diseno": "DBCA",
+    "porPosicion": false
+   },
+   {
+    "n": "Suelo y carbono (largo plazo)",
+    "descripcion": "Cambios de largo plazo en el suelo (materia orgánica, carbono, densidad, humedad, compactación) por los árboles y el pisoteo.",
+    "variables": [
+     "mo_suelo",
+     "cos_suelo",
+     "dens_ap",
+     "hum_suelo",
+     "rp_suelo",
+     "arboles_ha",
+     "dap"
+    ],
+    "testigos": "Pastura a pleno sol del mismo suelo; opcional, bosque o plantación de referencia",
+    "trat": "Pleno sol\nSilvopastoril (bajo copa o junto a la hilera)\nSilvopastoril (centro del callejón)",
+    "bloques_min": 3,
+    "momentos": "Línea de base y cada 4–5 años para el carbono (FAO); humedad en la seca; penetrómetro anual.",
+    "analisis": "Modelo mixto con posición y profundidad; stock de C a masa de suelo equivalente si cambia la densidad aparente.",
+    "normativa": "Sin norma específica",
+    "fuente": "https://www.fao.org/3/ca2934en/ca2934en.pdf; https://www.fao.org/fileadmin/user_upload/GSP/MRV/GSP_MRV_Protocol_A4_EN_002.pdf; https://dialnet.unirioja.es/descarga/articulo/8144096.pdf",
+    "unidad_experimental": "Parcela o potrero; posición y profundidad como subparcelas",
+    "diseno": "Parcelas divididas en el espacio (posición) y en profundidad, contra la línea de base",
+    "porPosicion": true
+   }
+  ],
+  "cultivos": [
+   {
+    "n": "Eucalipto + Urochloa brizantha (hileras simples)",
+    "cientifico": "Eucalyptus spp. + Urochloa brizantha",
+    "grupo": "Región Oriental · plantado en hileras",
+    "fenologia": "Árbol: edad en meses desde la plantación. Pastura: días de rebrote o ciclo de pastoreo; separar lluvias y seca",
+    "parcela": {
+     "arreglo": "hileras",
+     "hileras": 1,
+     "dh": 0,
+     "callejon": 14,
+     "da": 2,
+     "largo": 30,
+     "modulos": 2,
+     "posiciones": [
+      "Junto a la hilera (0–1 m)",
+      "1/4 del callejón",
+      "Centro del callejón"
+     ]
+    },
+    "parcelaTxt": "Hileras simples a 14 × 2 m (357 árb/ha) o 22 × 2 m (227 árb/ha). Unidad experimental: franja entre dos hileras de 14–22 m de ancho × 23 m de largo (≈ 12 árboles útiles por hilera), en 4 bloques; testigo a pleno sol en cada bloque. Transecta perpendicular a la hilera con 5 puntos: junto a cada hilera, a 1/4 desde cada lado y en el centro. Si se pastorea, potreros de 1–4 ha como unidad (≥ 2 por tratamiento).",
+    "notas": "Arreglo y diseño verificados en Embrapa (Lipsch et al., 2015): bloques con parcelas subdivididas, 4 repeticiones, posición como subparcela. La masa de forraje (promedio de las dos densidades) fue 728 y 446 kg/ha junto a las hileras, 1606 y 1376 a 1/4 y 2119 en el centro: los dos lados no son iguales. Sembrar la pastura cuando los árboles tienen 2,5–3 m (Colonias Unidas/PNUD 2020). Bovinos adultos desde DAP ≈ 6 cm.",
+    "arbol": "Eucalyptus grandis o clones E. grandis × E. urophylla / E. grandis × E. camaldulensis",
+    "pastura": "Urochloa brizantha (Marandu, Xaraés, Piatã)"
+   },
+   {
+    "n": "Eucalipto + Megathyrsus maximus (hileras dobles o triples)",
+    "cientifico": "Eucalyptus spp. + Megathyrsus maximus",
+    "grupo": "Región Oriental · plantado en hileras",
+    "fenologia": "Árbol: edad en meses. Pastura: altura de entrada y de salida",
+    "parcela": {
+     "arreglo": "hileras",
+     "hileras": 2,
+     "dh": 3,
+     "callejon": 14,
+     "da": 2,
+     "largo": 30,
+     "modulos": 2,
+     "posiciones": [
+      "Dentro de la franja (entre hileras)",
+      "Junto a la hilera (0–1 m)",
+      "1/4 del callejón",
+      "Centro del callejón"
+     ]
+    },
+    "parcelaTxt": "Hileras dobles o triples. Ejemplos de Embrapa: doble 14 × 2 × 3 m y triple 14 × 3 × 1,5 m. La app pide cada distancia por separado: callejón libre, distancia entre hileras de la franja y entre árboles. Con callejón de 14 m, 3 m entre hileras y 2 m entre árboles: doble 588 y triple 1000 árb/ha antes del raleo. Unidad experimental: un módulo franja + callejón × ≥ 25 m. Transecta como en hileras simples, más un punto dentro de la franja (entre hileras).",
+    "notas": "El orden de las medidas en la notación de Embrapa ('14 × 2 × 3') no está aclarado en la fuente. Massai y Marandu toleraron bien la sombra con malla de 30–70 % (Andrade et al., 2004). Ejemplo de triple hilera con nativas: 3 hileras a 2,5 × 2,5 m en franjas de 15 m, con RFA medida a 0; 2; 4,75 y 8,5 m de la hilera (Parmejiani et al., 2011).",
+    "arbol": "Eucalyptus spp. (clones)",
+    "pastura": "Megathyrsus maximus (Mombaça, Tanzânia, Massai, Gatton panic)"
+   },
+   {
+    "n": "Eucalipto + Axonopus catarinensis (Itapúa y Alto Paraná)",
+    "cientifico": "Eucalyptus spp. + Axonopus catarinensis",
+    "grupo": "Región Oriental · plantado en hileras",
+    "fenologia": "Árbol: edad en meses. Pastura implantada con mudas o estolones",
+    "parcela": {
+     "arreglo": "hileras",
+     "hileras": 1,
+     "dh": 0,
+     "callejon": 8,
+     "da": 2,
+     "largo": 30,
+     "modulos": 2,
+     "posiciones": [
+      "Junto a la hilera (0–1 m)",
+      "1/4 del callejón",
+      "Centro del callejón"
+     ]
+    },
+    "parcelaTxt": "Hileras simples a 8 × 2 m (625 árb/ha), orientadas de este a oeste. Raleo del 30 % al año 4 y otro 30 % a los 6–7 años; cosecha final a los 10–12 años. Poda hasta 2/3 de la altura. Unidad experimental: 2–3 callejones × 30 m (≈ 15 árboles útiles por hilera).",
+    "notas": "Recomendación de la Cooperativa Colonias Unidas y el PNUD (2020) para Itapúa y Alto Paraná. El documento dice 652 pl/ha, pero 8 × 2 m dan 625. El afiche del PNUD para Caazapá también da 625 árb/ha con clones E. grandis × E. urophylla y E. grandis × E. camaldulensis.",
+    "arbol": "Eucalyptus grandis o clones",
+    "pastura": "Axonopus catarinensis (jesuita gigante) o Urochloa brizantha"
+   },
+   {
+    "n": "Pino + pastura",
+    "cientifico": "Pinus spp. + gramínea",
+    "grupo": "Región Oriental · plantado",
+    "fenologia": "Árbol: edad en años y altura de poda",
+    "parcela": {
+     "arreglo": "hileras",
+     "hileras": 1,
+     "dh": 0,
+     "callejon": 14,
+     "da": 4,
+     "largo": 30,
+     "modulos": 2,
+     "posiciones": [
+      "Junto a la hilera (0–1 m)",
+      "1/4 del callejón",
+      "Centro del callejón"
+     ]
+    },
+    "parcelaTxt": "Orientativo: hileras simples a 14 × 4 m (179 árb/ha), arreglo genérico de Embrapa para madera gruesa, o plantación en bloque raleada hasta ≈ 50 % de RFA. Unidad experimental ≥ 0,25 ha con 1 hilera de borde.",
+    "notas": "No se encontró un arreglo verificado de pino silvopastoril en Paraguay. En Misiones (Argentina) se evaluó Axonopus catarinensis bajo P. elliottii con 50 % de RFA incidente (Trela, 2010).",
+    "arbol": "Pinus taeda / P. elliottii",
+    "pastura": "Axonopus catarinensis o Urochloa brizantha"
+   },
+   {
+    "n": "Grevillea + Urochloa o Axonopus",
+    "cientifico": "Grevillea robusta + gramínea",
+    "grupo": "Región Oriental · plantado",
+    "fenologia": "Árbol: edad en años y altura de poda",
+    "parcela": {
+     "arreglo": "hileras",
+     "hileras": 1,
+     "dh": 0,
+     "callejon": 4,
+     "da": 4,
+     "largo": 30,
+     "modulos": 2,
+     "posiciones": [
+      "Bajo copa",
+      "Borde de copa (proyección)",
+      "Entre copas o fuera de copa"
+     ]
+    },
+    "parcelaTxt": "Plantación a 4 × 4 m (625 pl/ha) raleada a ≈ 300 árb/ha con podas de levante a 2,5, 4 y 6 m (INTA Misiones), o hileras simples a 30 × 3,5 m (95 árb/ha) en curvas de nivel (Embrapa, lechería). Unidad experimental: potrero o parcela ≥ 0,5 ha. Posiciones: bajo copa y entre copas.",
+    "notas": "INTA Misiones (Lacorte et al., 2008): 63,5 % de sombra, 5711 kg MS/ha disponibles y GDP de 0,24–0,49 kg/día; citan 40–50 % de sombra como óptimo para esas forrajeras.",
+    "arbol": "Grevillea robusta",
+    "pastura": "Urochloa brizantha (Marandu) o Axonopus catarinensis"
+   },
+   {
+    "n": "Nativas maderables + pastura (Región Oriental)",
+    "cientifico": "Nativas maderables + Urochloa",
+    "grupo": "Región Oriental · plantado",
+    "fenologia": "Árbol: edad en años",
+    "parcela": {
+     "arreglo": "hileras",
+     "hileras": 1,
+     "dh": 0,
+     "callejon": 10,
+     "da": 4,
+     "largo": 30,
+     "modulos": 2,
+     "posiciones": [
+      "Junto a la hilera (0–1 m)",
+      "1/4 del callejón",
+      "Centro del callejón"
+     ]
+    },
+    "parcelaTxt": "Orientativo: hileras simples a 10–12 × 3–4 m (200–330 árb/ha), dentro del rango de 200–800 pl/ha que el Decreto 9425/95 fija para sistemas agroforestales; o triples a 2,5 × 2,5 m en franjas de 15 m. Unidad experimental ≥ 0,25 ha.",
+    "notas": "Arreglo no verificado con ensayos paraguayos. El Decreto 7702/17 admite un sistema agroforestal con ≥ 40 % de nativas para la reforestación obligatoria. En cedro, registrar el barrenador del brote (Hypsipyla) con la medición del rubro Forestal.",
+    "arbol": "Cedrela fissilis, Handroanthus spp., Peltophorum dubium (ybyrá pytá), Anadenanthera colubrina u otras",
+    "pastura": "Urochloa spp."
+   },
+   {
+    "n": "Árboles dispersos en potrero",
+    "cientifico": "Árboles dispersos + pastura",
+    "grupo": "Remanente disperso",
+    "fenologia": "No aplica; registrar especie, DAP y copa de cada árbol",
+    "parcela": {
+     "arreglo": "disperso",
+     "area_ha": 1,
+     "arb_ha": 60,
+     "posiciones": [
+      "Bajo copa",
+      "Borde de copa (proyección)",
+      "Entre copas o fuera de copa"
+     ]
+    },
+    "parcelaTxt": "Unidad experimental: el potrero completo. Censo de todos los árboles con DAP ≥ 10 cm (especie, DAP y dos diámetros de copa perpendiculares; área de copa como elipse = π × R1 × R2), como en los relevamientos del CATIE. Forraje en pares bajo copa / fuera de copa en 8–10 árboles por potrero; el árbol hace de bloque.",
+    "notas": "Sin arreglo regular. En el trópico seco de Costa Rica (CATIE) la cobertura de copa media fue del 7 % y la densidad de 8,1 árb/ha.",
+    "arbol": "Remanentes nativos o árboles aislados (timbó, lapacho, guatambú, etc.)",
+    "pastura": "Pastura implantada o natural"
+   },
+   {
+    "n": "Bosque nativo raleado + Gatton panic (Chaco)",
+    "cientifico": "Bosque nativo raleado + Megathyrsus maximus",
+    "grupo": "Chaco · bosque nativo raleado",
+    "fenologia": "Pastura: lluvias / seca. Bosque: árboles en pie y área basal",
+    "parcela": {
+     "arreglo": "disperso",
+     "area_ha": 1,
+     "arb_ha": 60,
+     "posiciones": [
+      "Bajo copa",
+      "Borde de copa (proyección)",
+      "Entre copas o fuera de copa"
+     ]
+    },
+    "parcelaTxt": "Parcelas permanentes de 1 ha (100 × 100 m) dentro de los potreros, con inventario de todos los árboles antes y después del raleo (especie, DAP, altura, copa). Tratamientos: % de retención de árboles o área basal. Forraje en subparcelas de 1 × 1 m bajo copa y a pleno sol (como la FCA-UNA en el Chaco Central).",
+    "notas": "La Res. INFONA 1232/2012 exige que el cambio de uso para ganadería en la Región Occidental se haga con sistema silvopastoril, sin porcentaje; el 30 % de los árboles del inventario lo fijaban las Res. 1136/2011, 429/2012 y 771/2012, ya modificadas. En el Chaco argentino, el INTA usa el rolado selectivo de baja intensidad (RBI) dentro del Manejo de Bosques con Ganadería Integrada (MBGI): conserva árboles y arbustos grandes.",
+    "arbol": "Bosque chaqueño raleado (Prosopis, Schinopsis, Aspidosperma, Bulnesia y otras)",
+    "pastura": "Megathyrsus maximus cv. Gatton panic"
+   },
+   {
+    "n": "Bosque nativo raleado + Buffel (Chaco seco)",
+    "cientifico": "Bosque nativo raleado + Cenchrus ciliaris",
+    "grupo": "Chaco · bosque nativo raleado",
+    "fenologia": "Pastura: lluvias / seca",
+    "parcela": {
+     "arreglo": "disperso",
+     "area_ha": 1,
+     "arb_ha": 60,
+     "posiciones": [
+      "Bajo copa",
+      "Borde de copa (proyección)",
+      "Entre copas o fuera de copa"
+     ]
+    },
+    "parcelaTxt": "Como con Gatton panic: parcelas permanentes de 1 ha con inventario, retención de árboles como tratamiento y muestreo por posición respecto de la copa.",
+    "notas": "Buffel es la gramínea de las zonas más secas (norte de Boquerón, Alto Paraguay). No se verificó su tolerancia a la sombra: medirla, no suponerla.",
+    "arbol": "Bosque chaqueño seco raleado",
+    "pastura": "Cenchrus ciliaris (Buffel)"
+   },
+   {
+    "n": "Franjas de bosque nativo + pastura (Chaco)",
+    "cientifico": "Franjas de bosque + gramínea",
+    "grupo": "Chaco · franjas de bosque",
+    "fenologia": "Pastura: lluvias / seca",
+    "parcela": {
+     "arreglo": "disperso",
+     "area_ha": 1,
+     "arb_ha": 60,
+     "posiciones": [
+      "5 m del borde",
+      "25 m",
+      "50 m",
+      "100 m"
+     ]
+    },
+    "parcelaTxt": "Franjas de bosque de ≥ 100 m de ancho entre parcelas desmontadas de ≤ 100 ha (Decreto 18831/86). Transectas perpendiculares al borde de la franja, con puntos fijos dentro de la pastura (orientativo: 5, 25, 50 y 100 m), en 3 o más franjas que hacen de bloques.",
+    "notas": "Distancias de la transecta orientativas (no verificadas). La Res. INFONA 1863/2013 da ± 5 m de tolerancia al medir las franjas.",
+    "arbol": "Franjas de bosque chaqueño entre potreros",
+    "pastura": "Gatton panic o Buffel"
+   },
+   {
+    "n": "Algarrobo (Prosopis) + Gatton panic o Pangola (Chaco Central)",
+    "cientifico": "Prosopis spp. + gramínea",
+    "grupo": "Chaco Central · remanente o plantado",
+    "fenologia": "Pastura: lluvias / seca",
+    "parcela": {
+     "arreglo": "disperso",
+     "area_ha": 1,
+     "arb_ha": 31,
+     "posiciones": [
+      "Bajo copa",
+      "Borde de copa (proyección)",
+      "Entre copas o fuera de copa"
+     ]
+    },
+    "parcelaTxt": "Parcelas permanentes de 1 ha (100 × 100 m) con censo de algarrobos (≈ 31 árb/ha en Boquerón y Presidente Hayes). Biomasa herbácea en subparcelas de 1 × 1 m bajo sol y bajo sombra. Suelo a 0–10 y 10–30 cm bajo copa y a pleno sol.",
+    "notas": "FCA-UNA (Díaz Lezcano et al., 2019–2021): 41,7 t C/ha en el sistema, el 95 % en el suelo; sin diferencias de MO entre sol y sombra, sí entre profundidades. En Filadelfia, el balance de C entre 2015 y 2016 fue −13,8 t/ha, casi todo por pérdida de C del suelo: medir densidad aparente y usar masa equivalente. INTA (Chaco argentino): Gatton panic produjo más entre copas (sin diferencia significativa) y tuvo 7 puntos más de PB bajo copa.",
+    "arbol": "Prosopis alba, P. nigra, P. kuntzei (algarrobo; hoy género Neltuma), remanentes o plantados",
+    "pastura": "Gatton panic o Digitaria decumbens (Pangola)"
+   },
+   {
+    "n": "Palo santo remanente + pastura (Chaco)",
+    "cientifico": "Bulnesia sarmientoi + gramínea",
+    "grupo": "Chaco · remanente",
+    "fenologia": "Pastura: lluvias / seca",
+    "parcela": {
+     "arreglo": "disperso",
+     "area_ha": 1,
+     "arb_ha": 60,
+     "posiciones": [
+      "Bajo copa",
+      "Borde de copa (proyección)",
+      "Entre copas o fuera de copa"
+     ]
+    },
+    "parcelaTxt": "Como en bosque raleado: parcelas permanentes de 1 ha con censo de palo santo (DAP, altura, copa, estado sanitario y regeneración) y forraje bajo copa / entre copas.",
+    "notas": "Palo santo: Apéndice II de la CITES; su madera sale en parte de inventarios de planes de uso agro-silvopastoril. Árbol de 8–20 m y DAP 30–70 cm, de crecimiento lento y baja regeneración por semilla: registrar la regeneración y el daño por animales. No se encontraron ensayos silvopastoriles específicos con palo santo (sistema a validar).",
+    "arbol": "Bulnesia sarmientoi (palo santo) remanente, con otras nativas",
+    "pastura": "Gatton panic o Buffel"
+   },
+   {
+    "n": "Leucaena en hileras dobles + Gatton panic",
+    "cientifico": "Leucaena leucocephala + Megathyrsus maximus",
+    "grupo": "Leñosa forrajera en hileras",
+    "fenologia": "Leucaena: altura de las plantas y días desde el último pastoreo. Pastura: lluvias / seca",
+    "parcela": {
+     "arreglo": "hileras",
+     "hileras": 2,
+     "dh": 1,
+     "callejon": 5,
+     "da": 2,
+     "largo": 30,
+     "modulos": 2,
+     "posiciones": [
+      "Hilera de leucaena",
+      "Centro del callejón"
+     ]
+    },
+    "parcelaTxt": "Hileras dobles a 0,8–1 m entre sí, con 5–6 m entre pares (rango usado: 3–8 m) y Gatton panic en el callejón; 10–12 semillas por metro lineal. Primer pastoreo con la leucaena a 1–1,5 m; remanente de 0,5–1 m; descanso ≈ 40 días. Unidad experimental: potrero (≤ 50 ha para evitar gradientes de pastoreo); ≥ 2 por tratamiento.",
+    "notas": "Chaco paraguayo (Glatzle y Klassen, INTTAS): 476 kg PV/ha con Gatton + leucaena (1,7 UA/ha) frente a 211 con Gatton solo (1,1 UA/ha), en 9 meses. Di Niro y Näguele (2007): GDP de 273, 697 y 938 g/día con 0, 0,9 y 2,05 kg de leucaena consumida; PB hasta 25 %. Inocular con la bacteria que degrada la mimosina.",
+    "arbol": "Leucaena leucocephala (Cunningham; Tarramba más tolerante a heladas)",
+    "pastura": "Megathyrsus maximus cv. Gatton panic"
+   },
+   {
+    "n": "Banco de proteína de leucaena + pastura base",
+    "cientifico": "Leucaena leucocephala",
+    "grupo": "Leñosa forrajera en banco",
+    "fenologia": "Leucaena: altura y días de rebrote",
+    "parcela": {
+     "arreglo": "disperso",
+     "area_ha": 1,
+     "arb_ha": 60,
+     "posiciones": [
+      "Banco de leucaena",
+      "Pastura base"
+     ]
+    },
+    "parcelaTxt": "Banco puro de leucaena en alta densidad (una fracción del potrero), con acceso controlado de los animales desde la pastura base o con corte y acarreo. Unidad experimental: potrero con su banco. Biomasa comestible en tramos de 2–5 m de hilera.",
+    "notas": "El banco de proteína se recomienda para pequeños productores y lechería, con corte y acarreo (Glatzle y otros). La fuente no da densidad ni % del potrero: declararlos en la ficha (no verificado).",
+    "arbol": "Leucaena leucocephala en siembra densa (banco de proteína)",
+    "pastura": "Pastura base de gramínea (Gatton panic, Urochloa)"
+   },
+   {
+    "n": "Malla de sombra sobre parcelas de pastura (sin árboles)",
+    "cientifico": "—",
+    "grupo": "Sombra artificial",
+    "fenologia": "Pastura: días de rebrote",
+    "parcela": {
+     "arreglo": "disperso",
+     "area_ha": 1,
+     "arb_ha": 60,
+     "posiciones": [
+      "Centro de la parcela (sin borde)"
+     ]
+    },
+    "parcelaTxt": "Parcelas chicas (p. ej. 3 × 3 a 4 × 5 m) cubiertas por malla a ≈ 1,5–2 m de altura, con 0,5 m de borde sin muestrear; la malla baja por los lados en el sentido del sol de la tarde si hace falta. Parcelas divididas: sombra en la parcela principal y especie en la subparcela, 3–4 bloques (Andrade et al., 2004).",
+    "notas": "La sombra nominal de la malla no es la real: medir la RFA debajo con ceptómetro o sensor cuántico al instalar y cada 6 meses. Medidas de parcela y altura de la malla orientativas (no verificadas).",
+    "arbol": "Ninguno: malla de polipropileno (media sombra) de 30, 50 o 70 %",
+    "pastura": "Cualquier forrajera a evaluar"
+   },
+   {
+    "n": "Otro sistema (especificar)",
+    "cientifico": "Componente arbóreo + forrajero a declarar en la ficha",
+    "grupo": "Otro",
+    "fenologia": "Edad de los árboles",
+    "parcela": {
+     "arreglo": "disperso",
+     "area_ha": 1,
+     "arb_ha": 60,
+     "posiciones": [
+      "Junto a la hilera (0–1 m)",
+      "1/4 del callejón",
+      "Centro del callejón"
+     ]
+    },
+    "parcelaTxt": "Cargar hileras por franja, distancia entre hileras, callejón y distancia entre árboles: la app calcula los árboles/ha y el ancho que representa cada posición de la transecta.",
+    "notas": "Para kiri, toona, paraíso, Eucalyptus camaldulensis en el Chaco y otros sistemas sin arreglo verificado.",
+    "arbol": "A declarar",
+    "pastura": "A declarar"
+   }
+  ],
+  "ficha": [
+   {
+    "id": "region",
+    "campo": "Región",
+    "tipo": "lista",
+    "opciones": [
+     "Región Oriental",
+     "Chaco húmedo",
+     "Chaco central",
+     "Chaco seco"
+    ]
+   },
+   {
+    "id": "origen",
+    "campo": "Origen del componente arbóreo",
+    "tipo": "lista",
+    "opciones": [
+     "Plantado",
+     "Bosque nativo raleado",
+     "Árboles remanentes dispersos",
+     "Franjas de bosque"
+    ]
+   },
+   {
+    "id": "arbol",
+    "campo": "Especie arbórea, clon o procedencia",
+    "tipo": "texto"
+   },
+   {
+    "id": "plantacion",
+    "campo": "Fecha de plantación de los árboles",
+    "tipo": "fecha"
+   },
+   {
+    "id": "orientacion",
+    "campo": "Orientación de las hileras",
+    "tipo": "lista",
+    "opciones": [
+     "Este–oeste",
+     "Norte–sur",
+     "Curvas de nivel",
+     "Sin hileras"
+    ]
+   },
+   {
+    "id": "inventario",
+    "campo": "Inventario original y % de retención (Chaco)",
+    "tipo": "texto"
+   },
+   {
+    "id": "intervenciones",
+    "campo": "Podas y raleos (fecha, altura de poda, intensidad)",
+    "tipo": "texto"
+   },
+   {
+    "id": "forrajera",
+    "campo": "Forrajera: especie, cultivar, fecha y método de siembra",
+    "tipo": "texto"
+   },
+   {
+    "id": "ingreso",
+    "campo": "Ingreso de los animales (fecha y criterio: DAP ≥ 6 cm para bovinos adultos)",
+    "tipo": "texto"
+   },
+   {
+    "id": "proteccion",
+    "campo": "Protección de los árboles",
+    "tipo": "lista",
+    "opciones": [
+     "Cerca eléctrica",
+     "Exclusión",
+     "Ninguna"
+    ]
+   },
+   {
+    "id": "animales",
+    "campo": "Animales: categoría, raza, probadores por potrero, sistema de pastoreo, superficie de cada potrero",
+    "tipo": "texto"
+   },
+   {
+    "id": "ua",
+    "campo": "Peso de la unidad animal (kg)",
+    "tipo": "numero"
+   },
+   {
+    "id": "sombra_testigo",
+    "campo": "Sombra disponible en el testigo a pleno sol",
+    "tipo": "texto"
+   },
+   {
+    "id": "instrumentos",
+    "campo": "Instrumentos de luz y clima (ceptómetro, densiómetro, globo negro, registradores)",
+    "tipo": "texto"
+   },
+   {
+    "id": "suelo",
+    "campo": "Suelo: textura, análisis, pendiente, drenaje; MO de línea de base",
+    "tipo": "texto"
+   },
+   {
+    "id": "clima",
+    "campo": "Lluvias mensuales, heladas y meses de lluvias y de seca",
+    "tipo": "texto"
+   },
+   {
+    "id": "infona",
+    "campo": "Plan de uso de la tierra o plan de manejo del INFONA (n.º)",
+    "tipo": "texto"
+   }
+  ],
+  "calculadoras": [
+   {
+    "n": "Árboles por hectárea según el arreglo",
+    "formula": "N = 10 000 × n ÷ ((C + (n − 1) × dl) × da); n = hileras por franja, dl = distancia entre hileras de la franja, C = callejón libre, da = distancia entre árboles",
+    "por_que": "14 × 2 m → 357 árb/ha y 22 × 2 → 227 (coinciden con Embrapa); 8 × 2 → 625; doble (3 m) + 14 m × 2 m → 588."
+   },
+   {
+    "n": "Ancho representado por cada posición y MS ponderada del potrero",
+    "formula": "MS potrero = Σ (MS_i × w_i) ÷ Σ w_i; w_i = ancho de callejón que representa cada punto (punto medio entre puntos vecinos), más la franja de árboles con su propia MS",
+    "por_que": "El promedio simple de las posiciones sesga el forraje del potrero cuando los puntos no cubren anchos iguales."
+   },
+   {
+    "n": "RFA transmitida, sombra y rendimiento relativo",
+    "formula": "% RFA = RFA bajo árboles ÷ RFA a pleno sol × 100; sombra = 100 − % RFA; RR % = MS bajo árboles ÷ MS a pleno sol del mismo bloque × 100",
+    "por_que": "La sombra es la variable explicativa central; el RR permite comparar sitios y años."
+   },
+   {
+    "n": "Cobertura de copa con densiómetro",
+    "formula": "Apertura % = (N + S + E + O) ÷ 4 × 1,04; cobertura = 100 − apertura",
+    "por_que": "Método barato para seguir la sombra entre podas y raleos."
+   },
+   {
+    "n": "Punto de rocío, ITH e ITGU con su clase",
+    "formula": "Tpr (Magnus): γ = ln(HR/100) + 17,62·T ÷ (243,12 + T); Tpr = 243,12·γ ÷ (17,62 − γ). ITH = 0,8·T + (HR/100)(T − 14,3) + 46,4. ITGU = Tg + 0,36·Tpr + 41,5",
+    "por_que": "Índice de estrés por calor bajo sombra y a pleno sol, con % de horas en cada clase."
+   },
+   {
+    "n": "Stock de carbono del suelo",
+    "formula": "COS (Mg C/ha) = Σ capas [C (g/kg) × Da (g/cm³) × (1 − fragmentos gruesos) × espesor (cm) × 0,1]; cambio = COS_t − COS_0 a masa de suelo equivalente",
+    "por_que": "Para ensayos de suelo y servicios ambientales; FAO pide ≥ 30 cm y remuestreo cada 4–5 años."
+   },
+   {
+    "n": "Índice equivalente de tierra (LER)",
+    "formula": "LER = Y madera SP ÷ Y plantación pura + Y forraje (o carne) SP ÷ Y pleno sol",
+    "por_que": "Resume si el sistema integrado produce más que separar las actividades (metaanálisis: 1,52 con forraje, 1,44 con carne)."
+   },
+   {
+    "n": "Ingreso neto y VAN del sistema",
+    "formula": "Ingreso anual = carne × precio + madera × precio − costos; VAN = Σ flujo_t ÷ (1 + i)^t; valor anual equivalente = VAN × i ÷ (1 − (1 + i)^−n)",
+    "por_que": "Los árboles dan ingresos tardíos (raleos y corta final) y la carne todos los años: hay que llevarlos a una misma base. Se conecta con la app Calculadora agrícola."
+   },
+   {
+    "n": "Retención de árboles respecto del inventario (Chaco)",
+    "formula": "% retención = árboles (o área basal) en pie después del raleo ÷ inventario original × 100",
+    "por_que": "Referencia del 30 % de las Res. INFONA 2011–2012; avisar que la Res. 1232/2012 ya no fija porcentaje."
+   },
+   {
+    "n": "Aviso de ingreso de animales",
+    "formula": "Aviso cuando el DAP medio ≥ 6 cm (bovinos adultos), ≥ 4 cm (terneros) o la altura ≥ 1,5 m (ovinos); en leucaena, altura ≥ 1–1,5 m",
+    "por_que": "Evita daños por ramoneo y descortezado."
+   },
+   {
+    "n": "Volumen, IMA y carga por hectárea de potrero",
+    "formula": "Reusar las calculadoras de Forestal (volumen, IMA) y de Pasturas (carga, GDP, kg PV/ha) con la superficie total del potrero como denominador",
+    "por_que": "En silvopastoril todo se expresa por hectárea de potrero."
+   }
+  ]
+ }
+}
