@@ -507,7 +507,7 @@
    "sub": 1,
    "min": 0,
    "max": 100,
-   "metodo": "En al menos 50 espigas al azar del área útil (n mínimo no verificado; habitual 50–100): incidencia = espigas con espiguillas blanqueadas ÷ total × 100; severidad = % promedio de espiguillas afectadas en las espigas enfermas. Índice = incidencia × severidad ÷ 100.",
+   "metodo": "Juntar las espigas de 1 m de cada una de las 3 hileras centrales (3 m de surco) y evaluar 100 espigas al azar: incidencia = espigas con al menos una espiguilla blanqueada ÷ total × 100; severidad = % promedio de espiguillas afectadas en las espigas enfermas (escala de Stack y McMullen). Índice = incidencia × severidad ÷ 100.",
    "momento": "Grano lechoso a pastoso (Z75–Z85)",
    "cultivos": [
     "Trigo",
@@ -518,7 +518,7 @@
     "Cultivares (RNCC/VCU)"
    ],
    "ref": "",
-   "fuente": "Proyecto: ensayos_de_campo/04_ensayos_agricolas.md"
+   "fuente": "Proyecto: ensayos_de_campo/04_ensayos_agricolas.md; Embrapa Trigo, Circular Técnica 74 (2022), 100 espigas de 3 m de surco en Zadoks 85: https://www.infoteca.cnptia.embrapa.br/infoteca/bitstream/doc/1146813/1/Circular-Tecnica-74-online.pdf; ensayo IPTA-UNI-CAPECO (Capitán Miranda, 2016), escala de Stack y McMullen: https://www.engormix.com/agricultura/fungicidas/control-quimico-fusariosis-espiga_a49237/"
   },
   {
    "id": "brusone",
@@ -586,7 +586,7 @@
     "Eficacia de insecticida"
    ],
    "ref": "04 §4.4",
-   "fuente": "Proyecto: ensayos_de_campo/04_ensayos_agricolas.md (escala de fotos: no verificada)"
+   "fuente": "Proyecto: ensayos_de_campo/04_ensayos_agricolas.md; fotos de referencia: tarjeta visual de defoliación de soja de la Universidad Estatal de Ohio (evaluar la planta entera; es fácil sobrestimar): https://agcrops.osu.edu/newsletter/corn-newsletter/2022-24/defoliation-soybean-and-corn; niveles de acción en soja (Embrapa Soja, Circular Técnica 79, 2010): 30 % en vegetativo y 15 % en reproductivo: https://www.infoteca.cnptia.embrapa.br/infoteca/bitstream/doc/859415/1/CT79VE.pdf"
   },
   {
    "id": "chinches",
@@ -676,7 +676,7 @@
    "sub": 10,
    "min": 0,
    "max": 50,
-   "metodo": "Revisar el cogollo y las hojas de 10 plantas por parcela temprano en la mañana (la chicharrita vuela con calor) y contar adultos y ninfas; complementar con trampas adhesivas amarillas en el ensayo.",
+   "metodo": "Revisar el cogollo (hojas recién desplegadas) de 20 plantas por parcela y contar adultos y ninfas de Dalbulus maidis (de preferencia a la misma hora en todas las fechas, temprano en la mañana); opcional: trampas adhesivas amarillas en el ensayo.",
    "momento": "VE–V8, cada 3–4 días o previo y 3, 7, 14 DAA",
    "cultivos": [
     "Maíz"
@@ -686,7 +686,7 @@
     "Tratamiento de semillas"
    ],
    "ref": "",
-   "fuente": "Proyecto: ensayos_de_campo/04_ensayos_agricolas.md (n de plantas: orientativo, no verificado)"
+   "fuente": "Proyecto: ensayos_de_campo/04_ensayos_agricolas.md; ensayo de Embrapa con 20 cogollos por parcela de V4 a V7: https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/1176305/1/Esquemas-de-aplicacao-de-inseticida-quimico.pdf; Waquil (1997), muestreo por planta individual: https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/479100/1/Amostragemabundancia.pdf; INIA Uruguay, monitoreo de lote con 100 cogollos: https://todoelcampo.com.uy/wp-content/uploads/2026/01/Cartilla-INIA-108-2024.pdf"
   },
   {
    "id": "pulgones",
@@ -697,7 +697,7 @@
    "sub": 20,
    "min": 0,
    "max": 500,
-   "metodo": "Contar pulgones vivos (por especie si se puede) en 20 macollos (trigo, avena) o 20 plantas/hojas (sorgo, canola, algodón) al azar del área útil; anotar también el % de macollos con pulgones.",
+   "metodo": "Trigo y avena: contar pulgones vivos por especie en 1 m de la hilera central (≈ 60 plantas en macollaje; desde encañazón, en 20 macollos o espigas al azar) y anotar el % de plantas o macollos con pulgones. Sorgo, canola y algodón: 20 plantas u hojas al azar del área útil (n orientativo, no verificado).",
    "momento": "Previo y 3, 7, 14 DAA",
    "cultivos": [
     "Trigo",
@@ -711,7 +711,7 @@
     "Tratamiento de semillas"
    ],
    "ref": "",
-   "fuente": "Proyecto: ensayos_de_campo/04_ensayos_agricolas.md (n de macollos: orientativo, no verificado)"
+   "fuente": "Proyecto: ensayos_de_campo/04_ensayos_agricolas.md; Embrapa Trigo (Salvadori y Pereira, 2005), conteo por especie en 60 plantas (1 m) de la hilera central, previo y 2, 7 y 14 DAA: https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/1024237/1/ID431362006reuniaotrigoCD164ento5.pdf; umbrales por especie y estado (INTA Manfredi, Boletín 7, 2004): https://produccion-animal.com.ar/produccion_y_manejo_pasturas/pasturas_combate_de_plagas_y_malezas/53-pulgones_que_atacan_trigo.pdf"
   },
   {
    "id": "picudo",
@@ -722,7 +722,7 @@
    "sub": 1,
    "min": 0,
    "max": 100,
-   "metodo": "Anthonomus grandis. Revisar ≥ 50 pimpollos (uno por planta, del tercio superior) en el área útil y contar los que tienen perforación de alimentación u oviposición ÷ total × 100.",
+   "metodo": "Anthonomus grandis. Revisar 50 pimpollos por parcela (5 al azar en cada una de 10 plantas del área útil) y contar los que tienen daño de oviposición (tapón de cera) o de alimentación (orificio de ~1 mm) ÷ total × 100; se puede anotar cada tipo de daño por separado. Umbral regional de referencia (INTA): 3–5 % de pimpollos dañados.",
    "momento": "Desde pimpollo (B1) hasta apertura de capullos; previo y 3, 7, 10 DAA",
    "cultivos": [
     "Algodón"
@@ -731,7 +731,7 @@
     "Eficacia de insecticida"
    ],
    "ref": "",
-   "fuente": "Proyecto: ensayos_de_campo/04_ensayos_agricolas.md (umbral regional 5–10 %; n de pimpollos orientativo)"
+   "fuente": "Proyecto: ensayos_de_campo/04_ensayos_agricolas.md; 50 pimpollos por parcela (5 al azar en cada una de 10 plantas del área útil), daño de oviposición y de alimentación: Ramiro et al. 1992, https://anais.seb.org.br/index.php/aseb/article/download/804/800/1587 y Bellettini et al. 2011, https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/904685/1/ENT006Poster.098.pdf; umbral regional INTA: 3–5 % de pimpollos dañados (Mondino, ICAC 2017): https://icac.org/wp-content/uploads/2023/07/082017-Mario-Mondino-INTA-ARGENTINA.pdf"
   },
   {
    "id": "diatraea",
@@ -754,7 +754,7 @@
     "Cultivares (RNCC/VCU)"
    ],
    "ref": "",
-   "fuente": "Método clásico de intensidad de infestación (no verificado en fuente en línea en esta revisión)"
+   "fuente": "Intensidad de infestación = entrenudos barrenados ÷ entrenudos totales × 100 (Macedo y Botelho, 1988), en tallos partidos a lo largo a cosecha; en ensayos de cultivares de caña se usan 12 tallos por parcela (3 por hilera): Dinardo-Miranda et al. 2013, Bragantia 72(1):29-34, https://www.redalyc.org/pdf/908/90826421004.pdf; Embrapa Clima Temperado, Espinelli et al.: https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/1057544/1/DoriCA01491.pdf"
   },
   {
    "id": "insectos_vivos",
@@ -1067,7 +1067,7 @@
     "Densidad, espaciamiento y época de siembra"
    ],
    "ref": "",
-   "fuente": "Práctica habitual (no verificada en fuente en línea en esta revisión)"
+   "fuente": "Ensayo paraguayo de mandioca (UNI, Itapúa): raíces comerciales = sin daño mecánico, de plagas ni enfermedades; 10 plantas del área útil (2 hileras centrales), total = comerciales + no comerciales llevado a t/ha: https://ciencialatina.org/index.php/cienciala/article/download/1655/2326?inline=1. Materia seca por balanza hidrostática (Grossmann y Freitas, 1950): 5 kg de raíces pesadas en agua, MS (%) = 15,75 + 0,03384 × peso en agua (g) [con 3 kg: 15,75 + 0,0564 × peso en agua]; almidón (%) = MS − 4,65 (Embrapa): https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/977484/1/AVALIACAOESELECAO235sistemas21578EDER.pdf"
   },
   {
    "id": "ndvi",
@@ -1413,7 +1413,7 @@
    "sub": 5,
    "min": 0,
    "max": 120,
-   "metodo": "Penetrómetro en 5 frutos, 2 lecturas en caras opuestas de la zona ecuatorial. Tomate: con piel; melón: sacando un disco de cáscara. Declarar el diámetro del puntero (8 mm el habitual; frutilla suele medirse con puntero más chico) y no comparar valores con punteros distintos. 1 kgf ≈ 9,8 N.",
+   "metodo": "Penetrómetro en 5 frutos, 2 lecturas en caras opuestas de la zona ecuatorial, penetrando unos 8 mm en la pulpa. Tomate: con piel; melón: sacando un disco de cáscara. Declarar el diámetro del puntero (referencias publicadas: 8 mm o 5/16\" = 7,9 mm en frutos medianos, 12 mm en melón, 2 mm en frutilla) y no comparar valores con punteros distintos. 1 kgf ≈ 9,8 N.",
    "momento": "Mismos frutos que el °Brix; en poscosecha, en cada fecha de evaluación",
    "cultivos": [
     "Tomate",
@@ -1428,7 +1428,7 @@
     "Poscosecha"
    ],
    "ref": "05 §3.2",
-   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md §3.2; Infoagro, firmeza o dureza de frutos: https://www.infoagro.com/documentos/firmeza_o_dureza_frutos.asp (puntero de frutilla: no verificado)"
+   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md §3.2. Punteros publicados: frutilla 2 mm (texturómetro; Embrapa Clima Temperado, Rosa et al. 2018: https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/1107523/1/FernandoCantillanoCantill7Genot.MorangueirosDEBpricils1.pdf); 7,9 mm (5/16\") en penetrómetro Effegi para durazno (Ortiz de Zárate et al. 2007: https://bibliotecavirtual.unl.edu.ar/publicaciones/index.php/FAVEAgrarias/article/download/1319/2073/3458); 8 mm en kiwi y 12 mm en melón (Takao y Ohmori 1994, JARQ 28:36-43: https://www.jircas.go.jp/sites/default/files/publication/jarq/28-1-036-043_0.pdf). Infoagro (https://www.infoagro.com/documentos/firmeza_o_dureza_frutos.asp) solo da la profundidad de penetración (8 mm) y no el diámetro del puntero."
   },
   {
    "id": "espesor_pulpa",
@@ -1896,7 +1896,7 @@
     "Cultivares / híbridos"
    ],
    "ref": "",
-   "fuente": "EPPO PP1 (lista de normas): https://pp1.eppo.int/standards/all (PP1/321, PP1/322); escala de Taylor y Sasser (1978): no verificado en línea"
+   "fuente": "Escala de Taylor y Sasser (1978): 0 = sin agallas; 1 = 1–2; 2 = 3–10; 3 = 11–30; 4 = 31–100; 5 = más de 100 agallas (o masas de huevos) por sistema radical, tal como la cita Journal of Nematology (2021), DOI 10.21307/jofnem-2021-111: https://pmc.ncbi.nlm.nih.gov/articles/PMC8784979/table/T4. Normas de eficacia de nematicidas: EPPO PP1 (lista de normas): https://pp1.eppo.int/standards/all (PP1/321, PP1/322)"
   },
   {
    "id": "fitotox",
@@ -2064,7 +2064,7 @@
     "Ambiente protegido"
    ],
    "ref": "",
-   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md (método no verificado con norma)"
+   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md; profundidad de 10 cm con termómetro digital bajo cada cobertura y en suelo desnudo (Moreno et al., Horticultura Internacional n.º 52, 2006: https://mapa.gob.es/ministerio/pags/Biblioteca/Revistas/pdf%5Fhortint%2Fhortint%5F2006%5F52%5F10%5F19%2Epdf); geotermómetro a 15 cm con lecturas a las 8 y 15 h (Delgado-Pacheco et al. 2025, Rev. Mex. Cienc. Agríc. 16(6): https://cienciasagricolas.inifap.gob.mx/index.php/agricolas/article/download/3793/7705/40750)"
   },
   {
    "id": "malezas_cob",
@@ -2075,14 +2075,14 @@
    "sub": 2,
    "min": 0,
    "max": 100,
-   "metodo": "Estimación visual del % de suelo cubierto por malezas en 2 marcos de 0,25 m² por parcela (en la entrelínea y en la línea de plantas); opcional: cortar, secar y pesar.",
+   "metodo": "Estimación visual del % de suelo cubierto por malezas en 3 marcos de 0,25 m² (0,5 × 0,5 m) por parcela, promediados (si interesa, anotar por separado la línea de plantas y la entrelínea); opcional: cortar, secar y pesar las malezas del marco.",
    "momento": "15, 30 y 45 días después del trasplante o de la aplicación, y antes de la cosecha",
    "tipos": [
     "Cobertura del suelo",
     "Eficacia de herbicidas"
    ],
    "ref": "",
-   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md (método no verificado con norma)"
+   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md; marco de 0,25 m² lanzado 3 veces por parcela, cobertura visual en % (Talavera y Padilla 2000, Agronomía Mesoamericana 11(2):101-107): https://dialnet.unirioja.es/descarga/articulo/5546835.pdf"
   },
   {
    "id": "perdida_peso",
@@ -2446,7 +2446,7 @@
     "Raleo, poda y manejo de rebrote"
    ],
    "ref": "",
-   "fuente": "Guía 06 §3; diámetros mínimos: ejemplo orientativo, no verificado"
+   "fuente": "Guía 06 §3; diámetro mínimo según destino: 8 cm para celulosa (límite usado por muchas empresas; Prates et al. 2023, Rev. Árvore 47) y 5 cm para energía (Lima et al. 2011, Pesq. Flor. Bras. 31(65)); para aserrío, el que pida el aserradero."
   },
   {
    "id": "altura_dom",
@@ -2576,7 +2576,7 @@
     "Progenies"
    ],
    "ref": "06 §3",
-   "fuente": "Guía 06 §3; escala orientativa (no hay norma única)"
+   "fuente": "Guía 06 §3. No hay norma única: Embrapa e INTA usan la rectitud como criterio de selección sin escala fija; en Brasil es común 1 = peor forma y 5 = fuste recto (p. ej. Zanata et al. 2010, Rev. Inst. Florestal 22(2)). Indicar en la ficha qué sentido se usó."
   },
   {
    "id": "bifurcacion",
@@ -2623,7 +2623,7 @@
     "Raleo, poda y manejo de rebrote"
    ],
    "ref": "",
-   "fuente": "Guía 06 §3; escala orientativa, no verificada en norma"
+   "fuente": "Guía 06 §3. Escala propia del proyecto, sin norma única. Los criterios (grosor, número y ángulo de inserción de las ramas) son los que usan Embrapa (Doc. 99, 2004) y Bustillos-Aguirre et al. (2018), que toman como defecto las ramas gruesas con ángulo menor de 40°."
   },
   {
    "id": "altura_poda",
@@ -2759,7 +2759,7 @@
     "Establecimiento y sobrevivencia post-plantación"
    ],
    "ref": "",
-   "fuente": "Guía 06; método de diagnóstico por excavación: práctica usual, no verificado en norma"
+   "fuente": "Guía 06; diagnóstico por descalce del cuello y la raíz: práctica de campo (las termitas destruyen la raíz y anillan el cuello; Serrão et al. 2016). Los ensayos de control de Embrapa separan muertes por termitas de otras causas y evalúan hasta ~6 meses de la plantación (Wilcken y Raetano)."
   },
   {
    "id": "roya_inc",
@@ -2771,7 +2771,7 @@
    "min": 0,
    "max": 100,
    "metodo": "Plantas con pústulas amarillas de Austropuccinia psidii en brotes y hojas jóvenes / plantas evaluadas × 100.",
-   "momento": "Vivero y plantación hasta ~2 años, en épocas húmedas y templadas (época exacta para Paraguay: no verificada)",
+   "momento": "En vivero, en plantación joven hasta que los árboles superan 3–4 m de altura, y en rebrotes de cepa. Evaluar en períodos con 18–25 °C y hojas mojadas más de 6 h durante varios días seguidos; en Paraná (Brasil), la estación más favorable es el verano y la menos favorable el invierno.",
    "cultivos": [
     "Eucalyptus grandis",
     "Eucalyptus urograndis (clones)",
@@ -2867,7 +2867,7 @@
     "Plagas y enfermedades (termitas, chinche, roya)"
    ],
    "ref": "",
-   "fuente": "Presente en Paraguay desde 2009 (https://gd.eppo.int/taxon/THMCPE/distribution/PY); método visual: no verificado, sin escala oficial"
+   "fuente": "Presente en Paraguay desde 2009 (https://gd.eppo.int/taxon/THMCPE/distribution/PY). No hay escala oficial de daño: el % de copa bronceada es una estimación visual propia del proyecto. Para la población, usar trampas adhesivas amarillas (5 por punto, recambio cada 15 días; Embrapa CT 337, 2014)."
   },
   {
    "id": "helada",
@@ -2879,7 +2879,7 @@
    "min": 0,
    "max": 10,
    "metodo": "Nota por árbol según % de follaje y de tallo dañado (escala invertida: 10 = sin daño). Registrar fecha y temperatura mínima de la helada; evaluar también la recuperación en la medición siguiente.",
-   "momento": "7–15 días después de cada helada (orientativo)",
+   "momento": "6–10 días después de cada helada (Lisbão 1986) y de nuevo a los ~30 días para ver el daño final y el rebrote (Higa et al.)",
    "escala": [
     "0 100 % del tallo dañado",
     "1 75–99 % del tallo",
@@ -2924,7 +2924,7 @@
    "sub": 1,
    "min": 0,
    "max": 100,
-   "metodo": "Plantas con síntomas (cancros en el tallo —p. ej. Teratosphaeria zuluensis—, muerte de ramas, manchas foliares, Fusarium en kiri) / evaluadas × 100. Anotar el agente presunto y enviar muestras a laboratorio para confirmar.",
+   "metodo": "Plantas con síntomas / evaluadas × 100. En eucalipto, en Paraguay se registraron cancros del tallo (Teratosphaeria zuluensis, Botryosphaeria, Chrysoporthe), tizón foliar (Calonectria), mancha foliar (Coniella) y pudrición del duramen (Silva et al. 2020); en kiri, Fusarium. Anotar el agente presunto y enviar muestras a laboratorio para confirmar.",
    "momento": "6, 12 meses y anual",
    "tipos": [
     "Clones (ensayo clonal)",
@@ -2996,7 +2996,7 @@
     "Preparación de suelo y control de malezas"
    ],
    "ref": "",
-   "fuente": "Guía 06 §1; método visual orientativo"
+   "fuente": "Guía 06 §1; estimación visual 0–100 % (la escala visual se usa en ensayos de malezas en eucalipto, p. ej. Assis et al. 2015, CERNE 21(4)); el ancho de la franja y los 4 puntos son criterio del proyecto"
   },
   {
    "id": "fitotox",
@@ -3013,7 +3013,7 @@
     "Preparación de suelo y control de malezas"
    ],
    "ref": "",
-   "fuente": "Escala porcentual usual en ensayos de herbicidas (no verificada para forestales)"
+   "fuente": "Escala porcentual 0 = sin síntomas a 100 = muerte, usada también en eucalipto (Machado et al. 2017, Rev. Bras. Ciênc. Agrárias 12(2), evaluaciones a 14, 35 y 49 días)"
   },
   {
    "id": "alt_plantin",
@@ -3194,7 +3194,7 @@
    "min": 0,
    "max": 30,
    "metodo": "Contar los brotes vivos por cepa después del corte (monte bajo de eucalipto) o del descepe (kiri), antes del desbrote; anotar cuántos se dejan.",
-   "momento": "3–6 meses después del corte (orientativo)",
+   "momento": "Unos 3 meses después del corte (antes del desbrote; IPEF 2023); en kiri, antes del primer desbrote tras el descepe. Si interesa la capacidad de rebrote, repetir a los 12–15 meses.",
    "cultivos": [
     "Eucalyptus grandis",
     "Eucalyptus urograndis (clones)",
@@ -3261,7 +3261,7 @@
    "dec": 0,
    "sub": 2,
    "min": 0,
-   "max": 20000,
+   "max": 25000,
    "metodo": "Cortar a la altura de corte de la especie todo el forraje dentro de un marco de 0,25 m² (2 marcos por parcela, al azar en el área útil) o cortar toda el área útil con motosegadora. Pesar en verde y secar una submuestra de ~300 g en estufa con aire forzado a 60–65 °C hasta peso constante (48–72 h). kg MS/ha = peso verde (g) ÷ área del marco (m²) × MS % ÷ 100 × 10. En Leucaena cosechar solo la fracción comestible (ver ms_comestible).",
    "momento": "En cada corte, después del corte de uniformización; RNCC Brachiaria: cada 35 días en lluvias y 70 días en seca",
    "tipos": [
@@ -3337,7 +3337,7 @@
    "dec": 1,
    "sub": 10,
    "min": 0,
-   "max": 400,
+   "max": 450,
    "metodo": "Regla graduada o bastón medidor: 10 lecturas por parcela (50 por potrero) en el área útil, desde el suelo hasta la curvatura de las hojas más altas, sin contar panojas. Sirve como criterio de entrada (p. ej. Marandu 35 cm, Mombaça 90 cm, Tanzânia 70 cm).",
    "momento": "Justo antes de cada corte o al entrar los animales",
    "tipos": [
@@ -3648,13 +3648,13 @@
    "sub": 1,
    "min": 0,
    "max": 100,
-   "metodo": "Estimación visual del control de cada maleza objetivo respecto del testigo sin aplicar (0 = igual al testigo, 100 = muerte total). Para renovales leñosos: % de plantas muertas o sin rebrote. Lectura orientativa con la escala ALAM: 91–100 excelente; 81–90 muy bueno; 71–80 bueno; 61–70 suficiente; 41–60 regular; 0–40 pobre.",
+   "metodo": "Estimación visual del control de cada maleza objetivo respecto del testigo sin aplicar (0 = igual al testigo, 100 = muerte total; ALAM 1974). Para renovales leñosos: % de plantas muertas o sin rebrote. Lectura orientativa por categorías (rangos atribuidos a ALAM, no confirmados en el original): 91–100 excelente; 81–90 muy bueno; 71–80 bueno; 61–70 suficiente; 41–60 regular; 0–40 pobre.",
    "momento": "15, 30 y 60 DAA; leñosas también a 6 y 12 meses",
    "tipos": [
     "Control de malezas en pasturas"
    ],
    "ref": "",
-   "fuente": "ALAM (1974), no verificado en esta revisión; Guía del proyecto ensayos_de_campo/08_normativa_paraguay.md"
+   "fuente": "ALAM (Asociación Latinoamericana de Malezas), 1974. Recomendaciones sobre unificación de los sistemas de evaluación en ensayos de control de malezas. Revista ALAM 1 (escala 0–100 %: 0–40 ninguno a pobre, 41–60 regular, 61–70 suficiente, 71–80 bueno, 81–90 muy bueno, 91–100 excelente); Guía del proyecto ensayos_de_campo/08_normativa_paraguay.md"
   },
   {
    "id": "fitotox",
@@ -3671,7 +3671,7 @@
     "Control de malezas en pasturas"
    ],
    "ref": "",
-   "fuente": "Criterio habitual en ensayos de selectividad; no verificado en esta revisión"
+   "fuente": "Escala visual 0 = sin síntomas a 100 = muerte, usada en ensayos de selectividad en Brachiaria (Colleta et al. 2009, Embrapa Gado de Corte; 40 % como máximo aceptable en preselección)"
   },
   {
    "id": "vigor",
@@ -3740,7 +3740,7 @@
    "min": 1,
    "max": 5,
    "metodo": "Nota visual del % de follaje dañado (amarillo o seco) en la parcela, siempre por el mismo evaluador. Escala de CIAT (Sotelo et al., 1998), pensada para invernáculo y usada también a campo. Clasificar los cultivares por el daño, no solo por el número de insectos.",
-   "momento": "Al final de cada generación de adultos (2–3 semanas después del pico; intervalo no verificado)",
+   "momento": "Al final de cada generación, cuando las ninfas completaron su desarrollo y emergen los adultos (≈ 35–40 días después de la infestación o de la aparición de las ninfas; Sotelo y Cardona 2001)",
    "escala": [
     "1 0 % de daño foliar",
     "2 25 %",
@@ -3942,7 +3942,7 @@
     "Cultivares / especies forrajeras"
    ],
    "ref": "",
-   "fuente": "https://www.infoteca.cnptia.embrapa.br/infoteca/bitstream/doc/505444/1/14373.pdf (escala no verificada; usar la del vigor invertida)"
+   "fuente": "Escala propia del proyecto (no hay escala publicada de daño por encharcamiento). Alternativa publicada: vigor 1–5 (1 muy bajo … 5 excelente) a los 8 y 23 días del anegamiento y coeficiente de tolerancia = anegado / no anegado × 100 (Embrapa BPD 175, 2025: https://www.infoteca.cnptia.embrapa.br/infoteca/bitstream/doc/1176422/1/BPD175.pdf). Contexto del Marandu: https://www.infoteca.cnptia.embrapa.br/infoteca/bitstream/doc/505444/1/14373.pdf"
   },
   {
    "id": "nodulacion",
@@ -4460,7 +4460,7 @@
     "Manejo del pastoreo en silvopastoril"
    ],
    "ref": "",
-   "fuente": "Escala orientativa, no normalizada (no verificada). Criterio de entrada de animales: https://www.infoteca.cnptia.embrapa.br/infoteca/bitstream/doc/1003751/1/projetosilvipastoril.pdf"
+   "fuente": "Escala 0–5 propia del proyecto (no normalizada). Escala publicada equivalente: Gonçalves et al. 2022, Ciência Florestal 32(2), con puntos por tipo de daño de bovinos (ramoneo 1; corteza 1,5; ramas 2; herida hasta la madera 4; fuste quebrado 8; vuelco 10) y clases d0–d4 (https://www.scielo.br/j/cflo/a/L9jms8x3ffMNH9J9f5ChHGp/). Para ramoneo de brotes laterales, clases 0–20, 21–40, 41–60 y > 60 % y brote apical sí/no (Mayer et al. 2006). Criterio de entrada de animales: https://www.infoteca.cnptia.embrapa.br/infoteca/bitstream/doc/1003751/1/projetosilvipastoril.pdf"
   },
   {
    "id": "hormigas",
@@ -4574,7 +4574,7 @@
    ],
    "porPosicion": true,
    "ref": "",
-   "fuente": "https://ppbio.inpa.gov.br/sites/default/files/Protocolo_de_uso_de_densiometro_florestal_06_2017.pdf (foto hemisférica: método de uso general, no verificado en esta revisión)"
+   "fuente": "https://ppbio.inpa.gov.br/sites/default/files/Protocolo_de_uso_de_densiometro_florestal_06_2017.pdf (densiómetro); foto hemisférica: cámara nivelada a 1–1,3 m, norte marcado, cielo nublado parejo o con el sol bajo el horizonte, análisis con Gap Light Analyzer (Jarčuška et al. 2010, J. For. Sci. 56(4): https://www.agriculturejournals.cz/pdfs/jfs/2010/04/01.pdf)"
   },
   {
    "id": "temp_aire",

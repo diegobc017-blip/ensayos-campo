@@ -39,7 +39,7 @@
     "bloques_min": 3,
     "momentos": "Emergencia y stand (V2–V3); floración 50 %; sanidad en los momentos de máxima expresión (soja R5–R6, maíz R2–R5, trigo Z75–Z85); madurez fisiológica; cosecha con humedad del grano.",
     "analisis": "ANAVA por localidad y año → homogeneidad de varianzas (cociente entre el mayor y el menor CME ≤ 5 según SENAVE) → ANAVA conjunto localidad × año × cultivar → Tukey o Scott-Knott; covarianza por stand admitida; % relativo a la media de testigos; estabilidad (opcional).",
-    "normativa": "Ley 385/94; Res. SENAVE 414/2020 (normas mínimas por especie) y fichas NOR-DPUV (maíz 111, poroto 119): ≥ 3 zonas agroecológicas × 2 años consecutivos, DBCA ≥ 3 rep. con ≥ 15 gl del error, máx. 30 entradas, parcela mínima 4 hileras × 5 m (algodón 4 × 10, avena 6 × 5, caña 5 × 8), solicitud de habilitación 30 días antes de la siembra, sin resiembra después de 10 días.",
+    "normativa": "Ley 385/94; Res. SENAVE 414/2020 (modificada por la Res. 028/2021) y normas por especie NOR-DPUV-100 a 129 (vigentes desde 02/01/2024; p. ej., arroz 102, avena 103, canola 104, girasol 109, maíz 111, mandioca 112, maní 113, poroto/caupí 119, sésamo 120, soja 121, sorgo 122, trigo 125); procedimiento PRO-DPUV-101: ≥ 3 zonas agroecológicas × 2 años consecutivos, DBCA ≥ 3 rep. con ≥ 15 gl del error, máx. 30 entradas, ≥ 2 testigos por grupo de madurez, parcela mínima 4 hileras × 5 m (algodón y mandioca 4 × 10; avena, aceven y trigo 6 × 5; sorgo 6 × 4; sésamo 3 × 5), solicitud de habilitación 30 días antes de la siembra, sin resiembra después de 10 días. Humedad de corrección fijada solo en maíz y sésamo (13 %).",
     "fuente": "https://www.aprosemp.org.py/docs/normativas/5-Resolucion-SENAVE-414-Normas-minimas-para-ensayos-evaluacion-agronomica-calidad-variedades.pdf ; Proyecto: ensayos_de_campo/08_normativa_paraguay.md (NOR-DPUV-111 y Res. 414/2020 leídas en senave.gov.py el 29-30/09/2026)"
    },
    {
@@ -60,10 +60,10 @@
     ],
     "testigos": "Testigo sin aplicar (incluido y aleatorizado en cada bloque) + producto de referencia registrado en SENAVE para el mismo blanco.",
     "trat": "Testigo sin aplicar\nReferencia registrada\nProducto a dosis baja\nProducto a dosis recomendada\nProducto a 2× (fitotoxicidad)",
-    "bloques_min": 4,
+    "bloques_min": 5,
     "momentos": "Antes de la 1.ª aplicación (0 DAA) y a 7, 14 y 21 DAA de cada aplicación, o por estadio (soja: R1, R3, R5.1–R5.3, R6; maíz: VT–R5; trigo: Z39, Z55–Z65, Z75–Z85). Defoliación en R6–R7. Cosecha del área útil.",
     "analisis": "ANAVA + Tukey; AACPE (trapecios) por parcela; % de control de Abbott sobre severidad final y sobre AACPE; diferencia de rendimiento respecto del testigo.",
-    "normativa": "Ley 3742/09 (ensayista registrado categoría A.10 y profesional categoría B; registro experimental D.1 y definitivo D.2); Res. MAG 296/03 'Protocolo patrón para ensayos de eficacia agronómica de plaguicidas' (texto no obtenido en esta revisión); Res. 297/03: muestras importadas, período de experimentación de 2 años, en campos del MAG, universidades o entidades habilitadas. Art. 63 Ley 3742: no aplicar con T > 32 °C, HR < 60 % o viento > 10 km/h.",
+    "normativa": "Ley 3742/09 (ensayista registrado categoría A.10 y profesional categoría B; registro experimental D.1 y definitivo D.2); Res. MAG 296/03 'Protocolo patrón para ensayos de eficacia agronómica de plaguicidas agrícolas' (vigente; la Res. SENAVE 305/2018 remite a él): ≥ 2 años por cultivo y plaga, en 3 zonas agroecológicas, ≥ 5 repeticiones con ≥ 12 gl del error, testigo sin tratar + producto de referencia registrado, al menos 3 dosis (baja, recomendada y alta), 1.ª evaluación antes de la 1.ª aplicación y la última antes de cosecha, ANAVA al 5 % con CV, libro de campo con clima y suelo. Res. 297/03: muestras importadas, 2 años de experimentación en campos del MAG, universidades o entidades habilitadas. Art. 63 Ley 3742: no aplicar con T > 32 °C, HR < 60 % o viento > 10 km/h.",
     "fuente": "https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/993530/1/EFICIENCIADEFUNGICIDASNOCONTROLEDAFERRUGEMASIATICA.pdf ; https://faolex.fao.org/docs/pdf/par47742.pdf ; https://pp1.eppo.int/standards/PP1-152-4-en.pdf"
    },
    {
@@ -86,7 +86,7 @@
     ],
     "testigos": "Testigo sin tratar + insecticida de referencia registrado para la plaga.",
     "trat": "Testigo sin tratar\nReferencia registrada\nProducto a dosis baja\nProducto a dosis recomendada\nProducto a dosis alta",
-    "bloques_min": 4,
+    "bloques_min": 5,
     "momentos": "Conteo previo (0 DAA, máximo 24 h antes) y a 1–3, 7, 10 y 14 DAA (orugas y chinches); para chicharrita cada 3–4 días entre VE y V8 y achaparramiento en R1–R3.",
     "analisis": "ANAVA + Tukey (transformar conteos con √(x+0,5) si hace falta); eficacia de Henderson-Tilton si las poblaciones previas difieren entre parcelas, Abbott si son uniformes.",
     "normativa": "Ley 3742/09; Res. MAG 296/03 y 297/03 (ver fungicida).",
@@ -106,7 +106,7 @@
     ],
     "testigos": "Testigo enmalezado (sin herbicida) + testigo limpio (carpido manual) + herbicida de referencia registrado.",
     "trat": "Testigo enmalezado\nTestigo limpio (carpido)\nReferencia registrada\nProducto a dosis baja\nProducto a dosis recomendada\nProducto a 2× (selectividad)",
-    "bloques_min": 4,
+    "bloques_min": 5,
     "momentos": "Densidad de malezas por especie antes de aplicar; control visual (ALAM) a 7, 14, 21 y 28 DAA y, para residualidad de preemergentes, a 35, 45 y 60 DAA; fitotoxicidad (EWRC) a 7, 14 y 21 DAA; biomasa de malezas a 28–45 DAA o al cierre del cultivo; rendimiento.",
     "analisis": "ANAVA + Tukey por especie de maleza; % de control sobre densidad o biomasa respecto del testigo enmalezado; pérdida por competencia = (testigo limpio − tratamiento) / testigo limpio × 100; residualidad = último DAA con control ≥ 80 %.",
     "normativa": "Ley 3742/09; Res. MAG 296/03. Registrar especies y biotipos resistentes (Amaranthus, Conyza, Digitaria insularis, Eleusine indica).",
@@ -179,7 +179,7 @@
     ],
     "testigos": "Semilla sin tratar + tratamiento de referencia registrado.",
     "trat": "Sin tratar\nReferencia registrada\nProducto dosis baja\nProducto dosis recomendada",
-    "bloques_min": 4,
+    "bloques_min": 5,
     "momentos": "Conteo diario de emergencia hasta estabilizar (7–14 DDS) para IVE; stand en V2–V3 y a cosecha; plagas iniciales (gusanos de suelo, chinche Dichelops, cogollero) a 7–21 DDE.",
     "analisis": "ANAVA + Tukey; índice de velocidad de emergencia (Maguire); Abbott sobre plantas dañadas.",
     "normativa": "Ley 3742/09 (es un plaguicida: mismo marco que fungicida e insecticida).",
@@ -294,7 +294,7 @@
      "util": 4
     },
     "parcelaTxt": "6 hileras a 0,17 m × 5 m; útil: 4 hileras centrales sin 0,5 m de cabecera (≈ 2,7 m²); o 6–8 hileras para cosecha con microcosechadora",
-    "notas": "Base de humedad: el anexo de trigo de la Res. 414/2020 no se pudo leer (no verificado). Ensayos publicados en Paraguay usan 13 % o 14 % (UNI, 2023, a 14 %); la norma argentina de comercialización usa 14 %. Dejar 13 % por defecto y obligar a declarar la base. Enfermedades: brusone (Pyricularia oryzae, endémica en el sur y noreste de Paraguay), mancha amarilla (Drechslera tritici-repentis), roya de la hoja (Puccinia triticina), fusariosis de la espiga (Fusarium graminearum), oídio, manchas foliares. Plagas: pulgones (Schizaphis graminum, Rhopalosiphum padi, Metopolophium dirhodum, Sitobion avenae), orugas (Pseudaletia), chinches. Calidad: peso hectolítrico, proteína, gluten y falling number (laboratorio).",
+    "notas": "Base de humedad: la norma SENAVE de trigo (NOR-DPUV-125, que reemplaza al anexo de la Res. 414/2020) no fija humedad de corrección; las normas SENAVE de maíz y sésamo ajustan al 13 %. Ensayos publicados en Paraguay usan 13 % o 14 % (UNI, 2023, a 14 %); la norma argentina de comercialización usa 14 %. Dejar 13 % por defecto y obligar a declarar la base. Norma SENAVE (inscripción de cultivares): mínimo 6 hileras × 5 m, útil 4 hileras centrales, densidad válida ≥ 60 plantas por metro lineal, siembra abril–julio (Oriental) y abril–mayo (Occidental); pide días a espigazón y a madurez, acame, dehiscencia, peso de 1000 semillas, altura, germinación en espiga, proteína, falling number, fuerza de gluten y peso hectolítrico. Enfermedades: brusone (Pyricularia oryzae, endémica en el sur y noreste de Paraguay), mancha amarilla (Drechslera tritici-repentis), mancha marrón, septoriosis, roya de la hoja (Puccinia triticina) y del tallo, fusariosis de la espiga (Fusarium graminearum), oídio, bacteriosis, virosis (BYDV), pudrición común y mal del pie. Plagas: pulgones (Schizaphis graminum, Rhopalosiphum padi, Metopolophium dirhodum, Sitobion avenae), orugas (Pseudaletia), chinches. Calidad: peso hectolítrico, proteína, gluten y falling number (laboratorio).",
     "humedad": 13
    },
    {
@@ -304,11 +304,11 @@
     "fenologia": "Schneiter y Miller (1981): VE, V1…Vn, R1…R9",
     "parcela": {
      "hileras": 4,
-     "dist": 0.7,
-     "largo": 6,
+     "dist": 0.45,
+     "largo": 5,
      "util": 2
     },
-    "parcelaTxt": "4 hileras a 0,70 m × 6 m; útil: 2 centrales × 5 m (no verificado: no se pudo leer el anexo SENAVE de girasol)",
+    "parcelaTxt": "Mínimo SENAVE (NOR-DPUV-109): 4 hileras a 0,45 m × 5 m; útil: 2 hileras centrales; bordes de 2–4 hileras; densidad válida 2–4 plantas por metro lineal. Fuera del registro de cultivares se puede usar el espaciamiento del productor (0,70 m o más) declarándolo en la ficha.",
     "notas": "11 % es la base de la norma argentina IX (tolerancia de recibo 14 %). Cultivo importante en el Chaco y en el sur de la Región Oriental. Variables propias: diámetro de capítulo, % aceite, daño por pájaros, vuelco y quebrado. Enfermedades: podredumbre del capítulo (Sclerotinia), mancha negra (Alternaria/Phoma), mildiu (Plasmopara halstedii), roya negra. Plagas: Helicoverpa, chinches, gusanos de suelo.",
     "humedad": 11
    },
@@ -323,8 +323,9 @@
      "largo": 5,
      "util": 2
     },
-    "parcelaTxt": "Mínimo SENAVE 4 hileras × 5 m; entre hileras 0,17–0,40 m según sembradora; útil: 2 centrales (no verificado el espaciamiento)",
-    "notas": "Humedad de comercialización NO verificada para Paraguay: pedir la humedad de recibo del acopiador en la ficha. Densidad mínima válida SENAVE: 7 pl/m lineal. Datos propios: dehiscencia/desgrane de silicuas, % aceite, glucosinolatos y erúcico (calidad 'canola'). Enfermedades: mancha negra (Alternaria), pie negro (Leptosphaeria/Phoma lingam), Sclerotinia. Plagas: polilla de las crucíferas (Plutella xylostella), pulgones."
+    "parcelaTxt": "Mínimo SENAVE (NOR-DPUV-104): 4 hileras × 5 m; útil: 2 hileras centrales; bordes de 2–4 hileras; densidad válida ≥ 7 plantas por metro lineal. La norma no fija la distancia entre hileras (según fecha de siembra, cultivar y región): usar la de la sembradora (habitual 0,17–0,40 m) y declararla en la ficha.",
+    "notas": "Humedad de comercialización no fijada en Paraguay (la norma SENAVE NOR-DPUV-104 solo pide informar el % de humedad, sin base de corrección): pedir la humedad de recibo del acopiador en la ficha. Densidad mínima válida SENAVE: 7 pl/m lineal; siembra abril–junio (Oriental). SENAVE pide además % de aceite (candidata y 2 testigos en 2 localidades por año) y % de proteína. Datos propios: dehiscencia/desgrane de silicuas, glucosinolatos y erúcico (calidad 'canola'). Enfermedades: mancha negra (Alternaria), pie negro (Leptosphaeria/Phoma lingam), Sclerotinia. Plagas: polilla de las crucíferas (Plutella xylostella), pulgones. Humedad base por defecto: 8,5 % (referencia regional: norma de comercialización argentina de colza; no hay norma paraguaya). Cambiala en la ficha si el acopiador usa otra.",
+    "humedad": 8.5
    },
    {
     "n": "Arroz",
@@ -338,22 +339,23 @@
      "util": 2
     },
     "parcelaTxt": "Mínimo SENAVE 4 hileras × 5 m; en línea a 0,17–0,20 m con riego por inundación; útil: 2 centrales (o 4 en siembra densa) sin cabeceras",
-    "notas": "13 % es la base habitual en ensayos; no verificada para comercio en Paraguay. SENAVE tiene zonas propias para arroz y densidad mínima válida de 7 pl/m lineal. Sistema: riego por inundación (Misiones, Ñeembucú, Itapúa, Caazapá). Datos propios: panojas/m², % de vaneo, rendimiento de molino (% grano entero), días a floración. Enfermedades: brusone (Pyricularia oryzae), mancha de la vaina (Rhizoctonia), mancha marrón. Plagas: gorgojo acuático (Oryzophagus), chinches (Tibraca, Oebalus).",
+    "notas": "13 % es la base habitual en ensayos; la norma SENAVE de arroz (NOR-DPUV-102) no fija humedad de corrección ni base de comercio. SENAVE define zonas propias para arroz (Oriental: Norte = San Pedro y Concepción; Centro = Paraguarí, Cordillera y Central; Sur = Itapúa y/o Misiones), densidad mínima válida de 7 pl/m lineal y siembra agosto–diciembre en la Región Oriental; pide vuelco, desgrane, peso de 1000 semillas, peso hectolítrico y calidad culinaria. Sistema: riego por inundación (Misiones, Ñeembucú, Itapúa, Caazapá). Datos propios: panojas/m², % de vaneo, rendimiento de molino (% grano entero), días a floración. Enfermedades: brusone (Pyricularia oryzae), mancha de la vaina (Rhizoctonia), mancha marrón. Plagas: gorgojo acuático (Oryzophagus), chinches (Tibraca, Oebalus).",
     "humedad": 13
    },
    {
     "n": "Sésamo",
     "cientifico": "Sesamum indicum",
     "grupo": "oleaginosa",
-    "fenologia": "BBCH general (Meier 2001) o etapas de Langham (no verificada su adopción en Paraguay)",
+    "fenologia": "Etapas de Langham (2007): germinación, plántula, juvenil, prerreproductiva, inicio de floración (50 % de plantas con flor), plena floración, fin de floración (90 % sin flores), madurez fisiológica (~3/4 de cápsulas del tallo principal con semilla de color final) y secado; o BBCH general (Meier 2001). No hay escala BBCH propia del sésamo ni una escala adoptada oficialmente en Paraguay: declarar en la ficha cuál se usa.",
     "parcela": {
      "hileras": 4,
-     "dist": 0.6,
+     "dist": 0.5,
      "largo": 5,
      "util": 2
     },
-    "parcelaTxt": "4 hileras a 0,50–0,70 m × 5 m; útil: 2 centrales × 4 m (orientativo; no se pudo leer el anexo SENAVE de sésamo)",
-    "notas": "Humedad de comercialización no verificada: declarar la del acopiador/exportador. Rubro de agricultura familiar (San Pedro, Concepción, Canindeyú). Datos propios: dehiscencia (variedades dehiscentes e indehiscentes), cápsulas por planta, altura a la primera cápsula, color de grano, % aceite. Cosecha manual en emparvado: pesar grano limpio. Enfermedades: Macrophomina y Fusarium (marchitez), mancha angular/bacteriosis. Plagas: mosca blanca, Antigastra catalaunalis (no verificado como principal en Paraguay)."
+    "parcelaTxt": "Mínimo SENAVE (NOR-DPUV-120): 3 hileras a 0,50 m × 5 m con útil '2 hileras centrales'; como con 3 hileras no quedan 2 centrales con borde, usar 4 hileras a 0,50 m × 5 m y cosechar las 2 centrales. Bordes de 2–4 hileras; densidad válida ≥ 7 plantas por metro lineal; rendimiento ajustado al 13 % de humedad.",
+    "notas": "Humedad de comercialización: no se encontró norma paraguaya ni argentina; declarar en la ficha la humedad de recibo del acopiador o exportador y medir la humedad del grano en cada muestra. Rubro de agricultura familiar (San Pedro, Concepción, Canindeyú). Datos propios: dehiscencia (variedades dehiscentes e indehiscentes), cápsulas por planta, altura a la primera cápsula, color de grano, % aceite. Cosecha manual en emparvado: secar en parva (en un ensayo paraguayo, hasta ~13 % de humedad de las cápsulas), trillar y pesar grano limpio. Referencia de parcela en Paraguay: 4 hileras de 5 m a 0,70 m (14 m²), útil 2 hileras centrales × 3 m (4,2 m²) (Rabery Cáceres et al., 2020). Enfermedades: Macrophomina y Fusarium (marchitez), mancha angular/bacteriosis. Plagas: mosca blanca, Antigastra catalaunalis (no verificado como principal en Paraguay).",
+    "humedad": 13
    },
    {
     "n": "Chía",
@@ -366,8 +368,8 @@
      "largo": 5,
      "util": 2
     },
-    "parcelaTxt": "4 hileras a 0,45–0,70 m × 5 m; útil: 2 centrales × 4 m (orientativo)",
-    "notas": "Paraguay es exportador importante, pero no se encontraron normas de humedad ni protocolos SENAVE propios (no está en la Res. 414/2020). Día corto: la fecha de siembra define el ciclo y debe ir en la ficha. Datos propios: espigas por planta, largo de espiga, PMG (~1 g, usar 2 decimales), % aceite y omega-3, vuelco. Plagas y enfermedades poco documentadas en el país (no verificado)."
+    "parcelaTxt": "4–5 hileras a 0,45 m (hasta 0,70 m según sembradora) × 5 m; útil: 2–3 hileras centrales × 4 m. Referencia paraguaya: 5 hileras a 0,45 m × 5 m (10 m²), 20 plantas por metro, cosecha manual y trilla (Lezcano Aquino et al., 2024, Choré, San Pedro).",
+    "notas": "Paraguay es exportador importante, pero SENAVE no tiene norma mínima de ensayos para chía (no está en la Res. 414/2020 ni en las normas NOR-DPUV-100 a 129; para inscribir un cultivar hay que pedir a la DISE la norma, Art. 3° de la Res. 414/2020) y no se encontraron normas de humedad. Día corto: la fecha de siembra define el ciclo y debe ir en la ficha. Datos propios: espigas por planta, largo de espiga, PMG (~1 g, usar 2 decimales), % aceite y omega-3, vuelco. Plagas y enfermedades poco documentadas en el país (no verificado)."
    },
    {
     "n": "Algodón",
@@ -381,7 +383,8 @@
      "util": 2
     },
     "parcelaTxt": "4 hileras a 0,90 m × 10 m (mínimo SENAVE 4 × 10 m); útil: 2 centrales × 9 m",
-    "notas": "Rendimiento en algodón en bruto (en rama), sin corrección de humedad; fibra por desmote de una muestra (20 capullos/parcela según SENAVE). Densidad mínima válida SENAVE: 7 pl/m lineal. Ciclos SENAVE: precoz, medio, tardío. Variables propias: capullos por planta, peso de capullo, % de fibra, calidad HVI. Plagas: picudo (Anthonomus grandis), Helicoverpa/Heliothis, Spodoptera, mosca blanca, pulgón (vector de enfermedad azul), ácaros. Enfermedades: ramularia (Ramularia areola), mancha angular."
+    "notas": "Rendimiento en algodón en bruto (en rama), sin corrección de humedad; fibra por desmote de una muestra (20 capullos/parcela según SENAVE). Densidad mínima válida SENAVE: 7 pl/m lineal. Ciclos SENAVE: precoz, medio, tardío. Variables propias: capullos por planta, peso de capullo, % de fibra, calidad HVI. Plagas: picudo (Anthonomus grandis), Helicoverpa/Heliothis, Spodoptera, mosca blanca, pulgón (vector de enfermedad azul), ácaros. Enfermedades: ramularia (Ramularia areola), mancha angular.",
+    "humedad": 12
    },
    {
     "n": "Sorgo",
@@ -424,7 +427,7 @@
      "util": 2
     },
     "parcelaTxt": "4 hileras a 0,45–0,50 m × 5 m; útil: 2 centrales × 4 m",
-    "notas": "Nuevo. SENAVE tiene norma propia NOR-DPUV-119 (no se pudo abrir en esta revisión: base de humedad 13 % no verificada). Rubro de agricultura familiar (poroto y kumanda/caupí). Variables: vainas por planta, granos por vaina, peso de 100 granos, hábito de crecimiento. Enfermedades: antracnosis, mancha angular, bacteriosis, virus del mosaico dorado (mosca blanca).",
+    "notas": "Nuevo. La norma SENAVE NOR-DPUV-119 ('poroto') está escrita para Vigna unguiculata (kumanda/caupí): mínimo 4 hileras × 5 m, útil 2 centrales, densidad válida ≥ 7 pl/m lineal, siembra agosto–febrero (Oriental), ≥ 3 zonas × 2 años; pide rendimiento, días a floración plena y a madurez, acame, dehiscencia, peso de 100 semillas y altura. No fija humedad de corrección: usar 13 % por defecto y declararla. Rubro de agricultura familiar (poroto Phaseolus y kumanda). Variables propias: vainas por planta, granos por vaina, hábito de crecimiento. Enfermedades: antracnosis, mancha angular, bacteriosis, virus del mosaico dorado (mosca blanca).",
     "humedad": 13
    },
    {
@@ -439,7 +442,8 @@
      "util": 2
     },
     "parcelaTxt": "4 hileras a 0,45–0,70 m × 5 m; útil: 2 centrales × 4 m (arrancado manual)",
-    "notas": "Nuevo; está en la Res. 414/2020. Rendimiento en vaina y en grano (relación grano/vaina); humedad base no verificada. Enfermedades: viruela/mancha de la hoja (Cercospora arachidicola, Nothopassalora personata), Sclerotium. Plagas: trips, gusanos de suelo."
+    "notas": "Nuevo; norma SENAVE NOR-DPUV-113 (ex anexo de la Res. 414/2020): mínimo 4 hileras × 5 m, útil 2 centrales, densidad válida ≥ 7 pl/m lineal, siembra setiembre–febrero (Oriental); pide peso de 100 semillas y % de aceite y proteína (candidata y 2 testigos en 3 localidades por año). La norma no dice si el rendimiento es en vaina o en grano ni fija humedad base: registrar ambos (relación grano/vaina) y declarar la humedad. Enfermedades: viruela/mancha de la hoja (Cercospora arachidicola, Nothopassalora personata), roya (Puccinia arachidis), Sclerotium rolfsii, Rhizoctonia, Fusarium, nematodos (Meloidogyne). Plagas: trips, gusanos de suelo. Humedad base por defecto: 9 % (referencia regional: norma de comercialización argentina de maní; no hay norma paraguaya). Cambiala en la ficha si el acopiador usa otra.",
+    "humedad": 9
    },
    {
     "n": "Mandioca",
@@ -452,7 +456,7 @@
      "largo": 6,
      "util": 2
     },
-    "parcelaTxt": "4 hileras a 1,0 m × 6 plantas a 1,0 m (24 m²); útil: 2 hileras centrales sin la primera y última planta (8 plantas) (orientativo)",
+    "parcelaTxt": "4–6 hileras × 5–6 m, entre hileras 0,80–1,0 m y entre plantas 0,70–1,0 m (unos 24 m²); útil: 2 hileras centrales sin la primera y la última planta (o sin 0,70 m de cabecera). Referencia paraguaya: 6 hileras de 5 m a 0,80 × 0,70 m (24 m², 17.857 pl/ha), útil 2 hileras centrales (8,64 m²), 10 plantas evaluadas (Venialgo Chávez et al., UNI, Itapúa).",
     "notas": "Nuevo; está en la Res. 414/2020 (anexo no leído). Rendimiento de raíces frescas (t/ha) y % de materia seca o almidón (método de la balanza hidrostática); cosecha a 8–12 meses. Usa estacas, no semilla: la ficha debe pedir largo de estaca y origen. Muy cultivada en todo el país."
    },
    {
@@ -714,10 +718,10 @@
     ],
     "testigos": "Testigo sin aplicar + producto de referencia registrado en SENAVE para ese cultivo y enfermedad",
     "trat": "Testigo sin aplicar\nReferencia registrada\nProducto a dosis baja\nProducto a dosis de etiqueta\nProducto a dosis doble (fitotoxicidad)",
-    "bloques_min": 4,
+    "bloques_min": 5,
     "momentos": "0 DAA (antes de la 1.ª aplicación) y cada 7 días (tizón tardío cada 5–7) hasta 14–21 días después de la última; fitotoxicidad a 3, 7 y 14 DAA; cosechas.",
     "analisis": "ANAVA + Tukey por fecha; AACPE; % de control de Abbott sobre severidad o AACPE respecto del testigo.",
-    "normativa": "Ley 3742/09: ensayista registrado (A.10) y registro experimental (D.1); protocolo patrón Res. MAG 296/03 (texto no consultado). Guías: EPPO PP1/152 y PP1/181 y las normas por patógeno (PP1/002 tizón tardío, PP1/263 Alternaria, PP1/057 oídio, PP1/065 mildiu, PP1/054 y PP1/016 Botrytis).",
+    "normativa": "Ley 3742/09: ensayista registrado (A.10) y registro experimental (D.1); protocolo patrón Res. MAG 296/03: ≥ 5 repeticiones con ≥ 12 gl del error, 3 zonas agroecológicas × 2 años, testigo sin tratar + fungicida de referencia registrado, al menos 3 dosis (baja, recomendada y alta), 1.ª evaluación antes de la 1.ª aplicación. Guías: EPPO PP1/152 y PP1/181 y las normas por patógeno (PP1/002 tizón tardío, PP1/263 Alternaria, PP1/057 oídio, PP1/065 mildiu, PP1/054 y PP1/016 Botrytis).",
     "fuente": "EPPO PP1 (lista de normas): https://pp1.eppo.int/standards/all"
    },
    {
@@ -736,10 +740,10 @@
     ],
     "testigos": "Testigo sin aplicar + insecticida o acaricida de referencia registrado en SENAVE",
     "trat": "Testigo sin aplicar\nReferencia registrada\nProducto dosis baja\nProducto dosis de etiqueta\nProducto dosis alta",
-    "bloques_min": 4,
+    "bloques_min": 5,
     "momentos": "Precuento (0 DAA) y 3, 7 y 14 días después de cada aplicación (ácaros también 21); frutos dañados en cada cosecha.",
     "analisis": "Conteos con √(x + 0,5) o modelo de Poisson; ANAVA + Tukey por fecha; % de control de Henderson-Tilton si el precuento difiere entre parcelas, Abbott si es homogéneo.",
-    "normativa": "Ley 3742/09 y Res. MAG 296/03 (no consultada). Guías EPPO: PP1/036 mosca blanca, PP1/275 Tuta absoluta, PP1/085 trips, PP1/037 arañuela, PP1/300 pulgones en solanáceas y cucurbitáceas, PP1/339 Spodoptera.",
+    "normativa": "Ley 3742/09 y Res. MAG 296/03 (Protocolo Patrón): ≥ 5 repeticiones con ≥ 12 gl del error, 3 zonas agroecológicas × 2 años, testigo sin tratar + producto de referencia registrado, al menos 3 dosis (baja, recomendada y alta), conteo previo a la 1.ª aplicación. Guías EPPO: PP1/036 mosca blanca, PP1/275 Tuta absoluta, PP1/085 trips, PP1/037 arañuela, PP1/300 pulgones en solanáceas y cucurbitáceas, PP1/339 Spodoptera.",
     "fuente": "EPPO PP1 (lista de normas): https://pp1.eppo.int/standards/all; Cáceres S., INTA EEA Bella Vista, Guía de identificación y manejo de plagas del tomate: https://repositorio.inta.gob.ar/xmlui/bitstream/handle/20.500.12123/8591/INTA_EEABellaVista_Libros_CaceresS_GuiaIdentificaci%C3%B3nManejoPlagasTomate.pdf"
    },
    {
@@ -755,10 +759,10 @@
     ],
     "testigos": "Testigo enmalezado + testigo carpido (limpio a mano) + herbicida de referencia registrado",
     "trat": "Testigo enmalezado\nTestigo carpido\nReferencia\nHerbicida dosis 1\nHerbicida dosis 2",
-    "bloques_min": 4,
+    "bloques_min": 5,
     "momentos": "Antes de aplicar; 15, 30 y 45 días después de la aplicación; cosecha.",
     "analisis": "ANAVA + Tukey; % de control respecto del enmalezado; rendimiento relativo al carpido.",
-    "normativa": "Ley 3742/09 y Res. MAG 296/03 (no consultada).",
+    "normativa": "Ley 3742/09 y Res. MAG 296/03 (Protocolo Patrón): ≥ 5 repeticiones con ≥ 12 gl del error, 3 zonas agroecológicas × 2 años, testigo sin tratar + herbicida de referencia registrado, al menos 3 dosis (baja, recomendada y alta) y prueba de selectividad con más de una dosis (fitotoxicidad en escala EWRS 1–9).",
     "fuente": "ABC Rural, Investigaciones en cebolla de bulbo (IPTA): https://www.abc.com.py/edicion-impresa/suplementos/abc-rural/investigaciones-en-cebolla-de-bulbo---ing-agr-edgar-salinas--1540416.html",
     "cultivos": [
      "Cebolla",
@@ -785,7 +789,7 @@
     ],
     "testigos": "Testigo sin tratar + nematicida de referencia registrado",
     "trat": "Testigo\nReferencia\nProducto A\nProducto B (biológico)",
-    "bloques_min": 4,
+    "bloques_min": 5,
     "momentos": "Muestreo de suelo antes (Pi) y al final (Pf); índice de agallas al final del ciclo; cosechas.",
     "analisis": "ANAVA + Tukey; índice de agallas con Kruskal-Wallis si no hay normalidad; factor de reproducción FR = Pf / Pi.",
     "normativa": "Ley 3742/09; guías EPPO PP1/321 (a campo) y PP1/322 (hortalizas de fruto bajo cubierta).",
@@ -1037,7 +1041,7 @@
      "bordeP": 1
     },
     "parcelaTxt": "Invernadero: 1 hilera de 12 plantas a 0,40 m (≈ 5 m), hileras a 1,0–1,2 m; útiles: 10 plantas centrales (1 planta de borde en cada extremo). A campo: 2 hileras × 6 m; útil: 1 hilera sin la primera y la última planta.",
-    "notas": "Mediciones propias: rendimiento total y comercial por cosechas, frutos por planta, peso medio, diámetro → calibre Res. GMC 26/17 (1: < 35 mm solo cherry; 2: 35–< 50; 3: 50–< 70; 4: 70–< 100; 5: ≥ 100 mm), descarte por causa, °Brix, acidez, firmeza, días a 1.ª cosecha. Criterio de cosecha a declarar (color: verde maduro, pintón, rojo). Enfermedades clave: tizón tardío (Phytophthora infestans), tizón temprano (Alternaria spp.), mancha bacteriana (Xanthomonas), marchitez bacteriana (Ralstonia), virosis por begomovirus (mosca blanca) y tospovirus (trips), oídio (Leveillula/Oidium) en invernadero. Plagas: polilla del tomate (Tuta absoluta), mosca blanca (Bemisia tabaci), trips, ácaro del bronceado (Aculops lycopersici), arañuela (Tetranychus urticae), perforador del fruto (Neoleucinodes elegantalis), Helicoverpa; nematodos de agallas (Meloidogyne). Registro: incluido en Res. SENAVE 414/2020 (anexo de tomate no consultado: verificar parcela y variables exigidas). Parcela (orientativo: no verificado con una norma paraguaya; ajustar al sistema del productor)."
+    "notas": "Mediciones propias: rendimiento total y comercial por cosechas, frutos por planta, peso medio, diámetro → calibre Res. GMC 26/17 (1: < 35 mm solo cherry; 2: 35–< 50; 3: 50–< 70; 4: 70–< 100; 5: ≥ 100 mm), descarte por causa, °Brix, acidez, firmeza, días a 1.ª cosecha. Criterio de cosecha a declarar (color: verde maduro, pintón, rojo). Enfermedades clave: tizón tardío (Phytophthora infestans), tizón temprano (Alternaria spp.), mancha bacteriana (Xanthomonas), marchitez bacteriana (Ralstonia), virosis por begomovirus (mosca blanca) y tospovirus (trips), oídio (Leveillula/Oidium) en invernadero. Plagas: polilla del tomate (Tuta absoluta), mosca blanca (Bemisia tabaci), trips, ácaro del bronceado (Aculops lycopersici), arañuela (Tetranychus urticae), perforador del fruto (Neoleucinodes elegantalis), Helicoverpa; nematodos de agallas (Meloidogyne). Registro: incluido en Res. SENAVE 414/2020 (anexo de tomate no consultado: verificar parcela y variables exigidas). Parcela (orientativo: no se encontró una norma ni un ensayo paraguayo publicado con la parcela de este cultivo; ajustar al sistema del productor)."
    },
    {
     "n": "Locote",
@@ -1053,7 +1057,7 @@
      "bordeP": 1
     },
     "parcelaTxt": "1 hilera de 12 plantas a 0,40 m, hileras a 1,0 m; útiles: 10 plantas centrales.",
-    "notas": "Igual que tomate más espesor de pericarpio y color a cosecha (verde o rojo, declarar). Sin norma MERCOSUR de calibre consultada: usar peso medio y diámetro. Enfermedades: Phytophthora capsici (podredumbre de cuello), antracnosis (Colletotrichum), mancha bacteriana, virosis (tospovirus, potyvirus), oídio (Leveillula taurica). Plagas: trips, ácaro blanco (Polyphagotarsonemus latus), pulgones, mosca blanca, perforadores de fruto; nematodos. IPTA presentó en 2025–2026 un locote/morrón nacional. Parcela (orientativo: no verificado con una norma paraguaya; ajustar al sistema del productor)."
+    "notas": "Igual que tomate más espesor de pericarpio y color a cosecha (verde o rojo, declarar). Sin norma MERCOSUR de calibre consultada: usar peso medio y diámetro. Enfermedades: Phytophthora capsici (podredumbre de cuello), antracnosis (Colletotrichum), mancha bacteriana, virosis (tospovirus, potyvirus), oídio (Leveillula taurica). Plagas: trips, ácaro blanco (Polyphagotarsonemus latus), pulgones, mosca blanca, perforadores de fruto; nematodos. IPTA presentó en 2025–2026 un locote/morrón nacional. Parcela de referencia en Paraguay (a campo, UNC, Horqueta): 5 hileras de 4,5 m a 1,0 m, plantas a 0,60–0,80 m, evaluando 7 plantas por unidad (Leguizamón Resquín et al., 2023). En invernadero, 1 hilera de 12 plantas a 0,40 m con 10 útiles (orientativo, no verificado). Ajustar al sistema del productor."
    },
    {
     "n": "Lechuga",
@@ -1069,7 +1073,7 @@
      "bordeP": 1
     },
     "parcelaTxt": "Cantero de 1,2 m con 4 hileras a 0,30 m y plantas a 0,30 m, 3 m de largo; útiles: 2 hileras centrales sin 0,5 m en cada extremo (≈ 14 plantas).",
-    "notas": "Mediciones propias: peso fresco de cabeza (como se vende), % comercial, espigado, tipburn (quemado de bordes). No aplican frutos, °Brix, firmeza ni calibre de fruto. Enfermedades: mildiu (Bremia lactucae), Septoria, podredumbres (Sclerotinia, Rhizoctonia), tospovirus. Plagas: pulgones, trips, lagartas, minador. En verano paraguayo es clave el espigado y el tipburn. Parcela (orientativo: no verificado con una norma paraguaya; ajustar al sistema del productor)."
+    "notas": "Mediciones propias: peso fresco de cabeza (como se vende), % comercial, espigado, tipburn (quemado de bordes). No aplican frutos, °Brix, firmeza ni calibre de fruto. Enfermedades: mildiu (Bremia lactucae), Septoria, podredumbres (Sclerotinia, Rhizoctonia), tospovirus. Plagas: pulgones, trips, lagartas, minador. En verano paraguayo es clave el espigado y el tipburn. Parcela de referencia en Paraguay (lechuga americana): cantero de 1,20 m con 4 hileras de 7–8 plantas a 0,35 × 0,35 m, evaluando 6 plantas de las hileras centrales, 4 repeticiones (Enciso-Garay et al., 2019). Ajustar el marco al tipo de lechuga y al sistema del productor."
    },
    {
     "n": "Repollo",
@@ -1085,7 +1089,7 @@
      "bordeP": 1
     },
     "parcelaTxt": "4 hileras a 0,60 m × 5 m, plantas a 0,40 m; útiles: 2 hileras centrales sin la primera y la última planta (≈ 20 plantas).",
-    "notas": "Peso de cabeza, % comercial, cabezas rajadas (en descarte), tipburn interno, espigado. Plagas clave: polilla de las crucíferas (Plutella xylostella), pulgones, lagartas; enfermedades: podredumbre negra (Xanthomonas campestris), alternaria. Parcela (orientativo: no verificado con una norma paraguaya; ajustar al sistema del productor)."
+    "notas": "Peso de cabeza, % comercial, cabezas rajadas (en descarte), tipburn interno, espigado. Plagas clave: polilla de las crucíferas (Plutella xylostella), pulgones, lagartas; enfermedades: podredumbre negra (Xanthomonas campestris), alternaria. Parcela (orientativo: no se encontró una norma ni un ensayo paraguayo publicado con la parcela de este cultivo; ajustar al sistema del productor)."
    },
    {
     "n": "Cebolla",
@@ -1117,7 +1121,7 @@
      "bordeP": 1
     },
     "parcelaTxt": "Cantero de 1 m con 5 hileras a 0,20 m, raleo a 5 cm, 4 m de largo; muestreo: 2 tramos de 1 m en hileras centrales (sin 0,5 m de cabecera).",
-    "notas": "Peso y longitud de raíz, diámetro de hombro, % comerciales, rajadas, bifurcadas, hombro verde; espigado. Enfermedades: tizón foliar (Alternaria dauci, Cercospora carotae); nematodos de agallas (bifurcación). Herbicidas de preemergencia frecuentes. Parcela (orientativo: no verificado con una norma paraguaya; ajustar al sistema del productor)."
+    "notas": "Peso y longitud de raíz, diámetro de hombro, % comerciales, rajadas, bifurcadas, hombro verde; espigado. Enfermedades: tizón foliar (Alternaria dauci, Cercospora carotae); nematodos de agallas (bifurcación). Herbicidas de preemergencia frecuentes. Parcela de referencia en Paraguay (UNC, Concepción): cantero de 1 m de ancho y 20 cm de alto, 4 hileras a 0,20 m, raleo a ~5 cm (20 plantas por metro); muestreo en las 2 hileras centrales (10 plantas). Para rendimiento conviene un cantero más largo (p. ej., 4 m) y cosechar 2 tramos de 1 m en las hileras centrales; ajustar al sistema del productor."
    },
    {
     "n": "Papa",
@@ -1132,8 +1136,8 @@
      "util": 2,
      "bordeP": 1
     },
-    "parcelaTxt": "4 hileras a 0,80 m × 5 m, plantas a 0,30 m; útil: 2 hileras centrales × 4 m (≈ 26 plantas).",
-    "notas": "Tubérculos por planta, rendimiento total y comercial, distribución por calibre de diámetro (referencia CEAGESP: < 34 mm 2.ª; 34–42 mm 1.ª; 43–70 mm especial; > 70 mm), defectos (verdeo, rajado, podredumbre). Enfermedades: tizón tardío (Phytophthora infestans; severidad de follaje y AACPE), tizón temprano (Alternaria), virosis. Plagas: vaquita (Diabrotica), pulguilla, polilla de la papa. Registro: incluida en Res. SENAVE 414/2020 (anexo no consultado). Parcela (orientativo: no verificado con una norma paraguaya; ajustar al sistema del productor)."
+    "parcelaTxt": "4 hileras a 0,90 m × 5 m, plantas a 0,40 m (marco de la norma SENAVE NOR-DPUV-118 para inscribir cultivares); útil: 2 hileras centrales × 4 m (≈ 20 plantas). En ensayos de manejo puede usarse el marco del productor (p. ej., 0,80 × 0,30 m).",
+    "notas": "Tubérculos por planta, rendimiento total y comercial, distribución por calibre de diámetro (referencia CEAGESP: < 34 mm 2.ª; 34–42 mm 1.ª; 43–70 mm especial; > 70 mm), defectos (verdeo, rajado, podredumbre). Enfermedades: tizón tardío (Phytophthora infestans; severidad de follaje y AACPE), tizón temprano (Alternaria), virosis. Plagas: vaquita (Diabrotica), pulguilla, polilla de la papa. Registro: incluida en Res. SENAVE 414/2020 (anexo no consultado). Parcela (orientativo: no se encontró una norma ni un ensayo paraguayo publicado con la parcela de este cultivo; ajustar al sistema del productor)."
    },
    {
     "n": "Batata",
@@ -1149,7 +1153,7 @@
      "bordeP": 1
     },
     "parcelaTxt": "4 hileras (camellones) a 0,90 m × 5 m, guías a 0,30 m; útil: 2 hileras centrales × 4 m.",
-    "notas": "Raíces comerciales por planta, rendimiento comercial, peso medio de raíz, defectos (rajadas, daño de insectos de suelo como Diabrotica y gorgojo). Parcela (orientativo: no verificado con una norma paraguaya; ajustar al sistema del productor)."
+    "notas": "Raíces comerciales por planta, rendimiento comercial, peso medio de raíz, defectos (rajadas, daño de insectos de suelo como Diabrotica y gorgojo). Parcela de referencia en Paraguay (FCA-UNA, San Lorenzo): 10 plantas por unidad, 1,0 m entre hileras × 0,30 m entre plantas, evaluando las 6 plantas centrales, con 3 repeticiones. Para ensayos agronómicos se puede usar 4 hileras × 5 m y 2 hileras útiles (orientativo); ajustar al sistema del productor."
    },
    {
     "n": "Mandioca de mesa",
@@ -1159,13 +1163,13 @@
     "parcela": {
      "hileras": 4,
      "entre": 1.0,
-     "largo": 6,
+     "largo": 10,
      "sobre": 0.9,
      "util": 2,
      "bordeP": 1
     },
-    "parcelaTxt": "4 hileras a 1,0 m × 6 m, plantas a 0,80–1,0 m; útil: 2 hileras centrales sin la primera y la última planta.",
-    "notas": "Raíces comerciales por planta, rendimiento de raíz fresca, % de raíces comerciales; calidad culinaria (tiempo de cocción) como medición propia si se pide. Incluida en Res. SENAVE 414/2020 y con variedades IPTA inscriptas en enero de 2026. Coordinar con el rubro agrícola para que no se duplique (si el uso es industrial va en agrícola). Parcela (orientativo: no verificado con una norma paraguaya; ajustar al sistema del productor)."
+    "parcelaTxt": "4 hileras a 1,0 m × 10 m (mínimo SENAVE NOR-DPUV-112), plantas a 0,70–1,0 m; útil: 2 hileras centrales sin la primera y la última planta. Para ensayos fuera del registro se puede acortar a 6 m.",
+    "notas": "Raíces comerciales por planta, rendimiento de raíz fresca, % de raíces comerciales; calidad culinaria (tiempo de cocción) como medición propia si se pide. Norma SENAVE NOR-DPUV-112 (ex anexo de la Res. 414/2020) para inscribir cultivares: mínimo 4 hileras × 10 m, útil 2 hileras centrales, 0,70–1 m entre plantas (11 000–17 000 pl/ha), plantación junio–setiembre (Oriental), ≥ 3 zonas × 2 años; pide productividad, ciclo, sanidad y valor nutricional (% carbohidratos, % agua, kcal, % Ca, % P, % porción no comestible). Variedades IPTA inscriptas en enero de 2026. Coordinar con el rubro agrícola para que no se duplique (si el uso es industrial va en agrícola). Fuera del registro, la parcela puede ajustarse al sistema del productor."
    },
    {
     "n": "Frutilla",
@@ -1197,7 +1201,7 @@
      "bordeP": 1
     },
     "parcelaTxt": "3 hileras a 2,0 m × 6 m, plantas a 0,6 m; útil: hilera central sin la primera y la última planta (≈ 8 plantas).",
-    "notas": "Frutos por planta, peso de fruto (kg), °Brix en el centro de la pulpa en la sección ecuatorial (referencia UE: ≥ 8 °Brix; ≥ 10 en Charentais), espesor de pulpa, forma, rendimiento comercial. Enfermedades: oídio, mildiu (Pseudoperonospora cubensis), cancro gomoso (Didymella bryoniae), virosis (potyvirus, begomovirus). Plagas: mosca blanca, pulgón, trips, minador, barrenador del fruto (Diaphania). Incluido en Res. SENAVE 414/2020; IPTA inscribió un melón nacional en 2026. Necesita polinizadores: anotar colmenas. Parcela (orientativo: no verificado con una norma paraguaya; ajustar al sistema del productor)."
+    "notas": "Frutos por planta, peso de fruto (kg), °Brix en el centro de la pulpa en la sección ecuatorial (referencia UE: ≥ 8 °Brix; ≥ 10 en Charentais), espesor de pulpa, forma, rendimiento comercial. Enfermedades: oídio, mildiu (Pseudoperonospora cubensis), cancro gomoso (Didymella bryoniae), virosis (potyvirus, begomovirus). Plagas: mosca blanca, pulgón, trips, minador, barrenador del fruto (Diaphania). Incluido en Res. SENAVE 414/2020; IPTA inscribió un melón nacional en 2026. Necesita polinizadores: anotar colmenas. Parcela (orientativo: no se encontró una norma ni un ensayo paraguayo publicado con la parcela de este cultivo; ajustar al sistema del productor)."
    },
    {
     "n": "Sandía",
@@ -1213,7 +1217,7 @@
      "bordeP": 1
     },
     "parcelaTxt": "3 hileras a 2,5–3,0 m × 8 m, plantas a 1,0 m; útil: hilera central sin la primera y la última planta (≈ 6 plantas; preferir más largo si hay pocos frutos).",
-    "notas": "Peso de fruto (kg), frutos por planta, °Brix en el centro y cerca de la cáscara, espesor de cáscara, corazón hueco y descarte. Enfermedades: antracnosis, cancro gomoso, oídio, mildiu, fusariosis, virosis. Plagas: pulgón, trips, ácaros, mosca blanca. Parcela (orientativo: no verificado con una norma paraguaya; ajustar al sistema del productor)."
+    "notas": "Peso de fruto (kg), frutos por planta, °Brix en el centro y cerca de la cáscara, espesor de cáscara, corazón hueco y descarte. Enfermedades: antracnosis, cancro gomoso, oídio, mildiu, fusariosis, virosis. Plagas: pulgón, trips, ácaros, mosca blanca. Parcela (orientativo: no se encontró una norma ni un ensayo paraguayo publicado con la parcela de este cultivo; ajustar al sistema del productor)."
    },
    {
     "n": "Zapallo / zapallito",
@@ -1229,7 +1233,7 @@
      "bordeP": 1
     },
     "parcelaTxt": "3 hileras a 1,5 m × 6 m, plantas a 0,8 m; útil: hilera central sin extremos.",
-    "notas": "Zapallito: cosechas frecuentes, frutos por planta y peso medio; zapallo: peso de fruto y °Brix. Oídio, virosis (mosaicos), mosca blanca, pulgones. Parcela (orientativo: no verificado con una norma paraguaya; ajustar al sistema del productor)."
+    "notas": "Zapallito: cosechas frecuentes, frutos por planta y peso medio; zapallo: peso de fruto y °Brix. Oídio, virosis (mosaicos), mosca blanca, pulgones. Parcela de referencia regional para zapallo de guía (anco; INTA Anguil): hileras a 2 m y plantas a 1 m, 10 plantas por parcela con las 8 centrales útiles y 4 repeticiones. Zapallito de tronco: marco más cerrado (p. ej., 1,5 × 0,8 m; orientativo, no verificado). Ajustar al sistema del productor."
    },
    {
     "n": "Pepino",
@@ -1245,7 +1249,7 @@
      "bordeP": 1
     },
     "parcelaTxt": "Tutorado: 1 hilera de 12 plantas a 0,40 m, hileras a 1,0–1,2 m; útiles: 10 plantas centrales.",
-    "notas": "Cosechas frecuentes: frutos por planta, peso medio, longitud y diámetro, descarte (curvos, deformes). Enfermedades: oídio, mildiu, mancha diana (Corynespora cassiicola), virosis. Plagas: mosca blanca, trips, ácaros. Parcela (orientativo: no verificado con una norma paraguaya; ajustar al sistema del productor)."
+    "notas": "Cosechas frecuentes: frutos por planta, peso medio, longitud y diámetro, descarte (curvos, deformes). Enfermedades: oídio, mildiu, mancha diana (Corynespora cassiicola), virosis. Plagas: mosca blanca, trips, ácaros. Parcela (orientativo: no se encontró una norma ni un ensayo paraguayo publicado con la parcela de este cultivo; ajustar al sistema del productor)."
    },
    {
     "n": "Cítricos",
@@ -1261,7 +1265,7 @@
      "bordeP": 1
     },
     "parcelaTxt": "Marco 6–7 m × 3–4 m; parcela de 3–5 árboles útiles en la hilera con 1 árbol de borde a cada lado (o hileras de borde entre tratamientos si hay deriva).",
-    "notas": "Ensayos plurianuales: kg/árbol, frutos/árbol, diámetro de fruto, °Brix, acidez, ratio (SST/AT), % de jugo. Enfermedades y plagas: HLB y su vector Diaphorina citri (incidencia, verificar estado oficial con SENAVE), cancro cítrico, sarna, mancha negra; ácaros, minador. Portainjertos como tipo de ensayo. Parcela (orientativo: no verificado con una norma paraguaya; ajustar al sistema del productor)."
+    "notas": "Ensayos plurianuales: kg/árbol, frutos/árbol, diámetro de fruto, °Brix, acidez, ratio (SST/AT), % de jugo. Enfermedades y plagas: HLB y su vector Diaphorina citri (incidencia, verificar estado oficial con SENAVE), cancro cítrico, sarna, mancha negra; ácaros, minador. Portainjertos como tipo de ensayo. Parcela orientativa: SENAVE no tiene norma mínima de ensayos para cítricos (no están en la Res. 414/2020 ni en las normas NOR-DPUV); ajustar al sistema del productor."
    },
    {
     "n": "Banana",
@@ -1277,7 +1281,7 @@
      "bordeP": 1
     },
     "parcelaTxt": "Marco 3 × 2 m (o 2,5 × 2,5 m); 6–10 plantas útiles por parcela con plantas de borde.",
-    "notas": "Peso del racimo (se carga en peso de fruto, en g o pasar a kg), número de manos, dedos por racimo, largo del dedo; ciclo. Enfermedades: Sigatoka (severidad por hoja), mal de Panamá (Fusarium; incidencia). Plagas: picudo negro (Cosmopolites sordidus). Parcela (orientativo: no verificado con una norma paraguaya; ajustar al sistema del productor)."
+    "notas": "Peso del racimo (se carga en peso de fruto, en g o pasar a kg), número de manos, dedos por racimo, largo del dedo; ciclo. Enfermedades: Sigatoka (severidad por hoja), mal de Panamá (Fusarium; incidencia). Plagas: picudo negro (Cosmopolites sordidus). Parcela de referencia (Embrapa): marco de 3 × 2 m con 6 plantas (matas) por parcela y 5 repeticiones; si hay lugar, usar plantas de borde entre parcelas. No se encontró un ensayo paraguayo publicado; ajustar al sistema del productor."
    },
    {
     "n": "Piña",
@@ -1293,7 +1297,7 @@
      "bordeP": 1
     },
     "parcelaTxt": "Camellón de doble hilera (0,40 m entre hileras, 0,30 m entre plantas, 0,90 m entre camellones), 5 m de largo; útil: centro del camellón sin 0,5 m de cada extremo.",
-    "notas": "Un fruto por planta: peso de fruto (con y sin corona), °Brix, acidez, % de frutos comerciales, % de plantas que respondieron a la inducción. Enfermedades/plagas: fusariosis, cochinilla harinosa y marchitez asociada. Parcela (orientativo: no verificado con una norma paraguaya; ajustar al sistema del productor)."
+    "notas": "Un fruto por planta: peso de fruto (con y sin corona), °Brix, acidez, % de frutos comerciales, % de plantas que respondieron a la inducción. Enfermedades/plagas: fusariosis, cochinilla harinosa y marchitez asociada. Densidad usual en Paraguay: 28.000–30.000 plantas/ha (IPTA); el marco de doble hilera a 0,40 × 0,30 m con camellones a 0,90 m da unas 51.000 plantas/ha, así que declarar el marco y la densidad reales en la ficha. Parcela orientativa: un camellón de doble hilera de 5 m, útil el centro sin 0,5 m de cada extremo (no se encontró un ensayo paraguayo publicado)."
    },
    {
     "n": "Mburucuyá",
@@ -1309,7 +1313,7 @@
      "bordeP": 1
     },
     "parcelaTxt": "Espaldera, hileras a 2,5–3,0 m y plantas a 3–4 m; 3–4 plantas útiles por parcela con plantas de borde.",
-    "notas": "Frutos por planta, peso de fruto, % de jugo (pulpa), °Brix, acidez. Enfermedades: virosis (endurecimiento del fruto), bacteriosis (Xanthomonas), antracnosis, Fusarium. Polinización por abejorros (Xylocopa). Parcela (orientativo: no verificado con una norma paraguaya; ajustar al sistema del productor)."
+    "notas": "Frutos por planta, peso de fruto, % de jugo (pulpa), °Brix, acidez. Enfermedades: virosis (endurecimiento del fruto), bacteriosis (Xanthomonas), antracnosis, Fusarium. Polinización por abejorros (Xylocopa). Parcela de referencia (Brasil): espaldera vertical con alambres a 1,2 y 1,8 m, hileras a 2,5 m, 4 plantas centrales útiles con plantas de borde (16 plantas por parcela en el ensayo de espaciamiento de Ritzinger et al., 1987). No se encontró un ensayo paraguayo publicado; ajustar al sistema del productor."
    }
   ],
   "ficha": [
@@ -1491,7 +1495,7 @@
    },
    {
     "n": "Grados-día",
-    "formula": "GD = Σ [(Tmáx + Tmín) ÷ 2 − Tbase], con Tbase 10 °C para tomate (valor habitual, no verificado)",
+    "formula": "GD = Σ [(Tmáx + Tmín) ÷ 2 − Tbase], con Tbase 10 °C para tomate (si el promedio diario es menor que Tbase, se suma 0). Umbral máximo de referencia del tomate: 30 °C.",
     "por_que": "Compara ciclos entre invernadero y campo o entre épocas."
    }
   ]
@@ -1530,7 +1534,7 @@
     "bloques_min": 4,
     "momentos": "Sobrevivencia a 30–90 días; 6 y 12 meses (altura, DAC, sanidad); 24 meses y luego anual (DAP, altura, forma, G, V, IMA) hasta el turno; densidad de madera pre-raleo o turno",
     "analisis": "ANAVA por edad sobre medias de parcela + Tukey; volumen/ha con covarianza por árboles vivos; en selección clonal: REML/BLUP y repetibilidad (H² = σ²clon / (σ²clon + σ²e)); análisis conjunto de sitios para interacción clon × ambiente",
-    "normativa": "Plantación inscripta en el Registro Público Forestal del INFONA (Ley 3464/08) si se acoge a beneficios de la Ley 536/95. Registro de clones en el RNCC (Ley 385/94): no verificado para especies forestales (la Res. SENAVE 414/2020 no incluye especies forestales)",
+    "normativa": "Plantación inscripta en el Registro Público Forestal del INFONA (Ley 3464/08) si se acoge a beneficios de la Ley 536/95. Los clones forestales se pueden inscribir en el RNCC del SENAVE (Ley 385/94; Res. SENAVE 972/2014; procedimiento PRO-DPUV-101), sin obligación de presentar ensayos de evaluación agronómica (las especies forestales están exceptuadas y no tienen norma mínima en la Res. 414/2020); un clon nuevo puede además protegerse en el RNCP (título de obtentor). Ya hay eucaliptos inscriptos (E. grandis y clones Eucalyptus sp.).",
     "fuente": "https://agrocienciauruguay.uy/index.php/agrociencia/article/view/1275",
     "cultivos": [
      "Eucalyptus grandis",
@@ -1678,10 +1682,10 @@
     ],
     "testigos": "Nidos sin tratar (testigo) + formicida de referencia registrado",
     "trat": "Testigo sin tratar\nCebo de referencia\nProducto a dosis baja\nProducto a dosis recomendada\nProducto a dosis alta",
-    "bloques_min": 4,
+    "bloques_min": 5,
     "momentos": "Actividad de nidos a 3, 30, 90 y 150 días de la aplicación; plantas atacadas en cada recorrida de sobrevivencia",
     "analisis": "% de nidos inactivos (eficiencia) por tratamiento; corrección de Abbott con nidos testigo; GLM binomial o χ²; dosis por m² de tierra suelta",
-    "normativa": "Formicidas: registro SENAVE (Ley 3742/09); ensayos con fines de registro por ensayista habilitado (cat. A.10)",
+    "normativa": "Formicidas: registro SENAVE (Ley 3742/09); ensayos con fines de registro por ensayista habilitado (cat. A.10). Para registro, protocolo patrón Res. MAG 296/03: ≥ 5 repeticiones con ≥ 12 gl del error, testigo sin tratar y producto de referencia registrado.",
     "fuente": "https://www.ipef.br/publicacoes/stecnica/nr48/ipef-sertec-48-063.pdf"
    },
    {
@@ -1766,7 +1770,7 @@
     "testigos": "Protocolo comercial del vivero",
     "trat": "Sustrato comercial\nSustrato alternativo 1\nSustrato alternativo 2\nFertilización de liberación lenta",
     "bloques_min": 4,
-    "momentos": "Quincenal y a la expedición (orientativo 90–120 días); sobrevivencia a campo a 30–90 días",
+    "momentos": "Quincenal y a la expedición: eucalipto a los 60–120 días (60–90 en tubete; ~120 con repique), pino a los 6–9 meses de la siembra; sobrevivencia a campo a 30–90 días",
     "analisis": "ANAVA (DCA o DBCA por mesada) + Tukey; regresión si son dosis",
     "normativa": "Vivero inscripto en el Registro de Viveros Forestales del INFONA (Registro Público Forestal, código 019)",
     "fuente": "https://www.redalyc.org/pdf/744/74418613005.pdf"
@@ -1891,7 +1895,7 @@
      "borde": 1
     },
     "parcelaTxt": "7 × 7 a 3 × 2 m, 25 útiles",
-    "notas": "No verificado su uso comercial en Paraguay. Tiene sentido solo en el sur (Itapúa) por tolerancia a heladas; dejarlo como especie opcional."
+    "notas": "Uso documentado en Paraguay en plantaciones de linderos de pequeños productores (Caaguazú; Amarilla 1997, FCA-UNA); no se encontró dato de superficie comercial. Su ventaja es la tolerancia a heladas, por lo que interesa sobre todo en el sur y en sitios con heladas frecuentes; dejarlo como especie opcional."
    },
    {
     "n": "Pinus taeda",
@@ -1905,7 +1909,7 @@
      "e2": 2.5,
      "borde": 1
     },
-    "parcelaTxt": "7 × 7 plantas a 3 × 2,5 m (no verificado para PY; espaciamiento usual regional), útil 5 × 5",
+    "parcelaTxt": "7 × 7 plantas a 3 × 2,5 m (≈ 1 330 pl/ha, dentro del rango usual de 800–1 600 pl/ha de Misiones y Corrientes; en Amambay se documenta 3 × 3 m), útil 5 × 5",
     "notas": "Plantaciones en Alto Paraná e Itapúa; según JICA el pino aportaba la mayor parte del volumen cortado de plantaciones. Turno 18–25 años para aserrío con raleos y podas. Ramosidad y poda son variables clave."
    },
    {
@@ -1935,7 +1939,7 @@
      "e2": 4,
      "borde": 1
     },
-    "parcelaTxt": "5 × 5 plantas a 4 × 4 m (no verificado; espaciamiento orientativo), útil 3 × 3 = 9",
+    "parcelaTxt": "5 × 5 plantas a 4 × 4 m (625 árb/ha; espaciamiento usado en plantaciones de paraíso gigante de la región), útil 3 × 3 = 9",
     "notas": "Muy valorado para laminado y mueble; cortas ~11 años (JICA). Requiere poda de formación; bifurcación y ramosidad son críticas. Estudio de biomasa en Vaquería (Caaguazú)."
    },
    {
@@ -1951,7 +1955,7 @@
      "borde": 1
     },
     "parcelaTxt": "4 × 4 plantas a 5 × 5 m o más (100–400 árb/ha), útil 2 × 2 = 4; preferir parcelas lineales con más repeticiones",
-    "notas": "Manejo con descepe al año (corte a ~5 cm) y desbrote para lograr fuste recto; sensible a heladas tardías y a Fusarium. En Misiones (AR) turno ~12 años. Uso en Paraguay: no verificado a escala comercial."
+    "notas": "Manejo con descepe al año de la plantación (corte a 5 cm del cuello, cuando el cuello supera 2 cm de diámetro) y desbrote durante el primer año para lograr fuste recto; sensible a heladas primaverales fuertes y a Fusarium en épocas húmedas y cálidas. En Misiones (AR) turno de 8–12 años. En Paraguay está presente desde hace décadas y hubo exportaciones de paulownia a Japón (JICA, ~2001), pero no se encontró superficie comercial actual: dejarlo como especie opcional."
    },
    {
     "n": "Grevillea",
@@ -1965,8 +1969,8 @@
      "e2": 3,
      "borde": 1
     },
-    "parcelaTxt": "5 × 5 plantas a 3 × 3 m (orientativo, no verificado), útil 3 × 3",
-    "notas": "Uso en cortinas, sombra y sistemas agroforestales; superficie comercial en Paraguay no verificada."
+    "parcelaTxt": "5 × 5 plantas a 3 × 3 m para macizo puro (orientativo), útil 3 × 3. En sistema agroforestal o silvopastoril usar 5 × 4 m (500 pl/ha), según el manual JIRCAS para Paraguay.",
+    "notas": "Introducida en Paraguay hacia 1980 (el manual JIRCAS de 2010 dice 'hace alrededor de 30 años') como árbol de cortina rompevientos; también ornamental y de arbolado urbano. El Proyecto JIRCAS plantó 73 ha en Paraguarí, sobre todo en sistemas agroforestales (500 pl/ha), porque compite poco con los cultivos vecinos. Plantar pasado el peligro de heladas. No hay dato de superficie comercial nacional."
    },
    {
     "n": "Toona",
@@ -1981,7 +1985,7 @@
      "borde": 1
     },
     "parcelaTxt": "5 × 5 plantas a 4 × 3 m (≈ 830 árb/ha; rango usual 500–800), útil 3 × 3",
-    "notas": "Sustituto del cedro por resistencia a Hypsipyla grandella; sensible a heladas. No podar más del 50 % de la altura total. Uso en Paraguay no verificado a escala comercial."
+    "notas": "Sustituto del cedro por resistencia al barrenador del brote (Hypsipyla grandella); sensible a heladas y a sequía. La poda no debe superar el 50 % de la altura del árbol. En Paraguay se planta a pequeña escala (junto con el paraíso, cerca del 5 % de la superficie reforestada según JICA/JIRCAS 2010; también en linderos en Caaguazú). En Misiones (AR) supera las 4 000 ha."
    },
    {
     "n": "Lapacho",
@@ -2427,7 +2431,7 @@
     ],
     "testigos": "Testigo sin aplicar (enmalezado) + herbicida de referencia registrado para pasturas",
     "trat": "Testigo sin aplicar\nReferencia registrada\nProducto dosis baja\nProducto dosis recomendada\nProducto dosis doble (selectividad)",
-    "bloques_min": 4,
+    "bloques_min": 5,
     "momentos": "Antes de aplicar (0 DAA) y a 15, 30, 60 DAA; renovales leñosos también a 6 y 12 meses",
     "analisis": "ANAVA + Tukey del % de control; dosis doble para selectividad",
     "normativa": "Productos con registro SENAVE para el uso; ensayista registrado (Ley 3742/09, Res. 979/11); Res. MAG 296/03 para registro",
@@ -2445,10 +2449,10 @@
     ],
     "testigos": "Testigo sin tratar; en resistencia, un testigo susceptible (U. decumbens) y uno resistente",
     "trat": "Testigo sin tratar\nReferencia registrada\nProducto A\nMetarhizium anisopliae",
-    "bloques_min": 4,
+    "bloques_min": 5,
     "momentos": "Conteo de ninfas y adultos antes de aplicar y a 7, 14 y 21 DAA; daño al final de cada generación de adultos; monitoreo semanal o quincenal en la estación lluviosa",
     "analisis": "ANAVA + Tukey; % de control de Abbott (o Henderson-Tilton si el conteo previo difiere entre parcelas); en resistencia, comparar ninfas y daño contra los testigos",
-    "normativa": "Producto con registro SENAVE para pasturas; Ley 3742/09",
+    "normativa": "Producto con registro SENAVE para pasturas; Ley 3742/09. Para registro, protocolo patrón Res. MAG 296/03: ≥ 5 repeticiones con ≥ 12 gl del error, testigo sin tratar y producto de referencia registrado.",
     "fuente": "https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/409420/1/MonitoramentoPopulaciona.pdf",
     "cultivos": [
      "Urochloa brizantha (Marandu, Xaraés, Piatã)",
@@ -2556,7 +2560,7 @@
     "bloques_min": 3,
     "momentos": "RFA a las 9, 12 y 15 h en días despejados, en lluvias y en seca; cortes por distancia a la hilera de árboles",
     "analisis": "ANAVA + Tukey; regresión de la MS sobre el % de RFA o la distancia a los árboles; los árboles se miden con el protocolo forestal",
-    "normativa": "Plantación forestal según INFONA si corresponde (no verificado en esta revisión)",
+    "normativa": "Si se planta para acogerse a la Ley 536/95: plan de manejo aprobado por el INFONA y, según el Decreto 9425/95 (art. 18), sistema agroforestal de 200–800 plantas/ha con prendimiento ≥ 80 % de la densidad del plan (bonificación del 75 % de implantación y 3 años de mantenimiento). En el Chaco, el cambio de uso para ganadería debe hacerse con sistema silvopastoril dentro del Plan de Uso de la Tierra aprobado por el INFONA (Res. 1232/2012, sin porcentaje mínimo de árboles) y respetando las franjas de bosque de 100 m del Decreto 18831/86. En la Región Oriental no se puede convertir bosque (Ley 6676/2020). Para el ensayo en sí no hay norma específica.",
     "fuente": "https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/596332/1/Radiacao-incidente-e-massa-de-forragem-de-Brachiaria-decumbens.pdf",
     "cultivos": [
      "Megathyrsus maximus (Gatton panic)",
@@ -2586,7 +2590,7 @@
     "testigos": "Cultivar más usado en la zona",
     "trat": "Avena testigo\nAvena cultivar A\nRaigrás testigo\nRaigrás cultivar B",
     "bloques_min": 4,
-    "momentos": "Primer corte a los 45–60 días o a 25–30 cm de altura (no verificado); luego a intervalos fijos hasta floración",
+    "momentos": "Primer corte a los ~45 días de la siembra o con ~20 cm de altura, en pleno macollaje, dejando ~5 cm de remanente; luego a intervalos fijos hasta floración",
     "analisis": "ANAVA del DBCA por corte y de la producción acumulada + Tukey; parcelas divididas en el tiempo (tratamiento × corte); totales por estación lluviosa y seca; análisis combinado de años/localidades si Fmax ≤ 5",
     "normativa": "Raigrás: Res. SENAVE 414/2020 anexo Aceven para RNCC; el anexo de avena es para grano",
     "fuente": "https://www.aprosemp.org.py/docs/normativas/5-Resolucion-SENAVE-414-Normas-minimas-para-ensayos-evaluacion-agronomica-calidad-variedades.pdf",
@@ -2611,7 +2615,7 @@
      "altura_corte": 15
     },
     "parcelaTxt": "Parcela de corte 3 × 5 m (15 m²) con 0,5 m de borde; área útil 2 × 4 m (8 m²); 2 marcos de 0,25 m² o corte de toda el área útil. Para RNCC: 4 hileras × 5 m, útil las 2 centrales (Res. SENAVE 414/2020, anexo Brachiaria).",
-    "notas": "Testigo regional más común en la Región Oriental y Chaco húmedo. Altura de residuo 15 cm y de entrada 35 cm (IDR-Paraná 2024, para pastoreo rotativo). Marandu es muy sensible al encharcamiento (síndrome de muerte del Marandu: deja de crecer al primer día de anegamiento, Dias-Filho en Franco 2006); en bajos preferir U. humidicola. Susceptible a salivazo (Marandu tiene antibiosis parcial; no verificado en esta revisión)."
+    "notas": "Testigo regional más común en la Región Oriental y Chaco húmedo. Altura de residuo 15 cm y de entrada 35 cm (IDR-Paraná 2024, para pastoreo rotativo). Marandu es muy sensible al encharcamiento (síndrome de muerte del Marandu: deja de crecer al primer día de anegamiento, Dias-Filho en Franco 2006; baja tolerancia también en Embrapa 2025); en bajos preferir U. humidicola. Frente al salivazo Deois flavopicta, Marandu es el testigo resistente de Embrapa (baja sobrevivencia de ninfas), pero la resistencia no cubre a Mahanarva, cuyos daños en braquiarias van en aumento."
    },
    {
     "n": "Urochloa decumbens (Basilisk)",
@@ -2627,7 +2631,7 @@
      "altura_corte": 10
     },
     "parcelaTxt": "Parcela de corte 3 × 5 m (15 m²) con 0,5 m de borde; área útil 2 × 4 m (8 m²); 2 marcos de 0,25 m² o corte de toda el área útil. Para RNCC: 4 hileras × 5 m, útil las 2 centrales (Res. SENAVE 414/2020, anexo Brachiaria). Estolonífera: dejar calles de 1 m o recortar bordes.",
-    "notas": "Muy susceptible al salivazo: sirve como testigo susceptible en ensayos de control o resistencia. Altura de corte 10–15 cm (no verificado para Paraguay)."
+    "notas": "Muy susceptible al salivazo: sirve como testigo susceptible en ensayos de control o resistencia. En pastoreo continuo mantener el pasto a 20–30 cm (Santos et al. 2011); altura de corte de las parcelas 10–15 cm (orientativa)."
    },
    {
     "n": "Urochloa humidicola",
@@ -2643,7 +2647,7 @@
      "altura_corte": 10
     },
     "parcelaTxt": "Parcela de corte 3 × 5 m (15 m²) con 0,5 m de borde; área útil 2 × 4 m (8 m²); 2 marcos de 0,25 m² o corte de toda el área útil. Para RNCC: 4 hileras × 5 m, útil las 2 centrales (Res. SENAVE 414/2020, anexo Brachiaria). Estolonífera: calles de 1 m.",
-    "notas": "La más tolerante al encharcamiento (0 % de reducción de fotosíntesis con 6 días de anegamiento vs. 89 % en Marandu; Dias-Filho en Franco 2006). INTA Formosa la cita (cv. Llanero) como alternativa en años húmedos. Altura de corte orientativa 10 cm (no verificado)."
+    "notas": "La más tolerante al encharcamiento (0 % de reducción de fotosíntesis con 6 días de anegamiento vs. 89 % en Marandu; Dias-Filho en Franco 2006). INTA Formosa la cita (cv. Llanero) como alternativa en años húmedos. En pastoreo continuo mantener ~15 cm (Tupi, no más de 15–20 cm para evitar el vuelco; Embrapa Acre 2010). Altura de corte de las parcelas: 10 cm (orientativa)."
    },
    {
     "n": "Urochloa híbrida (Mulato II, Cayman)",
@@ -2659,7 +2663,7 @@
      "altura_corte": 15
     },
     "parcelaTxt": "Parcela de corte 3 × 5 m (15 m²) con 0,5 m de borde; área útil 2 × 4 m (8 m²); 2 marcos de 0,25 m² o corte de toda el área útil. Para RNCC: 4 hileras × 5 m, útil las 2 centrales (Res. SENAVE 414/2020, anexo Brachiaria).",
-    "notas": "Cayman se promociona como tolerante a suelos mal drenados (dato de semillero, no verificado). Altura de corte 15 cm (asimilada a U. brizantha; no verificado)."
+    "notas": "Cayman es relativamente tolerante al anegamiento (más que Marandu, según Embrapa 2025); Mulato II no lo tolera (puede morir con más de una semana de suelo anegado). Mulato II: residuo de 15–20 cm y descanso de 25–35 días (ficha del semillero); usar 15 cm como altura de corte de las parcelas."
    },
    {
     "n": "Megathyrsus maximus (Gatton panic)",
@@ -2674,7 +2678,7 @@
      "marcos": 2,
      "altura_corte": 20
     },
-    "parcelaTxt": "Parcela de corte 3 × 5 m (15 m²) con 0,5 m de borde; área útil 2 × 4 m (8 m²); 2 marcos de 0,25 m² o corte de toda el área útil. Para RNCC: 4 hileras × 5 m, útil las 2 centrales (Res. SENAVE 414/2020, anexo Brachiaria).",
+    "parcelaTxt": "Parcela de corte 3 × 5 m (15 m²) con 0,5 m de borde; área útil 2 × 4 m (8 m²); 2 marcos de 0,25 m² o corte de toda el área útil. Para RNCC: 4 hileras a 0,5 m × 5 m, útil las 2 centrales (norma SENAVE NOR-DPUV-114, Megathyrsus).",
     "notas": "Gramínea dominante en desmontes nuevos del Chaco; fácil de establecer en suelo virgen, tolera sombra, no tolera anegamiento y es menos resistente a sequía que el Buffel (Glatzle). En Argentina se probaron 15 y 30 cm de corte: 15 cm con 90 días dio más MS, 30 cm cada 30–45 días más macollos y mejor relación hoja:tallo (Schnellmann et al. 2019). INTA Formosa: ≈ 8000 kg MS/ha/año."
    },
    {
@@ -2707,7 +2711,7 @@
      "altura_corte": 10
     },
     "parcelaTxt": "Parcela de corte 3 × 5 m (15 m²) con 0,5 m de borde; área útil 2 × 4 m (8 m²); 2 marcos de 0,25 m² o corte de toda el área útil. Para RNCC: 4 hileras × 5 m, útil las 2 centrales (Res. SENAVE 414/2020, anexo Brachiaria).",
-    "notas": "Muy tolerante a sequía; rebrote rápido en primavera; buen heno en pie. No apto para suelos arenosos, inundables ni zonas muy lluviosas (Glatzle). INTA Formosa: cultivares Molopo, Biloela, Lucero INTA-Pemán y Orión INTA > 10 t MS/ha/año. Altura de corte 10–15 cm (no verificado)."
+    "notas": "Muy tolerante a sequía; rebrote rápido en primavera; buen heno en pie. No apto para suelos arenosos, inundables ni zonas muy lluviosas (Glatzle). INTA Formosa: cultivares Molopo, Biloela, Lucero INTA-Pemán y Orión INTA > 10 t MS/ha/año. No cortar al ras; altura de corte 10–15 cm (orientativa; en Brasil se probaron residuos de 20–50 cm sin diferencias de producción)."
    },
    {
     "n": "Chloris gayana (Grama Rhodes)",
@@ -2723,7 +2727,7 @@
      "altura_corte": 10
     },
     "parcelaTxt": "Parcela de corte 3 × 5 m (15 m²) con 0,5 m de borde; área útil 2 × 4 m (8 m²); 2 marcos de 0,25 m² o corte de toda el área útil. Para RNCC: 4 hileras × 5 m, útil las 2 centrales (Res. SENAVE 414/2020, anexo Brachiaria). Estolonífera: calles de 1 m.",
-    "notas": "Callide Rhodes: amplia adaptación en zona de transición y Bajo Chaco; compite en suelos pesados algo salinos con agua estancada (Glatzle). Usada para heno. Altura de corte 10 cm (no verificado)."
+    "notas": "Callide Rhodes: amplia adaptación en zona de transición y Bajo Chaco; compite en suelos pesados algo salinos con agua estancada (Glatzle). Usada para heno. Dejar 15–20 cm de remanente al pastorear (INTA); en ensayos de corte, cortar a 12–15 cm."
    },
    {
     "n": "Panicum coloratum (Bambatsi, Klein)",
@@ -2739,7 +2743,7 @@
      "altura_corte": 10
     },
     "parcelaTxt": "Parcela de corte 3 × 5 m (15 m²) con 0,5 m de borde; área útil 2 × 4 m (8 m²); 2 marcos de 0,25 m² o corte de toda el área útil. Para RNCC: 4 hileras × 5 m, útil las 2 centrales (Res. SENAVE 414/2020, anexo Brachiaria).",
-    "notas": "Tolera salinidad, encharcamiento, sequía prolongada y heladas; establecimiento lento; solo arcillas pesadas (Glatzle). Bambatsi > 10 200 kg MS/ha en INTA Formosa. Altura de corte no verificada."
+    "notas": "Tolera salinidad, encharcamiento, sequía prolongada y heladas; establecimiento lento; solo arcillas pesadas (Glatzle). Bambatsi > 10 200 kg MS/ha en INTA Formosa. Dejar unos 15 cm de remanente (Ferreyra 2008) o el 25 % de la altura previa al corte, cortando con ~4,5 hojas por macollo (UNLPam 2024)."
    },
    {
     "n": "Digitaria eriantha (Pangola)",
@@ -2787,7 +2791,7 @@
      "altura_corte": 20
     },
     "parcelaTxt": "Surcos a 0,8–1 m: 4 surcos × 5 m; útil los 2 centrales × 4 m. Corte total del área útil con machete o motosegadora.",
-    "notas": "Forrajera de corte (corte y acarreo, ensilaje). Producciones por corte pueden pasar 12 t MS/ha: subir el máximo de la variable ms. Altura de corte y distancia entre surcos: no verificadas en esta revisión."
+    "notas": "Forrajera de corte (corte y acarreo, ensilaje). Surcos a 0,8–1,2 m (≥ 1 m si la cosecha es mecanizada). Corte al ras, a unos 5 cm del suelo. Para silaje, cortar a los 90–110 días (no pasar de 120). Por corte puede superar 20 t MS/ha (BRS Capiaçu: 17,5 t a 90 días y 22,5 t a 110 días; Embrapa). Subir el máximo de la variable ms."
    },
    {
     "n": "Campo natural (Paspalum y otras nativas)",
@@ -2803,7 +2807,7 @@
      "altura_corte": 5
     },
     "parcelaTxt": "Parcelas de 5 × 5 m o potreros; composición botánica con 20 o más marcos.",
-    "notas": "Ensayos de fertilización, diferimiento o carga en campos naturales (Ñeembucú, Misiones, Chaco). Composición botánica con rango en peso seco. Especies dominantes por zona: no verificadas en esta revisión."
+    "notas": "Ensayos de fertilización, diferimiento o carga en campos naturales (Ñeembucú, Misiones, Chaco). Composición botánica con rango en peso seco. Especies dominantes en Paraguay: sin dato publicado; como referencia regional, en los pastizales de Corrientes (contiguos a Ñeembucú y Misiones) dominan Paspalum notatum, Andropogon lateralis, Axonopus spp., Paspalum plicatulum, Sorghastrum agrostoides y Elionurus muticus según la zona (INTA Mercedes 1993). Registrar las especies del sitio en la ficha."
    },
    {
     "n": "Avena (verdeo de invierno)",
@@ -2819,7 +2823,7 @@
      "altura_corte": 7
     },
     "parcelaTxt": "6 hileras a 0,20 m × 5 m; útil las 4 centrales × 4 m. Corte con marco de 0,25 m² o de toda el área útil.",
-    "notas": "El anexo de avena de la Res. SENAVE 414/2020 es para grano (6 hileras × 5 m); para doble propósito o forraje no hay variables forrajeras en el anexo. Altura de corte orientativa 5–10 cm (no verificado)."
+    "notas": "La norma SENAVE de avena (NOR-DPUV-103, ex anexo de la Res. 414/2020) es para grano: 6 hileras × 5 m, útil 4 hileras centrales, densidad válida ≥ 300 plantas/m², siembra abril–junio (Oriental); no tiene variables forrajeras. Para forraje, tomar por analogía la norma de aceven (NOR-DPUV-100): primer corte cuando la mayoría de las parcelas tenga ≥ 25 cm, al menos 3 cortes y remanente ≥ 5 cm; medir MV, MS, % MS, PB, FDN y FDA. Altura de corte 5–10 cm orientativa (no fijada por norma)."
    },
    {
     "n": "Raigrás anual (Lolium multiflorum)",
@@ -2834,8 +2838,8 @@
      "marcos": 2,
      "altura_corte": 5
     },
-    "parcelaTxt": "4 hileras × 5 m; útil las 2 centrales (Res. SENAVE 414/2020, anexo Aceven).",
-    "notas": "En la Res. 414/2020 figura como Aceven (Lolium multiflorum): rendimiento, días a floración plena, días a pastoreo, PMS, roya y otras enfermedades, PB, NDT y energía digestible. Densidad mínima válida 7 plantas por metro lineal. Distancia entre hileras no verificada."
+    "parcelaTxt": "6 hileras × 5 m; útil las 2 centrales (norma SENAVE NOR-DPUV-100, Aceven).",
+    "notas": "La norma SENAVE vigente es NOR-DPUV-100 'Aceven' (Lolium multiflorum; reemplaza al anexo I de la Res. 414/2020, modificado por la Res. 028/2021): 6 hileras × 5 m, útil las 2 centrales, densidad mínima válida 300 plantas/m², siembra abril–junio (Oriental). Pide rendimiento, días a floración plena y a madurez del grano, PMS y enfermedades (roya y otras); en la opción forraje: MV y MS (kg/ha), % MS, PB, FDN y FDA, con primer corte cuando la mayoría del cultivo tenga ≥ 25 cm, al menos 3 cortes y remanente ≥ 5 cm. La norma no fija la distancia entre hileras (según fecha de siembra, cultivar y región)."
    },
    {
     "n": "Alfalfa",
@@ -2850,8 +2854,8 @@
      "marcos": 2,
      "altura_corte": 5
     },
-    "parcelaTxt": "Parcela 1,4 × 5 m (7 hileras a 0,20 m); útil las 5 centrales × 4 m. (no verificado para Paraguay)",
-    "notas": "Uso limitado en Paraguay (cuencas lecheras, riego); superficie no verificada. Única especie donde el valor relativo del forraje (VRF) tiene sentido como índice. Requiere inoculante específico (Sinorhizobium meliloti)."
+    "parcelaTxt": "Parcela 1,4 × 5 m (7 hileras a 0,20 m); útil las 5 centrales × 4 m. Equivale a la usada por la Red de Evaluación de Cultivares de Alfalfa del INTA (5 × 1 m, hileras a 18 cm, 4 repeticiones).",
+    "notas": "Uso limitado en Paraguay (cuencas lecheras, riego); no se encontraron datos de superficie. Única especie donde el valor relativo del forraje (VRF) tiene sentido como índice. Requiere inoculante específico (Sinorhizobium meliloti)."
    },
    {
     "n": "Leucaena",
@@ -2899,7 +2903,7 @@
      "altura_corte": 5
     },
     "parcelaTxt": "Parcela de corte 3 × 5 m (15 m²) con 0,5 m de borde; área útil 2 × 4 m (8 m²); 2 marcos de 0,25 m² o corte de toda el área útil. Para RNCC: 4 hileras × 5 m, útil las 2 centrales (Res. SENAVE 414/2020, anexo Brachiaria).",
-    "notas": "Adaptado a zonas húmedas; uso en Paraguay no verificado en esta revisión (dejar como especie opcional). Se propaga por semilla o estolones."
+    "notas": "Adaptado a zonas húmedas; no se encontraron registros de uso en Paraguay (dejar como especie opcional). Se propaga por semilla o estolones."
    },
    {
     "n": "Mezcla gramínea–leguminosa",
@@ -3016,7 +3020,7 @@
     "id": "ua",
     "campo": "Peso de la unidad animal (kg)",
     "tipo": "numero",
-    "ayuda": "450 kg por defecto; la definición internacional es 500 kg."
+    "ayuda": "En Paraguay se usa 450 kg (la definición internacional es 500 kg)."
    },
    {
     "id": "pastoreo",
@@ -3657,7 +3661,7 @@
       "Centro del callejón"
      ]
     },
-    "parcelaTxt": "Orientativo: hileras simples a 14 × 4 m (179 árb/ha), arreglo genérico de Embrapa para madera gruesa, o plantación en bloque raleada hasta ≈ 50 % de RFA. Unidad experimental ≥ 0,25 ha con 1 hilera de borde.",
+    "parcelaTxt": "Orientativo: densidad final de 200–500 árb/ha, lograda con raleo precomercial al podar (práctica silvopastoril con pino en Misiones y Corrientes); por ejemplo, hileras simples a 14 × 4 m (179 árb/ha) o plantación en bloque raleada. Mantener bajo los árboles 40–60 % de la radiación a pleno sol, medida con ceptómetro (Embrapa). Unidad experimental ≥ 0,25 ha con 1 hilera de borde.",
     "notas": "No se encontró un arreglo verificado de pino silvopastoril en Paraguay. En Misiones (Argentina) se evaluó Axonopus catarinensis bajo P. elliottii con 50 % de RFA incidente (Trela, 2010).",
     "arbol": "Pinus taeda / P. elliottii",
     "pastura": "Axonopus catarinensis o Urochloa brizantha"
@@ -3705,8 +3709,8 @@
       "Centro del callejón"
      ]
     },
-    "parcelaTxt": "Orientativo: hileras simples a 10–12 × 3–4 m (200–330 árb/ha), dentro del rango de 200–800 pl/ha que el Decreto 9425/95 fija para sistemas agroforestales; o triples a 2,5 × 2,5 m en franjas de 15 m. Unidad experimental ≥ 0,25 ha.",
-    "notas": "Arreglo no verificado con ensayos paraguayos. El Decreto 7702/17 admite un sistema agroforestal con ≥ 40 % de nativas para la reforestación obligatoria. En cedro, registrar el barrenador del brote (Hypsipyla) con la medición del rubro Forestal.",
+    "parcelaTxt": "Orientativo: hileras simples a 10–12 × 3–4 m (200–330 árb/ha), dentro del rango de 200–800 pl/ha que el Decreto 9425/95 fija para sistemas agroforestales; o triples a 2,5 × 2,5 m en franjas de 15 m. Como referencia paraguaya, en silvopastoril con eucalipto se usan hileras simples 8 × 2 m este-oeste y se excluye el ganado al menos 2 años (Colonias Unidas / PNUD 2020). Unidad experimental ≥ 0,25 ha.",
+    "notas": "Arreglo no verificado con ensayos paraguayos. El Decreto 7702/17 admitía un sistema agroforestal con ≥ 40 % de nativas para la reforestación obligatoria, pero fue derogado en abril de 2019: consultar con el INFONA la norma vigente antes de usar ese criterio. En cedro, registrar el barrenador del brote (Hypsipyla) con la medición del rubro Forestal.",
     "arbol": "Cedrela fissilis, Handroanthus spp., Peltophorum dubium (ybyrá pytá), Anadenanthera colubrina u otras",
     "pastura": "Urochloa spp."
    },
@@ -3786,8 +3790,8 @@
       "100 m"
      ]
     },
-    "parcelaTxt": "Franjas de bosque de ≥ 100 m de ancho entre parcelas desmontadas de ≤ 100 ha (Decreto 18831/86). Transectas perpendiculares al borde de la franja, con puntos fijos dentro de la pastura (orientativo: 5, 25, 50 y 100 m), en 3 o más franjas que hacen de bloques.",
-    "notas": "Distancias de la transecta orientativas (no verificadas). La Res. INFONA 1863/2013 da ± 5 m de tolerancia al medir las franjas.",
+    "parcelaTxt": "Franjas de bosque de ≥ 100 m de ancho entre parcelas desmontadas de ≤ 100 ha (Decreto 18831/86). Transectas perpendiculares al borde de la franja, con puntos fijos dentro de la pastura ubicados en múltiplos de la altura del bosque (H): 1H, 2,5H, 5H y 10H (o, si no se mide H, a 5, 25, 50 y 100 m), en 3 o más franjas que hacen de bloques.",
+    "notas": "Distancias de la transecta orientativas (no las fija ninguna norma). Una resolución INFONA de noviembre de 2013 (N° 863/2013 según la copia escaneada) da ± 5 m de tolerancia en el ancho de las franjas y ± 5 ha en la superficie de las parcelas, solo para el análisis cartográfico de los planes de uso de la tierra; en el terreno rigen los 100 m del Decreto 18831/86.",
     "arbol": "Franjas de bosque chaqueño entre potreros",
     "pastura": "Gatton panic o Buffel"
    },
@@ -3827,7 +3831,7 @@
      ]
     },
     "parcelaTxt": "Como en bosque raleado: parcelas permanentes de 1 ha con censo de palo santo (DAP, altura, copa, estado sanitario y regeneración) y forraje bajo copa / entre copas.",
-    "notas": "Palo santo: Apéndice II de la CITES; su madera sale en parte de inventarios de planes de uso agro-silvopastoril. Árbol de 8–20 m y DAP 30–70 cm, de crecimiento lento y baja regeneración por semilla: registrar la regeneración y el daño por animales. No se encontraron ensayos silvopastoriles específicos con palo santo (sistema a validar).",
+    "notas": "Palo santo: Apéndice II de la CITES; su madera sale en parte de inventarios de planes de uso agro-silvopastoril. Árbol de 8–20 m y DAP 30–70 cm, de crecimiento lento; se regenera poco por semilla y mejor por vástagos de raíz: registrar la regeneración (semilla y vástagos) y el daño por animales. No se encontraron ensayos silvopastoriles específicos con palo santo (sistema a validar).",
     "arbol": "Bulnesia sarmientoi (palo santo) remanente, con otras nativas",
     "pastura": "Gatton panic o Buffel"
    },
@@ -3869,7 +3873,7 @@
      ]
     },
     "parcelaTxt": "Banco puro de leucaena en alta densidad (una fracción del potrero), con acceso controlado de los animales desde la pastura base o con corte y acarreo. Unidad experimental: potrero con su banco. Biomasa comestible en tramos de 2–5 m de hilera.",
-    "notas": "El banco de proteína se recomienda para pequeños productores y lechería, con corte y acarreo (Glatzle y otros). La fuente no da densidad ni % del potrero: declararlos en la ficha (no verificado).",
+    "notas": "El banco de proteína se recomienda para pequeños productores y lechería, con corte y acarreo o pastoreo controlado (Glatzle y otros). Referencia Embrapa: ocupa el 10–30 % del potrero; líneas a 2–3 m con 3 hoyos por metro (o 1 m entre hoyos); entrada de los animales con plantas de 1,0–1,5 m y rebaje a 50–70 cm; acceso 2–3 h por día, 3–4 veces por semana; la leucaena no debe pasar del 50 % de la ración. Declarar en la ficha la densidad y el % del potrero usados.",
     "arbol": "Leucaena leucocephala en siembra densa (banco de proteína)",
     "pastura": "Pastura base de gramínea (Gatton panic, Urochloa)"
    },
@@ -3887,7 +3891,7 @@
      ]
     },
     "parcelaTxt": "Parcelas chicas (p. ej. 3 × 3 a 4 × 5 m) cubiertas por malla a ≈ 1,5–2 m de altura, con 0,5 m de borde sin muestrear; la malla baja por los lados en el sentido del sol de la tarde si hace falta. Parcelas divididas: sombra en la parcela principal y especie en la subparcela, 3–4 bloques (Andrade et al., 2004).",
-    "notas": "La sombra nominal de la malla no es la real: medir la RFA debajo con ceptómetro o sensor cuántico al instalar y cada 6 meses. Medidas de parcela y altura de la malla orientativas (no verificadas).",
+    "notas": "La sombra nominal de la malla no es la real: medir la RFA debajo con ceptómetro o sensor cuántico al instalar y cada 6 meses. Referencia de montaje: malla a 1,5–2,0 m del suelo, con los lados este y oeste cerrados hasta 1,0 m del suelo, sobre parcelas de 2 × 2 m a 10 × 4,5 m (Andrade et al. 2004; Vieira et al. 2014).",
     "arbol": "Ninguno: malla de polipropileno (media sombra) de 30, 50 o 70 %",
     "pastura": "Cualquier forrajera a evaluar"
    },
@@ -3994,7 +3998,8 @@
    {
     "id": "ua",
     "campo": "Peso de la unidad animal (kg)",
-    "tipo": "numero"
+    "tipo": "numero",
+    "ayuda": "En Paraguay se usa 450 kg (la definición internacional es 500 kg)."
    },
    {
     "id": "sombra_testigo",
