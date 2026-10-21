@@ -397,6 +397,7 @@ function irInicio() {
         <p class="note" style="margin:0">${pend.length} de ${ps.length} parcelas con mediciones pendientes.${ps.length > 6 ? ` Se muestran las primeras 6; el resto está en “Abrir ensayo” → Carga de datos.` : ''}</p></div>`; }).join('')
       : `<div class="card"><h3>Todavía no tenés parcelas asignadas en ${R.nombre.toLowerCase()}</h3><p class="note" style="margin:0">${u.equipo ? `Tu gerente del ${esc(EQUIPOS[u.equipo].nombre)} te asigna parcelas y aparecen acá.` : 'Uní tu cuenta a un equipo con el código de tu gerente.'} Probá con otro rubro desde el botón de arriba.</p></div>`;
   } else {
+    if (!obs) h += '<div id="ped-ens"></div>';
     const rev = lista.filter(T => puede.revisar(T)).reduce((s, T) => s + T.cambios.filter(c => c.estado === 'pendiente').length, 0);
     if (lista.length) {
       h += `<div class="grid2">${lista.map(T => { const r = rolEn(T), pr = progreso(T), pc = T.cambios.filter(c => c.estado === 'pendiente').length;
@@ -420,8 +421,10 @@ function irInicio() {
   }
   $('#s-inicio').innerHTML = bannerInstalar() + h;
   pantalla('inicio');
+  pintarPedidosEns();
 }
-$('#s-inicio').addEventListener('click', e => {
+$('#s-inicio').addEventListener('click', async e => {
+  if (e.target.closest('[data-ped-lal], [data-ped-visto], [data-ped-desc]')) return clickPedidoEns(e);
   const n = e.target.closest('#btn-nuevo, #btn-nuevo-2'); if (n) return nuevoEnsayo();
   if (e.target.closest('#btn-recibir')) return recibirArchivo();
   if (e.target.closest('#btn-ver-ej')) return tourEmpezar(0);
@@ -430,6 +433,110 @@ $('#s-inicio').addEventListener('click', e => {
   const a = e.target.closest('[data-abrir]'); if (a) return abrir(TRIALS.find(T => T.id === a.dataset.abrir), a.dataset.paso || null);
   const c = e.target.closest('[data-ctl]'); if (c) { const [id, p] = c.dataset.ctl.split('|'); const T = TRIALS.find(x => x.id === id); abrir(T, 'campo'); abrirDrawer(Number(p)); }
 });
+
+/* ================= pedidos de las otras apps (Monitoreo de campo y Calculadora agrícola) ================= */
+// Llegan por la base común del navegador (agro_comun, si las apps se abren desde la misma dirección) o por archivo .agro.json.
+// Monitoreo pide un lado a lado cuando un foco se repite o un control falla; la Calculadora manda resultados de cálculo.
+const COMUN_STORES = ['campos', 'lotes', 'catalogo', 'observaciones', 'pedidos', 'aplicaciones', 'costos', 'resultados'];
+const RUBRO_COD = {AG: 'agricola', HO: 'horticola', FO: 'forestal', PA: 'pasturas', SP: 'silvopastoril'};
+let CANAL_AGRO = null; try { CANAL_AGRO = new BroadcastChannel('agro_comun'); } catch (e) {}
+const pedidoParaEnsayos = p => p && (p.destino === 'ensayos' || (!p.destino && p.tipo === 'ensayo_lado_a_lado'));
+const nomObj = o => o.nombre || String(o.catalogo_id || '').replace(/^[a-z]+:/, '').replace(/[_-]+/g, ' ');
+const normTxt = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+async function comunAbrir() {
+  try { if (indexedDB.databases) { const l = await indexedDB.databases(); if (!l.some(d => d.name === 'agro_comun')) return null; } } catch (e) {}
+  return new Promise(res => { let r; try { r = indexedDB.open('agro_comun', 1); } catch (e) { return res(null); }
+    r.onupgradeneeded = () => COMUN_STORES.forEach(s => { if (!r.result.objectStoreNames.contains(s)) r.result.createObjectStore(s, {keyPath: 'id'}); });
+    r.onsuccess = () => res(r.result); r.onerror = () => res(null); r.onblocked = () => res(null); });
+}
+async function comunTodos(st) {
+  const db = await comunAbrir(); if (!db) return [];
+  try { if (!db.objectStoreNames.contains(st)) return []; return await new Promise(res => { const q = db.transaction(st).objectStore(st).getAll(); q.onsuccess = () => res(q.result || []); q.onerror = () => res([]); }); }
+  finally { db.close(); }
+}
+async function comunPoner(st, o) {
+  const db = await comunAbrir(); if (!db) return false;
+  try { if (!db.objectStoreNames.contains(st)) return false;
+    await new Promise((res, rej) => { const t = db.transaction(st, 'readwrite'); t.objectStore(st).put(o); t.oncomplete = res; t.onerror = () => rej(t.error); });
+    try { CANAL_AGRO?.postMessage({app: 'ensayos', tipo: 'cambio', entidad: st, ids: [o.id]}); } catch (e) {}
+    return true; } catch (e) { console.warn(e); return false; } finally { db.close(); }
+}
+// Pedidos que esta app ve: los de la base común más los que llegaron por archivo (guardados en META.pedidos)
+async function pedidosEns() {
+  const comunes = (await comunTodos('pedidos').catch(() => [])).filter(pedidoParaEnsayos);
+  const deArchivo = (META.pedidos || []).filter(p => !comunes.some(c => c.id === p.id));
+  return [...comunes.map(p => ({...p, _comun: true})), ...deArchivo].sort((a, b) => String(b.creado || b.fecha || '').localeCompare(String(a.creado || a.fecha || '')));
+}
+async function marcarPedidoEns(p, cambios) {
+  const n = {...p, ...cambios}; delete n._comun;
+  if (p._comun) await comunPoner('pedidos', n);
+  META.pedidos = META.pedidos || []; const i = META.pedidos.findIndex(x => x.id === p.id);
+  if (i >= 0) META.pedidos[i] = n; else if (!p._comun) META.pedidos.push(n);
+  guardarPronto(); return n;
+}
+function recibirPedidosArchivo(js) {
+  const ps = (js.pedidos || []).filter(pedidoParaEnsayos); META.pedidos = META.pedidos || [];
+  let n = 0; ps.forEach(p => { if (!META.pedidos.some(x => x.id === p.id)) { META.pedidos.push(p); n++; } });
+  guardarPronto(); return {total: ps.length, nuevos: n};
+}
+const ORIGEN_NOM = {monitoreo: 'Monitoreo de campo', calculadora: 'Calculadora agrícola', caldo: 'Consultas de Caldo'};
+const ESTADO_NOM = {nuevo: 'Nuevo', en_proceso: 'En proceso', resuelto: 'Resuelto', descartado: 'Descartado', visto: 'Visto'};
+function pedidoEnsHTML(p) {
+  const de = ORIGEN_NOM[p.origen?.app] || p.origen?.app || 'otra app', lote = p.lote ? `${p.lote.nombre || ''}${p.lote.campo ? ' · ' + p.lote.campo : ''}${p.lote.ha ? ' · ' + fmt(+p.lote.ha, 1) + ' ha' : ''}` : '';
+  const objs = (p.objetivos || []).map(o => `${nomObj(o)}${o.valor != null ? ` (${fmt(+o.valor, 2)} ${o.unidad || ''})` : ''}`).filter(Boolean);
+  const sal = p.datos?.salidas ? Object.entries(p.datos.salidas).slice(0, 8).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(typeof v === 'object' ? JSON.stringify(v) : v)}</dd>`).join('') : '';
+  const abierto = !['resuelto', 'descartado', 'visto'].includes(p.estado);
+  const acc = !abierto ? '' : p.tipo === 'ensayo_lado_a_lado' || p.destino === 'ensayos' && p.tipo !== 'resultado_calculo'
+    ? `<button class="btn primary small" data-ped-lal="${esc(p.id)}">↔️ Crear el lado a lado</button><button class="btn small" data-ped-desc="${esc(p.id)}">Descartar</button>`
+    : `<button class="btn primary small" data-ped-visto="${esc(p.id)}">Visto</button><button class="btn small" data-ped-desc="${esc(p.id)}">Descartar</button>`;
+  return `<div class="task" style="grid-template-columns:1fr;gap:6px"><div><b>${esc(p.titulo || (p.tipo === 'ensayo_lado_a_lado' ? 'Pedido de lado a lado' : 'Resultado de cálculo'))}</b>
+    <span class="chip ${p.prioridad === 'alta' ? 'warn' : 'neu'}">${ESTADO_NOM[p.estado] || 'Nuevo'}</span><br>
+    <span class="note">De ${esc(de)}${p.autor ? ' · ' + esc(p.autor) : ''}${lote ? ' · ' + esc(lote) : ''}${p.cultivo ? ' · ' + esc(p.cultivo) : ''}${p.estadio ? ' ' + esc(p.estadio) : ''}</span></div>
+    ${objs.length ? `<div class="note">Objetivos: ${esc(objs.join(', '))}</div>` : ''}${p.nota ? `<div class="note">${esc(p.nota)}</div>` : ''}
+    ${sal ? `<dl class="kv">${sal}</dl>` : ''}${p.respuesta?.texto ? `<div class="note">✔ ${esc(p.respuesta.texto)}</div>` : ''}
+    ${acc ? `<div class="row">${acc}</div>` : ''}</div>`;
+}
+let PEDS_ENS = [];
+async function pintarPedidosEns() {
+  const el = document.getElementById('ped-ens'); if (!el) return;
+  PEDS_ENS = await pedidosEns().catch(() => []);
+  const abiertos = PEDS_ENS.filter(p => !['resuelto', 'descartado', 'visto'].includes(p.estado)), viejos = PEDS_ENS.filter(p => !abiertos.includes(p)).slice(0, 5);
+  if (!PEDS_ENS.length) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div class="card"><div class="row" style="justify-content:space-between"><h3>🔔 Pedidos de las otras apps</h3><span class="chip ${abiertos.length ? 'acc' : 'neu'}">${abiertos.length} por atender</span></div>
+    ${abiertos.map(pedidoEnsHTML).join('') || '<p class="note" style="margin:0">No hay pedidos pendientes.</p>'}
+    ${viejos.length ? `<details><summary class="note" style="cursor:pointer">Atendidos hace poco (${viejos.length})</summary>${viejos.map(pedidoEnsHTML).join('')}</details>` : ''}</div>`;
+}
+function cultivoDePedido(R, c) {
+  const n = normTxt(c); if (!n) return null;
+  return R.cultivos.find(x => normTxt(x) === n) || R.cultivos.find(x => normTxt(x).startsWith(n) || n.startsWith(normTxt(x))) || null;
+}
+async function crearLalDesdePedido(p) {
+  const rb = RUBROS[p.rubro] ? p.rubro : RUBRO_COD[p.rubro]; if (rb && RUBROS[rb]) { S.rubro = rb; try { localStorage.setItem('ec-rubro', rb); } catch (e) {} }
+  const R = RUBROS[S.rubro];
+  if (!R.tipos.some(t => /lado a lado/i.test(t))) return toast(`En ${R.nombre.toLowerCase()} no hay ensayos lado a lado: creá un ensayo experimental.`);
+  nuevoEnsayo(); NV.modo = 'lal';
+  const cu = cultivoDePedido(R, p.cultivo); if (cu) NV.cultivo = cu;
+  NV.productor = p.lote?.campo || ''; NV.lote = p.lote?.nombre || ''; NV.lugar = [p.lote?.nombre, p.lote?.campo].filter(Boolean).join(', ');
+  const obj = (p.objetivos || []).map(nomObj).filter(Boolean);
+  NV.titulo = `Lado a lado${obj.length ? ' contra ' + obj.slice(0, 2).join(' y ') : ''}${p.lote?.nombre ? ' en ' + p.lote.nombre : ''}`;
+  NV.pedido = p.id;
+  await marcarPedidoEns(p, {estado: 'en_proceso'});
+  renderNuevo(); toast('Datos del pedido cargados: elegí los productos a comparar');
+}
+async function resolverPedidoEns(id, T) {
+  if (!id) return; const p = (await pedidosEns()).find(x => x.id === id); if (!p) return;
+  await marcarPedidoEns(p, {estado: 'resuelto', resuelto: new Date().toISOString(),
+    respuesta: {app: 'ensayos', ensayo_id: T.id, fecha: new Date().toISOString(), texto: `Se creó el lado a lado “${T.titulo}” (${T.id}) en ${T.lal?.lote || T.lugar || 'el lote'}: ${T.tratamientos.map(t => t.nombre).join(' vs. ')}.`}});
+}
+async function clickPedidoEns(e) {
+  const b = e.target.closest('[data-ped-lal], [data-ped-visto], [data-ped-desc]'); if (!b) return false;
+  const id = b.dataset.pedLal || b.dataset.pedVisto || b.dataset.pedDesc, p = PEDS_ENS.find(x => x.id === id); if (!p) return true;
+  if (b.dataset.pedLal) await crearLalDesdePedido(p);
+  else { await marcarPedidoEns(p, b.dataset.pedVisto ? {estado: 'visto', respuesta: {app: 'ensayos', fecha: new Date().toISOString(), texto: 'Visto en Ensayos de Campo'}} : {estado: 'descartado', respuesta: {app: 'ensayos', fecha: new Date().toISOString(), texto: 'Descartado en Ensayos de Campo'}}); pintarPedidosEns(); }
+  return true;
+}
+if (CANAL_AGRO) CANAL_AGRO.onmessage = ev => { const m = ev.data || {}; if (m.app !== 'ensayos' && (m.tipo === 'pedido' || m.entidad === 'pedidos') && !$('#s-inicio').hidden) pintarPedidosEns(); };
+document.addEventListener('visibilitychange', () => { if (!document.hidden && !$('#s-inicio').hidden) pintarPedidosEns(); });
 
 /* ================= nuevo ensayo ================= */
 const NV = {};
@@ -682,7 +789,7 @@ async function crearLal() {
   const T = {id: nuevoIdEnsayo().replace('ENS-', 'LAL-'), creado: new Date().toISOString(), rubro: S.rubro, modo: 'lal', titulo: NV.titulo.trim() || `Lado a lado en ${NV.cultivo}`, cultivo: NV.cultivo,
     tipo: NV.escala === 'macro' ? 'Lado a lado (macroparcelas)' : 'Lado a lado (microparcelas)', campana: '2026/27', lugar: NV.lugar || 'Sin ubicación', owner: S.user.id, equipo: S.user.perfil === 'gerente' ? S.user.equipo : null, bloques: NV.pares,
     parcela: {forma: 'franja', ancho: L.ancho, largo: L.largo, cab: L.cab || 0, anchoCos: L.anchoCos ?? L.ancho, area_m2: +(L.ancho * L.largo).toFixed(1), area_util_m2: +util.toFixed(1), texto: `Franjas de ${fmt(L.ancho, 1)} × ${fmt(L.largo, 0)} m (${fmt(ha, ha < 0.1 ? 3 : 2)} ha)`},
-    lal: {escala: NV.escala, productor: NV.productor.trim(), lote: NV.lote.trim(), sep: L.sep || 0, puntos: NV.puntos, costo: {}, precio: null},
+    lal: {escala: NV.escala, productor: NV.productor.trim(), lote: NV.lote.trim(), sep: L.sep || 0, puntos: NV.puntos, costo: {}, precio: null}, pedido_id: NV.pedido || undefined,
     tratamientos: lados, variables, parcelas, asig: {}, compartido: {}, notas: [], cambios: [], aplicaciones: [], dron: NV.dron,
     objetivo: `Comparar en la parcela del productor la eficacia de ${lados[0].productos[0]?.prod || lados[0].nombre} frente a ${lados[1].productos[0]?.prod || lados[1].nombre}${NV.testigo ? ', con una franja testigo sin aplicar' : ''}.`};
   prepararRepetidas(T);
@@ -695,6 +802,7 @@ async function crearLal() {
       // en cada chacra el mismo orden alternado que en la primera (A-B, B-A…), no un sorteo
       const base = T.parcelas.filter(p => p.sitio === T.sitios[0].id); ps.forEach(p => { const b = base.find(q => q.parcela % 1000 === p.parcela % 1000); if (b) p.trat = b.trat; }); }
     T.cambios = []; }
+  if (NV.pedido) { await resolverPedidoEns(NV.pedido, T); NV.pedido = null; }
   toast(otros.length ? `Lado a lado creado en ${T.sitios.length} chacras` : 'Lado a lado creado: ahora ubicá las franjas con el GPS'); abrir(T, 'campo');
 }
 
@@ -2692,10 +2800,13 @@ function fusionar(L, R, de) {
 }
 function recibirArchivo() {
   const M = modal(`<div class="row" style="justify-content:space-between"><h2>Recibir archivo</h2><button class="btn small" data-cerrar>✕</button></div>
-    <p class="note" style="margin:0">Elegí el archivo que te mandaron (ensayo, datos de un operador o respaldo). Si ya tenés ese ensayo, la app suma lo nuevo sin borrar lo tuyo.</p>
+    <p class="note" style="margin:0">Elegí el archivo que te mandaron (ensayo, datos de un operador, respaldo o un pedido .agro.json de Monitoreo o de la Calculadora). Si ya tenés ese ensayo, la app suma lo nuevo sin borrar lo tuyo.</p>
     <label class="btn primary" style="position:relative;justify-self:start">📥 Elegir archivo<input type="file" accept=".json,application/json,text/plain,*/*" id="rec-file" style="position:absolute;inset:0;opacity:0;cursor:pointer"></label><div id="rec-msg"></div>`, 560);
   M.querySelector('#rec-file').onchange = async e => {
     const f = e.target.files[0]; if (!f) return; let js; try { js = JSON.parse(await f.text()); } catch (x) { M.querySelector('#rec-msg').innerHTML = '<div class="callout warn">El archivo no se pudo leer. ¿Es un archivo de Ensayos de Campo (.json)?</div>'; return; }
+    if (js && (js.app === 'agro-intercambio' || js.formato === 'agro-intercambio')) { const r = recibirPedidosArchivo(js);
+      if (!r.total) { M.querySelector('#rec-msg').innerHTML = '<div class="callout warn">El archivo es de otra app agro, pero no trae pedidos para Ensayos de Campo.</div>'; return; }
+      M.cerrar(); toast(r.nuevos ? `${r.nuevos} ${r.nuevos === 1 ? 'pedido nuevo' : 'pedidos nuevos'} en el inicio` : 'Ese pedido ya estaba cargado'); if (S.user) irInicio(); return; }
     if (js?.app !== 'Ensayos de Campo' || !Array.isArray(js.ensayos)) { M.querySelector('#rec-msg').innerHTML = '<div class="callout warn">No es un archivo de Ensayos de Campo.</div>'; return; }
     const res = await recibirPaquete(js); M.cerrar();
     const para = js.para && USERS[js.para];
