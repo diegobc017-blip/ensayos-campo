@@ -207,6 +207,7 @@ pre.code{margin:0;max-height:260px;overflow:auto;background:var(--soft);border-r
 .galpap img{width:100%;aspect-ratio:76/26;object-fit:cover;border-radius:6px;display:block;background:var(--soft)}
 .galpap .sinimg{display:grid;place-items:center;aspect-ratio:76/26;border-radius:6px;background:var(--soft);color:var(--muted);font-size:.8rem}
 .galpap .gp>span{display:grid;gap:2px;font-size:.85rem}.galpap small{color:var(--muted)}.galpap .swatch{display:inline-block;vertical-align:-1px;margin-right:4px}
+#plan-card,#avisos-card{min-width:0;max-width:100%}#plan-card select,#plan-card input{max-width:100%}#plan-card .row>label{min-width:0;flex:1 1 180px}#plan-card .row>*{min-width:0}#plan-card td{overflow-wrap:anywhere}#plan-card .tw{max-width:100%;overflow-x:auto}
 .modal-fondo{position:fixed;inset:0;background:rgba(10,14,12,.45);z-index:90;display:grid;place-items:start center;padding:6vh 16px;overflow:auto}
 .modal{background:var(--panel);border-radius:14px;box-shadow:var(--shadow);width:min(720px,100%);padding:20px;display:grid;gap:14px}
 .ayuda-lista{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
@@ -412,7 +413,7 @@ pre.code{margin:0;max-height:260px;overflow:auto;background:var(--soft);border-r
 
 <div class="carga" id="carga"><div class="spin"></div><span>Abriendo Ensayos de Campo…</span></div>
 <noscript><p style="padding:20px">Esta aplicación necesita JavaScript activado.</p></noscript>
-<script type="module" src="./js/app.js?v=b705f2df5e"></script>
+<script type="module" src="./js/app.js?v=4e3cc86e35"></script>
 <script>window.addEventListener('unhandledrejection', e => { const c = document.getElementById('carga'); if (c) c.innerHTML = '<span>No se pudo abrir la app: ' + (e.reason && e.reason.message || 'error') + '. Abrila con iniciar-app.cmd.</span>'; });
 window.addEventListener('error', e => { try { if (document.getElementById('carga') && !sessionStorage.getItem('ec-recarga')) { sessionStorage.setItem('ec-recarga', '1'); setTimeout(() => location.reload(), 600); return; } } catch (x) {} const c = document.getElementById('carga'); if (c) c.innerHTML = '<span>No se pudo abrir la app: ' + (e.message || 'error') + '. Probá abrirla con iniciar-app.cmd (no con doble clic en index.html).</span>'; });</script>
 </body>

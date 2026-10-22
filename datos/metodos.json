@@ -23,7 +23,8 @@
     "Sorgo",
     "Poroto",
     "Maní",
-    "Avena"
+    "Avena",
+    "Abonos verdes y coberturas"
    ],
    "tipos": [
     "Cultivares (RNCC/VCU)",
@@ -64,7 +65,8 @@
     "Sorgo",
     "Poroto",
     "Maní",
-    "Avena"
+    "Avena",
+    "Abonos verdes y coberturas"
    ],
    "tipos": [
     "Cultivares (RNCC/VCU)",
@@ -97,7 +99,8 @@
     "Sorgo",
     "Poroto",
     "Maní",
-    "Avena"
+    "Avena",
+    "Abonos verdes y coberturas"
    ],
    "tipos": [
     "Cultivares (RNCC/VCU)",
@@ -446,7 +449,9 @@
     "Arroz",
     "Sorgo",
     "Poroto",
-    "Maní"
+    "Maní",
+    "Mandioca",
+    "Abonos verdes y coberturas"
    ],
    "tipos": [
     "Eficacia de fungicida",
@@ -579,7 +584,8 @@
     "Soja",
     "Poroto",
     "Algodón",
-    "Girasol"
+    "Girasol",
+    "Maní"
    ],
    "tipos": [
     "Eficacia de fungicida",
@@ -704,7 +710,8 @@
     "Avena",
     "Sorgo",
     "Canola",
-    "Algodón"
+    "Algodón",
+    "Abonos verdes y coberturas"
    ],
    "tipos": [
     "Eficacia de insecticida",
@@ -969,7 +976,8 @@
     "Canola",
     "Sésamo",
     "Chía",
-    "Maní"
+    "Maní",
+    "Abonos verdes y coberturas"
    ],
    "tipos": [
     "Cultivares (RNCC/VCU)",
@@ -993,7 +1001,10 @@
     "Soja",
     "Trigo",
     "Poroto",
-    "Maíz"
+    "Maíz",
+    "Canola",
+    "Maní",
+    "Abonos verdes y coberturas"
    ],
    "tipos": [
     "Cultivares (RNCC/VCU)",
@@ -1123,6 +1134,1013 @@
    "momento": "En cada aplicación",
    "ref": "DepositScan (Zhu et al., 2011); ASABE S572.3",
    "origen": "papel"
+  },
+  {
+   "id": "dias_cosecha",
+   "nombre": "Días a madurez de cosecha",
+   "unidad": "días",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": 40,
+   "max": 420,
+   "metodo": "Días desde la siembra hasta que el 50 % de las plantas del área útil alcanza madurez de cosecha (soja R8: 95 % de vainas con color de madura; cereales: grano duro, Z92). Es la que pide SENAVE para el ciclo total.",
+   "cultivos": [
+    "Soja",
+    "Trigo",
+    "Girasol",
+    "Canola",
+    "Arroz",
+    "Chía",
+    "Algodón",
+    "Sorgo",
+    "Caña de azúcar",
+    "Poroto",
+    "Maní",
+    "Mandioca",
+    "Avena",
+    "Abonos verdes y coberturas"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/f210082bdb407a2eb64a6934d9cd2eb4.pdf"
+  },
+  {
+   "id": "tallos_verdes",
+   "nombre": "Tallos verdes a madurez",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "En R8, contar en el área útil las plantas con tallo todavía verde (o con hojas retenidas) y dividir por el total × 100. Exigido por SENAVE (NOR-DPUV-121, 3.1).",
+   "cultivos": [
+    "Soja"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/f210082bdb407a2eb64a6934d9cd2eb4.pdf"
+  },
+  {
+   "id": "retencion_foliar",
+   "nombre": "Retención foliar a madurez",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "En R8, % de plantas del área útil que conservan hojas adheridas cuando las vainas ya están maduras. Exigido por SENAVE (NOR-DPUV-121, 3.1).",
+   "cultivos": [
+    "Soja"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/f210082bdb407a2eb64a6934d9cd2eb4.pdf"
+  },
+  {
+   "id": "dehiscencia",
+   "nombre": "Dehiscencia (apertura de vainas / desgrane)",
+   "unidad": "nota 1–5",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": 1,
+   "max": 5,
+   "metodo": "Nota visual en el área útil, 7–15 días después de la madurez de cosecha: 1 = sin vainas abiertas o granos caídos; 2 = <10 %; 3 = 10–25 %; 4 = 25–50 %; 5 = >50 %. Escala orientativa: SENAVE pide 'grado de dehiscencia' sin fijar escala.",
+   "cultivos": [
+    "Soja",
+    "Trigo",
+    "Arroz",
+    "Sésamo",
+    "Poroto"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/f210082bdb407a2eb64a6934d9cd2eb4.pdf"
+  },
+  {
+   "id": "vaina_verde_abierta",
+   "nombre": "Apertura de vainas en verde",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 0,
+   "sub": 10,
+   "min": 0,
+   "max": 100,
+   "metodo": "Entre R6 y R7, en 10 plantas por parcela, % de vainas que se abren estando todavía verdes (frecuente con chinches o estrés). SENAVE (NOR-DPUV-121) lo pide sin fijar método: método orientativo.",
+   "cultivos": [
+    "Soja"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/f210082bdb407a2eb64a6934d9cd2eb4.pdf"
+  },
+  {
+   "id": "dias_flor_masc",
+   "nombre": "Días a floración masculina (antesis)",
+   "unidad": "días",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": 30,
+   "max": 120,
+   "metodo": "Días desde la siembra hasta que el 50 % de las plantas del área útil libera polen. La floración femenina (estigmas visibles) va en dias_flor; la diferencia es el intervalo antesis-estigmas (ASI).",
+   "cultivos": [
+    "Maíz"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/4bba5a89dd0b10be8bbccf9671e8d693.pdf"
+  },
+  {
+   "id": "maz_vacias",
+   "nombre": "Mazorcas vacías",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "En la cosecha del área útil, % de mazorcas con 25 % o más de la superficie sin granos (definición SENAVE, NOR-DPUV-111).",
+   "cultivos": [
+    "Maíz"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/4bba5a89dd0b10be8bbccf9671e8d693.pdf"
+  },
+  {
+   "id": "dias_espigazon",
+   "nombre": "Días a espigazón completa",
+   "unidad": "días",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": 40,
+   "max": 120,
+   "metodo": "Días desde la siembra hasta que el 50 % de los tallos del área útil tiene la espiga completamente afuera (Z59). Exigido por SENAVE (NOR-DPUV-125).",
+   "cultivos": [
+    "Trigo"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/890a828cf316f56c5c162c5aaeadc567.pdf"
+  },
+  {
+   "id": "germ_espiga",
+   "nombre": "Germinación en espiga (brotado)",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 0,
+   "sub": 10,
+   "min": 0,
+   "max": 100,
+   "metodo": "Tras lluvias en madurez, en 10 espigas por parcela (o prueba de espigas humedecidas), % de granos con coleorriza o radícula visible. SENAVE la pide sin fijar método: método orientativo.",
+   "cultivos": [
+    "Trigo"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/890a828cf316f56c5c162c5aaeadc567.pdf"
+  },
+  {
+   "id": "falling_number",
+   "nombre": "Número de caída (falling number)",
+   "unidad": "s",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": 60,
+   "max": 600,
+   "metodo": "Laboratorio (ICC 107 / AACC 56-81): segundos; <250 s indica actividad amilásica alta (brotado). Muestra de grano del área útil.",
+   "cultivos": [
+    "Trigo"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/890a828cf316f56c5c162c5aaeadc567.pdf"
+  },
+  {
+   "id": "gluten_w",
+   "nombre": "Fuerza panadera (W, alveograma) o gluten húmedo",
+   "unidad": "W (10⁻⁴ J)",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": 50,
+   "max": 600,
+   "metodo": "Laboratorio: alveograma de Chopin (W) o gluten húmedo (%). SENAVE pide 'fuerza de gluten' en 3 localidades por año para la candidata y dos testigos.",
+   "cultivos": [
+    "Trigo"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/890a828cf316f56c5c162c5aaeadc567.pdf"
+  },
+  {
+   "id": "grupo_madurez",
+   "nombre": "Grupo de maduración (ciclo)",
+   "unidad": "grupo",
+   "tipo": "texto",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 0,
+   "metodo": "Clasificar el ciclo total según los rangos de días de la norma de la especie (p. ej. súper precoz / precoz / medio / tardío).",
+   "cultivos": [
+    "Girasol",
+    "Canola",
+    "Arroz",
+    "Sésamo",
+    "Algodón",
+    "Sorgo",
+    "Caña de azúcar",
+    "Poroto",
+    "Maní",
+    "Mandioca",
+    "Avena",
+    "Abonos verdes y coberturas",
+    "Soja",
+    "Maíz",
+    "Trigo"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/71d0bdea59c310a7f69482bc919d9bab.pdf"
+  },
+  {
+   "id": "calidad_industrial_arroz",
+   "nombre": "Calidad industrial del arroz (rendimiento de molienda / grano entero)",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "La norma pide características tecnológicas/industriales, químicas, organolépticas y culinarias sin detallar; registrar el parámetro y el método del laboratorio (p. ej. % de grano entero).",
+   "cultivos": [
+    "Arroz"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/38ccbde64c32cbaa0a3b3597a81f3e0a.pdf"
+  },
+  {
+   "id": "dias_flor_fem",
+   "nombre": "Días a floración femenina (50 % con estigmas)",
+   "unidad": "días",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": 30,
+   "max": 150,
+   "metodo": "Días desde la siembra hasta que el 50 % de las plantas muestra estigmas visibles (R1).",
+   "cultivos": [
+    "Sésamo",
+    "Maíz"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/fd3e75f451d1f97408f382c0d6eb7166.pdf"
+  },
+  {
+   "id": "reaccion_enf",
+   "nombre": "Reacción a enfermedad o plaga (lectura REC)",
+   "unidad": "clase",
+   "tipo": "texto",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 0,
+   "metodo": "Reacción de la entrada a la enfermedad/plaga indicada, leída en parcela REC, invernadero o laboratorio. La norma no fija escala: indicar la usada (p. ej. R/MR/MS/S o severidad del testigo susceptible, que debe superar 50 %).",
+   "cultivos": [
+    "Sésamo",
+    "Algodón",
+    "Poroto",
+    "Maní",
+    "Soja"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/fd3e75f451d1f97408f382c0d6eb7166.pdf"
+  },
+  {
+   "id": "rend_rama",
+   "nombre": "Rendimiento de algodón en rama",
+   "unidad": "kg/ha",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 8000,
+   "metodo": "Peso del algodón en bruto (fibra + semilla) cosechado en el área útil, llevado a kg/ha.",
+   "cultivos": [
+    "Algodón"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/bafaa15624cde95d5dc8da5cf124833a.pdf"
+  },
+  {
+   "id": "peso_capullo",
+   "nombre": "Peso medio del capullo",
+   "unidad": "g",
+   "tipo": "numero",
+   "dec": 2,
+   "sub": 1,
+   "min": 0,
+   "max": 15,
+   "metodo": "Peso de algodón en rama por capullo (muestra de capullos del área útil).",
+   "cultivos": [
+    "Algodón"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/bafaa15624cde95d5dc8da5cf124833a.pdf"
+  },
+  {
+   "id": "p100_con_linter",
+   "nombre": "Peso de 100 semillas con línter",
+   "unidad": "g",
+   "tipo": "numero",
+   "dec": 2,
+   "sub": 1,
+   "min": 0,
+   "max": 20,
+   "metodo": "Pesar 100 semillas tal como salen del desmote.",
+   "cultivos": [
+    "Algodón"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/bafaa15624cde95d5dc8da5cf124833a.pdf"
+  },
+  {
+   "id": "p100_sin_linter",
+   "nombre": "Peso de 100 semillas sin línter",
+   "unidad": "g",
+   "tipo": "numero",
+   "dec": 2,
+   "sub": 1,
+   "min": 0,
+   "max": 20,
+   "metodo": "Pesar 100 semillas deslintadas.",
+   "cultivos": [
+    "Algodón"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/bafaa15624cde95d5dc8da5cf124833a.pdf"
+  },
+  {
+   "id": "aceite_semilla",
+   "nombre": "Contenido de aceite de la semilla",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 40,
+   "metodo": "Laboratorio, sobre semilla de algodón.",
+   "cultivos": [
+    "Algodón"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/bafaa15624cde95d5dc8da5cf124833a.pdf"
+  },
+  {
+   "id": "calidad_fibra",
+   "nombre": "Calidad de fibra (HVI)",
+   "unidad": "texto",
+   "tipo": "texto",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 0,
+   "metodo": "Cargar los parámetros del certificado HVI: longitud, uniformidad, resistencia, alargamiento, finura, madurez, micronaire, índice de fibras cortas, reflectancia (Rd), amarillamiento (+b) y gosipol.",
+   "cultivos": [
+    "Algodón"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/bafaa15624cde95d5dc8da5cf124833a.pdf"
+  },
+  {
+   "id": "tanino",
+   "nombre": "Contenido de taninos del grano",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 2,
+   "sub": 1,
+   "min": 0,
+   "max": 10,
+   "metodo": "Laboratorio (certificado).",
+   "cultivos": [
+    "Sorgo"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/c94a6c87db0e93e01ba4e229c8aba095.pdf"
+  },
+  {
+   "id": "tipo_panoja",
+   "nombre": "Tipo de panoja",
+   "unidad": "tipo",
+   "tipo": "texto",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 0,
+   "metodo": "Describir panoja (compacta, semilaxa, laxa).",
+   "cultivos": [
+    "Sorgo"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/c94a6c87db0e93e01ba4e229c8aba095.pdf"
+  },
+  {
+   "id": "suculencia_tallo",
+   "nombre": "Suculencia del tallo",
+   "unidad": "nota",
+   "tipo": "texto",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 0,
+   "metodo": "La norma no fija escala; describir tallo jugoso o seco e indicar la escala usada.",
+   "cultivos": [
+    "Sorgo",
+    "Abonos verdes y coberturas"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/c94a6c87db0e93e01ba4e229c8aba095.pdf"
+  },
+  {
+   "id": "ms_fracciones",
+   "nombre": "Materia seca por fracción (hoja / panícula / tallo)",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Separar hojas, panícula y tallo de una muestra, secar y expresar el % de MS de cada fracción.",
+   "cultivos": [
+    "Sorgo"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/c94a6c87db0e93e01ba4e229c8aba095.pdf"
+  },
+  {
+   "id": "dias_emergencia",
+   "nombre": "Días a emergencia completa (brotación)",
+   "unidad": "días",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 90,
+   "metodo": "Días desde la siembra/plantación hasta que la parcela muestra emergencia completa.",
+   "cultivos": [
+    "Caña de azúcar"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/6abdde193c11f98a6491e55f95000959.pdf"
+  },
+  {
+   "id": "macollos_m",
+   "nombre": "Macollos (tallos) por metro lineal",
+   "unidad": "n/m",
+   "tipo": "conteo",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 60,
+   "metodo": "Contar tallos/macollos en metros fijos de las hileras centrales.",
+   "cultivos": [
+    "Caña de azúcar"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/6abdde193c11f98a6491e55f95000959.pdf ; https://www.redalyc.org/journal/1932/193279251007/193279251007.pdf"
+  },
+  {
+   "id": "largo_hoja",
+   "nombre": "Largo de la hoja",
+   "unidad": "cm",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 10,
+   "min": 0,
+   "max": 250,
+   "metodo": "Medir la hoja +3 (primera con lígula visible) o la indicada.",
+   "cultivos": [
+    "Caña de azúcar"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/6abdde193c11f98a6491e55f95000959.pdf"
+  },
+  {
+   "id": "josal",
+   "nombre": "Josal (pelos en la vaina)",
+   "unidad": "nota",
+   "tipo": "texto",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 0,
+   "metodo": "Describir mayor o menor presencia de pelos en la vaina.",
+   "cultivos": [
+    "Caña de azúcar"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/6abdde193c11f98a6491e55f95000959.pdf"
+  },
+  {
+   "id": "sev_foliar_cana",
+   "nombre": "Severidad de enfermedad foliar en caña",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 0,
+   "sub": 10,
+   "min": 0,
+   "max": 100,
+   "metodo": "% de área foliar afectada en hojas +1 a +3.",
+   "cultivos": [
+    "Caña de azúcar"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/6abdde193c11f98a6491e55f95000959.pdf"
+  },
+  {
+   "id": "brix_cana",
+   "nombre": "Brix del jugo",
+   "unidad": "°Brix",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 30,
+   "metodo": "Refractómetro sobre jugo de tallos muestreados.",
+   "cultivos": [
+    "Caña de azúcar"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.jica.go.jp/paraguay/espanol/office/others/c8h0vm0000ad5gke-att/gt_01.pdf"
+  },
+  {
+   "id": "raiz_aerea",
+   "nombre": "Presencia de raíces aéreas",
+   "unidad": "nota",
+   "tipo": "texto",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 0,
+   "metodo": "Describir presencia (ausente/escasa/abundante).",
+   "cultivos": [
+    "Caña de azúcar"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/6abdde193c11f98a6491e55f95000959.pdf"
+  },
+  {
+   "id": "despaje",
+   "nombre": "Despaje natural",
+   "unidad": "nota",
+   "tipo": "texto",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 0,
+   "metodo": "Describir facilidad de desprendimiento de las hojas secas.",
+   "cultivos": [
+    "Caña de azúcar"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/6abdde193c11f98a6491e55f95000959.pdf"
+  },
+  {
+   "id": "tipo_yema",
+   "nombre": "Tipo de yema",
+   "unidad": "tipo",
+   "tipo": "texto",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 0,
+   "metodo": "Clasificar forma/prominencia de la yema.",
+   "cultivos": [
+    "Caña de azúcar"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/6abdde193c11f98a6491e55f95000959.pdf"
+  },
+  {
+   "id": "rajaduras",
+   "nombre": "Tallos con rajaduras",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "% de tallos con rajaduras.",
+   "cultivos": [
+    "Caña de azúcar"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/6abdde193c11f98a6491e55f95000959.pdf"
+  },
+  {
+   "id": "canas_m",
+   "nombre": "Cañas cosechables por metro lineal",
+   "unidad": "n/m",
+   "tipo": "conteo",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 40,
+   "metodo": "Contar los tallos molibles en las hileras centrales al momento de la cosecha.",
+   "cultivos": [
+    "Caña de azúcar"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/6abdde193c11f98a6491e55f95000959.pdf"
+  },
+  {
+   "id": "long_tallo",
+   "nombre": "Longitud de tallo molible",
+   "unidad": "m",
+   "tipo": "numero",
+   "dec": 2,
+   "sub": 10,
+   "min": 0,
+   "max": 6,
+   "metodo": "Medir desde la base hasta el punto de despunte en tallos de la parcela útil.",
+   "cultivos": [
+    "Caña de azúcar"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/6abdde193c11f98a6491e55f95000959.pdf"
+  },
+  {
+   "id": "diam_tallo",
+   "nombre": "Diámetro de tallo",
+   "unidad": "mm",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 10,
+   "min": 0,
+   "max": 60,
+   "metodo": "Calibre en el tercio medio del tallo.",
+   "cultivos": [
+    "Caña de azúcar",
+    "Abonos verdes y coberturas"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/6abdde193c11f98a6491e55f95000959.pdf"
+  },
+  {
+   "id": "pol_cana",
+   "nombre": "Pol (sacarosa aparente)",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 2,
+   "sub": 1,
+   "min": 0,
+   "max": 25,
+   "metodo": "Laboratorio (polarimetría).",
+   "cultivos": [
+    "Caña de azúcar"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/6abdde193c11f98a6491e55f95000959.pdf"
+  },
+  {
+   "id": "pureza_cana",
+   "nombre": "Pureza del jugo",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Pol / Brix × 100.",
+   "cultivos": [
+    "Caña de azúcar"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/6abdde193c11f98a6491e55f95000959.pdf"
+  },
+  {
+   "id": "medula",
+   "nombre": "Hueco o médula en el tallo",
+   "unidad": "nota",
+   "tipo": "texto",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 0,
+   "metodo": "Describir presencia de hueco o médula al cortar el tallo.",
+   "cultivos": [
+    "Caña de azúcar"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/6abdde193c11f98a6491e55f95000959.pdf"
+  },
+  {
+   "id": "carbohidratos",
+   "nombre": "Carbohidratos totales de la raíz",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Laboratorio (certificado).",
+   "cultivos": [
+    "Mandioca"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/003ae35613ddf384dc924c263850410b.pdf"
+  },
+  {
+   "id": "agua_raiz",
+   "nombre": "Contenido de agua de la raíz",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Laboratorio (certificado).",
+   "cultivos": [
+    "Mandioca"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/003ae35613ddf384dc924c263850410b.pdf"
+  },
+  {
+   "id": "valor_energetico",
+   "nombre": "Valor energético",
+   "unidad": "kcal/100 g",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 500,
+   "metodo": "Laboratorio (certificado).",
+   "cultivos": [
+    "Mandioca"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/003ae35613ddf384dc924c263850410b.pdf"
+  },
+  {
+   "id": "calcio_raiz",
+   "nombre": "Calcio en raíz",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 3,
+   "sub": 1,
+   "min": 0,
+   "max": 5,
+   "metodo": "Laboratorio (certificado).",
+   "cultivos": [
+    "Mandioca"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/003ae35613ddf384dc924c263850410b.pdf"
+  },
+  {
+   "id": "fosforo_raiz",
+   "nombre": "Fósforo en raíz",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 3,
+   "sub": 1,
+   "min": 0,
+   "max": 5,
+   "metodo": "Laboratorio (certificado).",
+   "cultivos": [
+    "Mandioca"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/003ae35613ddf384dc924c263850410b.pdf"
+  },
+  {
+   "id": "no_comestible",
+   "nombre": "Porción no comestible (cáscara y descarte)",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Peso de cáscara y partes no comestibles sobre peso total de raíz.",
+   "cultivos": [
+    "Mandioca"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/003ae35613ddf384dc924c263850410b.pdf"
+  },
+  {
+   "id": "cobertura_cultivo",
+   "nombre": "Cobertura del suelo por el cultivo",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Estimar visualmente o con foto/grilla el % de suelo cubierto por el cultivo (equivale a 'cobertura_p' de pasturas).",
+   "cultivos": [
+    "Abonos verdes y coberturas"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/093bd9666463650c27836c4733d0696e.pdf"
+  },
+  {
+   "id": "mv",
+   "nombre": "Forraje verde cosechado (materia verde)",
+   "unidad": "kg MV/ha",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 60000,
+   "metodo": "Cortar un marco o el área útil al remanente fijado, pesar en verde y llevar a kg/ha.",
+   "cultivos": [
+    "Abonos verdes y coberturas"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/093bd9666463650c27836c4733d0696e.pdf"
+  },
+  {
+   "id": "dias_a_corte",
+   "nombre": "Días de la germinación al primer corte",
+   "unidad": "días",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 300,
+   "metodo": "Días desde la germinación hasta el primer corte (equivale a 'dias_primer_corte' de pasturas).",
+   "cultivos": [
+    "Abonos verdes y coberturas"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/093bd9666463650c27836c4733d0696e.pdf"
+  },
+  {
+   "id": "rel_hoja_tallo",
+   "nombre": "Hoja en la materia seca (relación hoja/tallo)",
+   "unidad": "% de la MS",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Separar hojas y tallos de una muestra, secar y expresar % de hoja en la MS (equivale a 'hoja' de pasturas).",
+   "cultivos": [
+    "Abonos verdes y coberturas"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/093bd9666463650c27836c4733d0696e.pdf"
+  },
+  {
+   "id": "dig_ms",
+   "nombre": "Digestibilidad de la materia seca",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Laboratorio (equivale a 'divms' de pasturas).",
+   "cultivos": [
+    "Abonos verdes y coberturas"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/093bd9666463650c27836c4733d0696e.pdf"
+  },
+  {
+   "id": "tolerancia_seca_frio",
+   "nombre": "Tolerancia a sequía y frío",
+   "unidad": "nota",
+   "tipo": "texto",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 0,
+   "metodo": "La norma no fija escala; describir el comportamiento frente a sequía y frío (p. ej. alta / media / baja) e indicar cuándo se observó.",
+   "cultivos": [
+    "Abonos verdes y coberturas"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/093bd9666463650c27836c4733d0696e.pdf"
+  },
+  {
+   "id": "rebrote_cap",
+   "nombre": "Capacidad de rebrote",
+   "unidad": "clase",
+   "tipo": "texto",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 0,
+   "metodo": "Alta / media / baja (equivale a 'rebrote' de pasturas).",
+   "cultivos": [
+    "Abonos verdes y coberturas"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/093bd9666463650c27836c4733d0696e.pdf"
+  },
+  {
+   "id": "vainas_abiertas_verde",
+   "nombre": "Apertura de vainas en verde",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "% de vainas abiertas mientras la planta todavía está verde.",
+   "cultivos": [
+    "Soja"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "Método orientativo: la norma pide la variable pero no fija el método."
+  },
+  {
+   "id": "ndt",
+   "nombre": "Nutrientes digestibles totales (NDT)",
+   "unidad": "% de la MS",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Análisis de laboratorio del material para ensilaje.",
+   "cultivos": [
+    "Maíz"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "Método orientativo: la norma pide la variable pero no fija el método."
+  },
+  {
+   "id": "fuerza_gluten",
+   "nombre": "Fuerza de gluten (W)",
+   "unidad": "J×10⁻⁴",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 800,
+   "metodo": "Laboratorio; la norma no fija el método (en la práctica alveograma W). Indicar método en el informe.",
+   "cultivos": [
+    "Trigo"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "Método orientativo: la norma pide la variable pero no fija el método."
   }
  ],
  "horticola": [
@@ -1331,7 +2349,8 @@
     "Pepino",
     "Cebolla",
     "Lechuga",
-    "Repollo"
+    "Repollo",
+    "Papa"
    ],
    "tipos": [
     "Cultivares / híbridos",
@@ -2329,6 +3348,658 @@
    "momento": "En cada aplicación",
    "ref": "DepositScan (Zhu et al., 2011); ASABE S572.3",
    "origen": "papel"
+  },
+  {
+   "id": "prendimiento_h",
+   "nombre": "Prendimiento del trasplante",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Plantas vivas y con brote nuevo ÷ plantas trasplantadas × 100 en la parcela útil, a los 7 y 14 días del trasplante (como en Tanaka Aguirre 2021, frutilla en Itapúa). Reponer fallas solo en el plazo que permita la norma (SENAVE: no después de 10 días).",
+   "cultivos": [
+    "Tomate",
+    "Locote",
+    "Frutilla",
+    "Sandía",
+    "Pepino",
+    "Lechuga",
+    "Repollo",
+    "Cebolla",
+    "Batata",
+    "Mburucuyá"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://revistas.uni.edu.py/index.php/rseisa/article/download/292/276/552"
+  },
+  {
+   "id": "dias_flor_h",
+   "nombre": "Días a plena floración",
+   "unidad": "días",
+   "tipo": "conteo",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 400,
+   "metodo": "Días desde la siembra o el trasplante (declarar cuál) hasta que el 50 % de las plantas de la parcela útil tiene flores abiertas. Recorrer la parcela cada 2–3 días desde la primera flor. Exigida por las normas SENAVE NOR-DPUV-108, 115, 118 y 124 (\"días a plena floración\").",
+   "cultivos": [
+    "Tomate",
+    "Locote",
+    "Papa",
+    "Frutilla",
+    "Melón",
+    "Sandía",
+    "Zapallo / zapallito",
+    "Pepino",
+    "Banana",
+    "Mburucuyá"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/c553ead0eb9f2ecb42778191d28931cb.pdf"
+  },
+  {
+   "id": "periodo_fruct",
+   "nombre": "Período de fructificación (cosecha)",
+   "unidad": "días",
+   "tipo": "conteo",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 400,
+   "metodo": "Días entre la primera y la última cosecha de la parcela. Exigido por las normas SENAVE de tomate, melón y frutilla (\"período de fructificación\").",
+   "cultivos": [
+    "Tomate",
+    "Locote",
+    "Frutilla",
+    "Melón",
+    "Sandía",
+    "Zapallo / zapallito",
+    "Pepino",
+    "Piña",
+    "Mburucuyá"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/c553ead0eb9f2ecb42778191d28931cb.pdf"
+  },
+  {
+   "id": "ciclo_total_h",
+   "nombre": "Ciclo total",
+   "unidad": "días",
+   "tipo": "conteo",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 800,
+   "metodo": "Días desde la siembra (o la preparación del plantín, como pide la norma de tomate) hasta la última cosecha o la madurez final del cultivo. Exigido por las normas SENAVE NOR-DPUV-108, 112, 115, 118 y 124.",
+   "cultivos": [
+    "Tomate",
+    "Locote",
+    "Papa",
+    "Frutilla",
+    "Melón",
+    "Sandía",
+    "Zapallo / zapallito",
+    "Pepino",
+    "Repollo",
+    "Zanahoria",
+    "Batata",
+    "Mandioca de mesa",
+    "Banana",
+    "Piña",
+    "Mburucuyá"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/c553ead0eb9f2ecb42778191d28931cb.pdf"
+  },
+  {
+   "id": "ms_fruto",
+   "nombre": "Materia seca del órgano cosechado",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 5,
+   "min": 0,
+   "max": 60,
+   "metodo": "Submuestra de frutos completamente maduros (tomate, melón) o de tubérculos o raíces (papa, mandioca), en rodajas, secada en estufa a 65–70 °C hasta peso constante. % = peso seco ÷ peso fresco × 100 (guía 05 §3.2). Las normas SENAVE de tomate, melón y papa la piden.",
+   "cultivos": [
+    "Tomate",
+    "Papa",
+    "Melón",
+    "Batata",
+    "Mandioca de mesa"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/c553ead0eb9f2ecb42778191d28931cb.pdf; Proyecto: ensayos_de_campo/05_ensayos_horticolas.md"
+  },
+  {
+   "id": "nem_suelo",
+   "nombre": "Nematodos en el suelo (juveniles J2)",
+   "unidad": "J2/100 cm³ de suelo",
+   "tipo": "conteo",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 100000,
+   "metodo": "Muestra compuesta de 10–20 submuestras de 0–20 cm en la parcela útil, extraída en laboratorio de nematología. Población inicial (Pi) antes de plantar o aplicar y final (Pf) a la cosecha; factor de reproducción FR = Pf ÷ Pi (calculadora de la app).",
+   "cultivos": [
+    "Tomate",
+    "Locote",
+    "Papa",
+    "Frutilla",
+    "Melón",
+    "Sandía",
+    "Zapallo / zapallito",
+    "Pepino",
+    "Lechuga",
+    "Zanahoria",
+    "Batata"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md §3.5"
+  },
+  {
+   "id": "insectos_h",
+   "nombre": "Insectos o ácaros vivos (especie indicada)",
+   "unidad": "n/unidad",
+   "tipo": "conteo",
+   "dec": 1,
+   "sub": 10,
+   "min": 0,
+   "max": 5000,
+   "metodo": "Contar los individuos vivos de la plaga indicada en la unidad de muestreo declarada (hoja, planta, brote, fruto, trampa o golpe de paño), en las mismas plantas marcadas antes y después de cada aplicación. Para plagas sin medición propia en el rubro (vaquita, pulguilla, polilla de la papa o de las crucíferas, pulgones, cochinillas, Diaphorina, picudo del banano). Eficacia por Henderson-Tilton.",
+   "cultivos": [
+    "Papa",
+    "Lechuga",
+    "Repollo",
+    "Cebolla",
+    "Zanahoria",
+    "Batata",
+    "Mandioca de mesa",
+    "Cítricos",
+    "Banana",
+    "Piña",
+    "Mburucuyá"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/9e3c02fa918871717025ddfc2a36b8d8.pdf; https://aulavirtual.agro.unlp.edu.ar/pluginfile.php/60751/mod_folder/content/0/Gu%C3%ADa%20papa%202020.pdf"
+  },
+  {
+   "id": "peso_especifico",
+   "nombre": "Peso específico del tubérculo",
+   "unidad": "g/cm³",
+   "tipo": "numero",
+   "dec": 3,
+   "sub": 1,
+   "min": 1.0,
+   "max": 1.2,
+   "metodo": "Pesar una muestra de 3–5 kg de tubérculos limpios en el aire y sumergida en agua: PE = peso en aire ÷ (peso en aire − peso en agua). Exigido por la norma SENAVE NOR-DPUV-118 (papa).",
+   "cultivos": [
+    "Papa"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/9e3c02fa918871717025ddfc2a36b8d8.pdf"
+  },
+  {
+   "id": "apt_fritura",
+   "nombre": "Aptitud para fritura",
+   "unidad": "nota 1–5",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": 1,
+   "max": 5,
+   "metodo": "Freír bastones de una muestra de tubérculos y calificar color y textura frente a los 2 testigos (1 = no apta, 5 = muy apta). La norma NOR-DPUV-118 pide informar la aptitud para freír en 3 localidades, sin fijar escala: la escala 1–5 es de la app.",
+   "cultivos": [
+    "Papa"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/9e3c02fa918871717025ddfc2a36b8d8.pdf"
+  },
+  {
+   "id": "apt_hervido",
+   "nombre": "Aptitud para hervir",
+   "unidad": "nota 1–5",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": 1,
+   "max": 5,
+   "metodo": "Hervir una muestra de tubérculos y calificar desintegración y textura frente a los 2 testigos (1 = no apta, 5 = muy apta). La norma NOR-DPUV-118 pide informar la aptitud para hervir, sin fijar escala: la escala 1–5 es de la app.",
+   "cultivos": [
+    "Papa"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/9e3c02fa918871717025ddfc2a36b8d8.pdf"
+  },
+  {
+   "id": "diam_hombro",
+   "nombre": "Diámetro de hombro de la raíz",
+   "unidad": "mm",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 10,
+   "min": 0,
+   "max": 100,
+   "metodo": "Con calibre, en la parte más ancha de la raíz (hombro), en las raíces del tramo muestreado. Criterio de cosecha: 2 a 6 cm de diámetro de hombro (UNLU, zanahoria).",
+   "cultivos": [
+    "Zanahoria"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.hort.unlu.edu.ar/sites/www.hort.unlu.edu.ar/files/site/Zanahoria.pdf"
+  },
+  {
+   "id": "plantas_m",
+   "nombre": "Plantas por metro lineal",
+   "unidad": "pl/m",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 2,
+   "min": 0,
+   "max": 120,
+   "metodo": "Contar plantas en 2 tramos de 1 m dentro de las hileras útiles y promediar. La app convierte a pl/ha = pl/m × 10 000 ÷ distancia entre hileras (m). La norma SENAVE NOR-DPUV-112 pide informar la población después de la brotación (11.000–17.000 pl/ha).",
+   "cultivos": [
+    "Mandioca de mesa"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/003ae35613ddf384dc924c263850410b.pdf"
+  },
+  {
+   "id": "grupo_madurez",
+   "nombre": "Grupo de maduración (ciclo)",
+   "unidad": "grupo",
+   "tipo": "texto",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 0,
+   "metodo": "Clasificar el ciclo total en precoz / medio / tardío, como pide la norma SENAVE NOR-DPUV-112 (la norma no fija los rangos de días). Método orientativo: la norma pide la variable pero no fija el método.",
+   "cultivos": [
+    "Mandioca de mesa"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/003ae35613ddf384dc924c263850410b.pdf"
+  },
+  {
+   "id": "coccion",
+   "nombre": "Tiempo de cocción",
+   "unidad": "min",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 3,
+   "min": 0,
+   "max": 90,
+   "metodo": "Trozos de unos 5 cm del tercio medio de 3 raíces por parcela, en 1 L de agua hirviendo; cronometrar desde que entran al agua hasta que no ofrecen resistencia al tenedor. Más de 30 minutos se califica como malo (Embrapa, tiempo de cocción de mandioca de mesa).",
+   "cultivos": [
+    "Mandioca de mesa"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/977503/1/TEMPODECOZIMENTO231sistemas21479MAURICIO.pdf"
+  },
+  {
+   "id": "carbohidratos",
+   "nombre": "Carbohidratos totales de la raíz",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Laboratorio (certificado). Valor nutricional exigido por la norma SENAVE NOR-DPUV-112. Método orientativo: la norma pide la variable pero no fija el método.",
+   "cultivos": [
+    "Mandioca de mesa"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/003ae35613ddf384dc924c263850410b.pdf"
+  },
+  {
+   "id": "agua_raiz",
+   "nombre": "Contenido de agua de la raíz",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Laboratorio (certificado). Valor nutricional exigido por la norma SENAVE NOR-DPUV-112. Método orientativo: la norma pide la variable pero no fija el método.",
+   "cultivos": [
+    "Mandioca de mesa"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/003ae35613ddf384dc924c263850410b.pdf"
+  },
+  {
+   "id": "valor_energetico",
+   "nombre": "Valor energético",
+   "unidad": "kcal/100 g",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 500,
+   "metodo": "Laboratorio (certificado). Valor nutricional exigido por la norma SENAVE NOR-DPUV-112. Método orientativo: la norma pide la variable pero no fija el método.",
+   "cultivos": [
+    "Mandioca de mesa"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/003ae35613ddf384dc924c263850410b.pdf"
+  },
+  {
+   "id": "calcio_raiz",
+   "nombre": "Calcio en raíz",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 3,
+   "sub": 1,
+   "min": 0,
+   "max": 5,
+   "metodo": "Laboratorio (certificado). Valor nutricional exigido por la norma SENAVE NOR-DPUV-112. Método orientativo: la norma pide la variable pero no fija el método.",
+   "cultivos": [
+    "Mandioca de mesa"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/003ae35613ddf384dc924c263850410b.pdf"
+  },
+  {
+   "id": "fosforo_raiz",
+   "nombre": "Fósforo en raíz",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 3,
+   "sub": 1,
+   "min": 0,
+   "max": 5,
+   "metodo": "Laboratorio (certificado). Valor nutricional exigido por la norma SENAVE NOR-DPUV-112. Método orientativo: la norma pide la variable pero no fija el método.",
+   "cultivos": [
+    "Mandioca de mesa"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/003ae35613ddf384dc924c263850410b.pdf"
+  },
+  {
+   "id": "no_comestible",
+   "nombre": "Porción no comestible (cáscara y descarte)",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Peso de cáscara y partes no comestibles sobre peso total de raíz. Valor nutricional exigido por la norma SENAVE NOR-DPUV-112. Método orientativo: la norma pide la variable pero no fija el método.",
+   "cultivos": [
+    "Mandioca de mesa"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/003ae35613ddf384dc924c263850410b.pdf"
+  },
+  {
+   "id": "jugo_pct",
+   "nombre": "Rendimiento de jugo o pulpa",
+   "unidad": "% del peso del fruto",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 5,
+   "min": 0,
+   "max": 80,
+   "metodo": "Pesar 5 frutos, extraer el jugo (cítricos) o la pulpa con semillas (mburucuyá) y pesar: % = peso de jugo ÷ peso de frutos × 100.",
+   "cultivos": [
+    "Cítricos",
+    "Mburucuyá"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://publicacoes.epagri.sc.gov.br/rac/article/download/1230/1430; Proyecto: ensayos_de_campo/05_ensayos_horticolas.md"
+  },
+  {
+   "id": "altura_planta_h",
+   "nombre": "Altura de planta",
+   "unidad": "cm",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 5,
+   "min": 0,
+   "max": 600,
+   "metodo": "Desde el suelo hasta la inserción de la hoja más nueva (banana: hasta la roseta foliar) en la floración.",
+   "cultivos": [
+    "Banana",
+    "Piña"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/961764/1/AVALIACAOAGRONOMICADEGENOTIPOSDEBANANEIRASEMCONDICOESSUBTROPICAIS.pdf"
+  },
+  {
+   "id": "diam_pseudotallo",
+   "nombre": "Diámetro del pseudotallo",
+   "unidad": "cm",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 5,
+   "min": 0,
+   "max": 60,
+   "metodo": "A 30 cm del suelo, en la floración (emisión del racimo) (Embrapa, bananeras en clima subtropical).",
+   "cultivos": [
+    "Banana"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/961764/1/AVALIACAOAGRONOMICADEGENOTIPOSDEBANANEIRASEMCONDICOESSUBTROPICAIS.pdf"
+  },
+  {
+   "id": "hojas_activas",
+   "nombre": "Hojas activas por planta",
+   "unidad": "n/planta",
+   "tipo": "conteo",
+   "dec": 0,
+   "sub": 5,
+   "min": 0,
+   "max": 30,
+   "metodo": "Contar las hojas con más del 50 % de área verde, en la floración (emisión del racimo) y en la cosecha (Embrapa, bananeras en clima subtropical).",
+   "cultivos": [
+    "Banana"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/961764/1/AVALIACAOAGRONOMICADEGENOTIPOSDEBANANEIRASEMCONDICOESSUBTROPICAIS.pdf"
+  },
+  {
+   "id": "manos_racimo",
+   "nombre": "Manos por racimo",
+   "unidad": "n/racimo",
+   "tipo": "conteo",
+   "dec": 0,
+   "sub": 5,
+   "min": 0,
+   "max": 20,
+   "metodo": "Contar las manos comerciales de cada racimo cosechado.",
+   "cultivos": [
+    "Banana"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md"
+  },
+  {
+   "id": "largo_dedo",
+   "nombre": "Largo del dedo",
+   "unidad": "cm",
+   "tipo": "numero",
+   "dec": 1,
+   "sub": 5,
+   "min": 0,
+   "max": 40,
+   "metodo": "Largo externo (curvatura) del dedo central de la fila externa de la 2.ª mano, en cada racimo cosechado.",
+   "cultivos": [
+    "Banana"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "Proyecto: ensayos_de_campo/05_ensayos_horticolas.md"
+  },
+  {
+   "id": "hoja_larga",
+   "nombre": "Largo de la hoja más larga",
+   "unidad": "cm",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 10,
+   "min": 0,
+   "max": 150,
+   "metodo": "Medir la hoja más larga de la planta antes de la inducción floral. Embrapa induce con plantas de 80 cm de altura o con la hoja más larga de 80 cm u 80 g de peso fresco.",
+   "cultivos": [
+    "Piña"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/985223/1/8.ControledaFloracao0001.pdf"
+  },
+  {
+   "id": "induccion_resp",
+   "nombre": "Plantas que respondieron a la inducción floral",
+   "unidad": "%",
+   "tipo": "porcentaje",
+   "dec": 1,
+   "sub": 1,
+   "min": 0,
+   "max": 100,
+   "metodo": "Plantas con inflorescencia visible ÷ plantas inducidas × 100, contado 40–50 días después de la inducción (Embrapa, abacaxi).",
+   "cultivos": [
+    "Piña"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.alice.cnptia.embrapa.br/alice/bitstream/doc/985223/1/8.ControledaFloracao0001.pdf"
+  },
+  {
+   "id": "dias_flor_plena",
+   "nombre": "Días a plena floración",
+   "unidad": "días",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": 10,
+   "max": 200,
+   "metodo": "Días desde la siembra (o trasplante, indicarlo) hasta plena floración de la parcela; la norma no define el %.",
+   "cultivos": [
+    "Tomate",
+    "Papa",
+    "Melón",
+    "Frutilla"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "Método orientativo: la norma pide la variable pero no fija el método."
+  },
+  {
+   "id": "ciclo_total",
+   "nombre": "Ciclo total",
+   "unidad": "días",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": 30,
+   "max": 400,
+   "metodo": "Días desde la siembra hasta el fin de la cosecha (o el criterio que defina la norma de la especie).",
+   "cultivos": [
+    "Tomate",
+    "Papa",
+    "Melón",
+    "Frutilla"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "Método orientativo: la norma pide la variable pero no fija el método."
+  },
+  {
+   "id": "periodo_fructificacion",
+   "nombre": "Período de fructificación (duración de cosecha)",
+   "unidad": "días",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 300,
+   "metodo": "Días entre la primera y la última cosecha de frutos.",
+   "cultivos": [
+    "Tomate",
+    "Melón",
+    "Frutilla"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "Método orientativo: la norma pide la variable pero no fija el método."
+  },
+  {
+   "id": "aptitud_fritura",
+   "nombre": "Aptitud para fritura",
+   "unidad": "nota",
+   "tipo": "texto",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 0,
+   "metodo": "Resultado del test de fritura según la norma de calidad citada en el informe (color de bastones/chips).",
+   "cultivos": [
+    "Papa"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "Método orientativo: la norma pide la variable pero no fija el método."
+  },
+  {
+   "id": "aptitud_hervido",
+   "nombre": "Aptitud para hervir",
+   "unidad": "nota",
+   "tipo": "texto",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 0,
+   "metodo": "Resultado del test de cocción según la norma citada en el informe (desintegración, textura).",
+   "cultivos": [
+    "Papa"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "Método orientativo: la norma pide la variable pero no fija el método."
+  },
+  {
+   "id": "reaccion_enf",
+   "nombre": "Reacción a enfermedad o plaga (lectura REC)",
+   "unidad": "clase",
+   "tipo": "texto",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 0,
+   "metodo": "Reacción de la entrada a la enfermedad/plaga indicada, leída en parcela REC, invernadero o laboratorio. La norma no fija escala: indicar la usada (p. ej. R/MR/MS/S o severidad del testigo susceptible, que debe superar 50 %).",
+   "cultivos": [
+    "Papa"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "Método orientativo: la norma pide la variable pero no fija el método."
   }
  ],
  "forestal": [
@@ -4223,6 +5894,193 @@
    "momento": "En cada aplicación",
    "ref": "DepositScan (Zhu et al., 2011); ASABE S572.3",
    "origen": "papel"
+  },
+  {
+   "id": "mv",
+   "nombre": "Forraje verde cosechado (materia verde)",
+   "unidad": "kg MV/ha",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 60000,
+   "metodo": "Cortar un marco o el área útil al remanente fijado, pesar en verde y llevar a kg/ha.",
+   "cultivos": [
+    "Urochloa brizantha (Marandu, Xaraés, Piatã)",
+    "Urochloa decumbens (Basilisk)",
+    "Urochloa humidicola",
+    "Urochloa híbrida (Mulato II, Cayman)",
+    "Megathyrsus maximus (Gatton panic)",
+    "Megathyrsus maximus porte alto (Mombaça, Tanzânia, Zuri)",
+    "Raigrás anual (Lolium multiflorum)",
+    "Avena (verdeo de invierno)"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "Método orientativo: la norma pide la variable pero no fija el método."
+  },
+  {
+   "id": "tolerancia_seca_frio",
+   "nombre": "Tolerancia a sequía y frío",
+   "unidad": "nota",
+   "tipo": "texto",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 0,
+   "metodo": "La norma no fija escala; describir el comportamiento frente a sequía y frío (p. ej. alta / media / baja) e indicar cuándo se observó.",
+   "cultivos": [
+    "Urochloa brizantha (Marandu, Xaraés, Piatã)",
+    "Urochloa decumbens (Basilisk)",
+    "Urochloa humidicola",
+    "Urochloa híbrida (Mulato II, Cayman)",
+    "Megathyrsus maximus (Gatton panic)",
+    "Megathyrsus maximus porte alto (Mombaça, Tanzânia, Zuri)"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/223cd065f314b0c32109b025a435232b.pdf"
+  },
+  {
+   "id": "suculencia_tallo",
+   "nombre": "Suculencia del tallo",
+   "unidad": "nota",
+   "tipo": "texto",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 0,
+   "metodo": "La norma no fija escala; describir tallo jugoso o seco e indicar la escala usada.",
+   "cultivos": [
+    "Urochloa brizantha (Marandu, Xaraés, Piatã)",
+    "Urochloa decumbens (Basilisk)",
+    "Urochloa humidicola",
+    "Urochloa híbrida (Mulato II, Cayman)",
+    "Megathyrsus maximus (Gatton panic)",
+    "Megathyrsus maximus porte alto (Mombaça, Tanzânia, Zuri)"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "https://www.senave.gov.py/documentos/sistema-gestion-calidad/lineamientos/223cd065f314b0c32109b025a435232b.pdf"
+  },
+  {
+   "id": "reaccion_enf",
+   "nombre": "Reacción a enfermedad o plaga (lectura REC)",
+   "unidad": "clase",
+   "tipo": "texto",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 0,
+   "metodo": "Reacción de la entrada a la enfermedad/plaga indicada, leída en parcela REC, invernadero o laboratorio. La norma no fija escala: indicar la usada (p. ej. R/MR/MS/S o severidad del testigo susceptible, que debe superar 50 %).",
+   "cultivos": [
+    "Urochloa brizantha (Marandu, Xaraés, Piatã)",
+    "Urochloa decumbens (Basilisk)",
+    "Urochloa humidicola",
+    "Urochloa híbrida (Mulato II, Cayman)",
+    "Megathyrsus maximus (Gatton panic)",
+    "Megathyrsus maximus porte alto (Mombaça, Tanzânia, Zuri)",
+    "Raigrás anual (Lolium multiflorum)",
+    "Avena (verdeo de invierno)"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "Método orientativo: la norma pide la variable pero no fija el método."
+  },
+  {
+   "id": "altura_flor",
+   "nombre": "Altura de planta a floración",
+   "unidad": "cm",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 10,
+   "min": 0,
+   "max": 400,
+   "metodo": "Medir desde el suelo hasta el extremo de la inflorescencia (o del follaje) en plantas de la parcela útil, a floración.",
+   "cultivos": [
+    "Urochloa brizantha (Marandu, Xaraés, Piatã)",
+    "Urochloa decumbens (Basilisk)",
+    "Urochloa humidicola",
+    "Urochloa híbrida (Mulato II, Cayman)",
+    "Megathyrsus maximus (Gatton panic)",
+    "Megathyrsus maximus porte alto (Mombaça, Tanzânia, Zuri)",
+    "Avena (verdeo de invierno)"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "Método orientativo: la norma pide la variable pero no fija el método."
+  },
+  {
+   "id": "macollos_tot",
+   "nombre": "Macollos totales",
+   "unidad": "macollos/m²",
+   "tipo": "conteo",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 2000,
+   "metodo": "Contar todos los macollos en un marco o metro lineal del área útil al momento de la cosecha.",
+   "cultivos": [
+    "Megathyrsus maximus (Gatton panic)",
+    "Megathyrsus maximus porte alto (Mombaça, Tanzânia, Zuri)"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "Método orientativo: la norma pide la variable pero no fija el método."
+  },
+  {
+   "id": "macollos_prod",
+   "nombre": "Macollos productivos (con panoja con semillas)",
+   "unidad": "macollos/m²",
+   "tipo": "conteo",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 2000,
+   "metodo": "Contar los macollos con panoja con semillas en el mismo marco que los macollos totales.",
+   "cultivos": [
+    "Megathyrsus maximus (Gatton panic)",
+    "Megathyrsus maximus porte alto (Mombaça, Tanzânia, Zuri)"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "Método orientativo: la norma pide la variable pero no fija el método."
+  },
+  {
+   "id": "dias_madurez_cosecha",
+   "nombre": "Días a madurez de cosecha",
+   "unidad": "días",
+   "tipo": "numero",
+   "dec": 0,
+   "sub": 1,
+   "min": 40,
+   "max": 250,
+   "metodo": "Días desde la siembra hasta que la parcela está en madurez de cosecha (grano listo para trillar). Distinto de madurez fisiológica.",
+   "cultivos": [
+    "Raigrás anual (Lolium multiflorum)",
+    "Avena (verdeo de invierno)"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "Método orientativo: la norma pide la variable pero no fija el método."
+  },
+  {
+   "id": "grupo_madurez",
+   "nombre": "Grupo de maduración (ciclo)",
+   "unidad": "grupo",
+   "tipo": "texto",
+   "dec": 0,
+   "sub": 1,
+   "min": 0,
+   "max": 0,
+   "metodo": "Clasificar el ciclo total según los rangos de días de la norma de la especie (p. ej. súper precoz / precoz / medio / tardío).",
+   "cultivos": [
+    "Raigrás anual (Lolium multiflorum)",
+    "Avena (verdeo de invierno)"
+   ],
+   "tipos": [],
+   "ref": "",
+   "fuente": "Método orientativo: la norma pide la variable pero no fija el método."
   }
  ],
  "silvopastoril": [

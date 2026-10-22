@@ -4,6 +4,7 @@ import {anovaDBCA, tukey, interpretarCV, anovaCombinado, ladoALado, welch, anova
 import {enRect, enCuad, distancia, areaM2, svgMapa, desdeMerc, mover, rumbo} from './lib/geo.js';
 import {leerArchivoGeo, cuatroEsquinas, centroide, puntoEnPoligono, crearShapefile, crearGpx} from './lib/importgeo.js';
 import * as DB from './db.js';
+import {fenDe, fechaRef, estadios as estadiosDe, itemsPlan, momentosSugeridos, epocaDe, cicloDe, addDias, difDias, tipoOk} from './plan.js';
 import {abrirLector, COL as COL_GOTA, NOMCL} from './papel.js';
 import {combinarTarjetas, histDe, OBJETIVOS, claseASABE, CLASES, homografia, rectificar} from './lib/hidro.js';
 import {crearZip, crearDocx, crearXlsx, crearCsv, crearGeojson, crearQml, crearKml, poligonosCroquis, graficoBarras} from './exportar.js';
@@ -28,6 +29,8 @@ const PALETA = ['#8d8d8d', '#2f7fd1', '#e0a21a', '#c2410c', '#7c3aed', '#0f9d77'
 
 /* ================= datos ================= */
 const [E0, CAT, MET, EJ, RUBD] = await Promise.all(['./datos/ensayo_demo.json', './datos/catalogo.json', './datos/metodos.json', './datos/ensayos_ejemplo.json', './datos/rubros.json'].map(u => fetch(u).then(r => r.json())));
+// Calendario fenológico y de evaluaciones por cultivo, y cultivares del mercado con sus datos (si faltan los archivos, la app sigue igual)
+const [FEN, CULT] = await Promise.all(['./datos/fenologia.json', './datos/cultivares.json'].map(u => fetch(u).then(r => r.ok ? r.json() : {}).catch(() => ({}))));
 const catIdx = CAT.cols.reduce((o, c, i) => (o[c] = i, o), {});
 const catByReg = new Map(CAT.rows.map(r => [Number(r[catIdx.reg]), r]));
 const ALTERNATIVAS = {
@@ -113,17 +116,17 @@ function ensayoSimple(J) {
     parcelas: J.parcelas.map(p => ({...p, valores: {...p.valores}, sub: structuredClone(p.sub || {})})), tratamientos: J.tratamientos.map(t => ({productos: [], ...t})),
     asig: Object.fromEntries(Object.entries(J.asig).map(([k, v]) => [Number(k), v])), trabajo: Object.fromEntries([...new Set(Object.values(J.asig))].map(u => [u, 'parcelas'])),
     notas: structuredClone(J.notas || []), cambios: structuredClone(J.cambios || []), aplicaciones: structuredClone(J.aplicaciones || []), compartido: {...(J.compartido || {})}};
-  if (T.cortes || T.porPos) { T.porCorte = [...(T.porCorte || [])]; T.porPos = [...(T.porPos || [])]; T.cortes = structuredClone(T.cortes || []); armarCortes(T); } else recalc(T);
+  if (T.cortes || T.porPos || T.momVar) { T.porCorte = [...(T.porCorte || [])]; T.porPos = [...(T.porPos || [])]; if (T.cortes) T.cortes = structuredClone(T.cortes); armarCortes(T); } else recalc(T);
   return T;
 }
 /* ----- pasturas y silvopastoril: variables por corte, por posición y calculadas ----- */
 // Una sola fila por medición repetida (por corte o por posición) y su nombre sin el sufijo
-const esPrimera = v => (!v.corte || v.corte === 1) && (!v.pos || v.pos === 1);
-const nomBase = (T, v) => v.base ? (varDef(T.rubro, v.base)?.nombre || (v.calc === 'suma' ? 'Producción acumulada de forraje' : v.calc === 'tasa' ? 'Tasa de crecimiento media' : v.nombre)) : v.nombre;
-const repTxt = (T, v) => [v.corte ? `en cada corte (${T.cortes.length})` : '', v.pos ? `en cada posición (${(T.posiciones || []).length})` : ''].filter(Boolean).join(' y ');
+const esPrimera = v => (!v.corte || v.corte === 1) && (!v.pos || v.pos === 1) && (!v.mom || v.mom === 1);
+const nomBase = (T, v) => v.calc === 'aacpe' ? v.nombre : v.base ? (varDef(T.rubro, v.base)?.nombre || (v.calc === 'suma' ? 'Producción acumulada de forraje' : v.calc === 'tasa' ? 'Tasa de crecimiento media' : v.nombre)) : v.nombre;
+const repTxt = (T, v) => [v.corte ? `en cada corte (${T.cortes.length})` : '', v.pos ? `en cada posición (${(T.posiciones || []).length})` : '', v.mom ? `en ${(T.momVar?.[v.base] || []).length} momentos: ${(T.momVar?.[v.base] || []).join(', ')}` : ''].filter(Boolean).join(' y ');
 const posCorta = n => String(n || '').split(' (')[0].replace(/^Bajo copa \/ junto a la hilera.*/i, 'Junto a la hilera');
 function armarCortes(T) {
-  const base = T.variables.filter(v => !v.corte && !v.pos && v.origen !== 'calc'), nuevas = [], porC = T.porCorte || [], porP = T.porPos || [], pos = porP.length ? (T.posiciones || []) : [], cortes = T.cortes || [];
+  const base = T.variables.filter(v => !v.corte && !v.pos && !v.mom && v.origen !== 'calc' || v.calc === 'deriv'), nuevas = [], porC = T.porCorte || [], porP = T.porPos || [], pos = porP.length ? (T.posiciones || []) : [], cortes = T.cortes || [];
   const ks = b => porP.includes(b) && pos.length ? pos.map((_, k) => k + 1) : [0];
   porC.forEach(b => { const d = varDef(T.rubro, b); if (!d) return;
     cortes.forEach(c => ks(b).forEach(k => nuevas.push({...structuredClone(d), id: `${b}_c${c.n}${k ? '_p' + k : ''}`, base: b, corte: c.n, ...(k ? {pos: k} : {}), nombre: `${d.nombre} · corte ${c.n}${k ? ' · ' + posCorta(pos[k - 1]) : ''}`, momento: `Corte ${c.n} · ${fechaTxt(c.fecha)} · ${c.dias} días de rebrote`}))); });
@@ -133,6 +136,12 @@ function armarCortes(T) {
     ks('ms').forEach(k => { const sx = k ? '_p' + k : '', nx = k ? ' · ' + posCorta(pos[k - 1]) : '';
       nuevas.push({id: 'ms_total' + sx, nombre: 'Producción acumulada de forraje' + nx, unidad: 'kg MS/ha', tipo: 'numero', dec: 0, sub: 1, origen: 'calc', calc: 'suma', ...(k ? {pos: k, base: 'ms_total'} : {}), metodo: `Suma de la materia seca de los ${cortes.length} cortes; se calcula sola cuando están todos cargados.`, ref: u.ref});
       nuevas.push({id: 'tasa' + sx, nombre: 'Tasa de crecimiento media' + nx, unidad: 'kg MS/ha/día', tipo: 'numero', dec: 1, sub: 1, origen: 'calc', calc: 'tasa', ...(k ? {pos: k, base: 'tasa'} : {}), metodo: 'Producción acumulada ÷ días de rebrote sumados de todos los cortes.', ref: u.ref}); }); }
+  // Mediciones que se repiten en distintos estadios o días después de la aplicación (momentos de evaluación)
+  Object.entries(T.momVar || {}).filter(([b]) => !porC.includes(b) && !porP.includes(b)).forEach(([b, lab]) => { const d = varDef(T.rubro, b) || T.variables.find(v => v.id === b); if (!d) return;
+    lab.forEach((l, k) => nuevas.push({...structuredClone(d), id: `${b}_m${k + 1}`, base: b, mom: k + 1, nombre: `${d.nombre} · ${l}`, momento: l}));
+    if (lab.length >= 3 && /^(sev|severidad|incidencia|roya|fusari|brusone|mancha|virosis|defol)/.test(b) && !(T.noAacpe || []).includes(b))
+      nuevas.push({id: `${b}_aacpe`, base: b, nombre: `AACPE de ${d.nombre.charAt(0).toLowerCase() + d.nombre.slice(1)}`, unidad: `${d.unidad || ''}·días`, tipo: 'numero', dec: 0, sub: 1, origen: 'calc', calc: 'aacpe',
+        metodo: `Área bajo la curva de progreso: Σ (yᵢ + yᵢ₊₁) ÷ 2 × (tᵢ₊₁ − tᵢ) con los ${lab.length} momentos (${lab.join(', ')}) y los días entre ellos del calendario de evaluaciones. Se calcula sola.`, ref: d.ref}); });
   T.variables = [...nuevas, ...base]; recalc(T);
 }
 // Mediciones que se calculan solas a partir de otras del mismo ensayo (forestal, silvopastoril, vivero, confort animal).
@@ -176,12 +185,36 @@ function recalc(T) {
   marcarDerivadas(T);
   const der = T.variables.filter(v => v.calc === 'deriv');
   if (der.length) T.parcelas.forEach(p => der.forEach(v => { const x = calcDeriv(T, p, v.id); p.valores[v.id] = x == null || !isFinite(x) ? null : +x.toFixed(Math.max(v.dec ?? 2, 2)); }));
-  const calc = T.variables.filter(v => v.origen === 'calc' && v.calc !== 'deriv'); if (!calc.length) return;
+  T.variables.filter(v => v.calc === 'aacpe').forEach(v => { const lab = T.momVar?.[v.base] || [], ids = lab.map((_, k) => `${v.base}_m${k + 1}`), t = T.momDias?.[v.base]?.length === lab.length ? T.momDias[v.base] : lab.map((_, k) => k * 7);
+    T.parcelas.forEach(p => { const y = ids.map(id => p.valores[id]); if (y.length < 2 || y.some(x => x == null || x === '')) { p.valores[v.id] = null; return; }
+      let a = 0; for (let k = 0; k < y.length - 1; k++) a += (+y[k] + +y[k + 1]) / 2 * Math.max(0, t[k + 1] - t[k]); p.valores[v.id] = +a.toFixed(1); }); });
+  const calc = T.variables.filter(v => v.origen === 'calc' && v.calc !== 'deriv' && v.calc !== 'aacpe'); if (!calc.length) return;
   const dias = (T.cortes || []).reduce((s, c) => s + c.dias, 0);
   T.parcelas.forEach(p => { calc.forEach(v => { const ms = T.variables.filter(x => x.base === 'ms' && x.corte && (x.pos || 0) === (v.pos || 0)), vals = ms.map(x => p.valores[x.id]), ok = vals.length && vals.every(x => x != null && x !== ''), tot = ok ? vals.reduce((s, x) => s + +x, 0) : null;
     p.valores[v.id] = tot == null ? null : v.calc === 'suma' ? tot : +(tot / dias).toFixed(2); }); });
 }
-const TRIALS = [ensayoRico(E0), ...EJ.map(ensayoSimple)];
+// Ensayo de ejemplo "en curso": sus fechas se cuentan desde hoy para mostrar el calendario y los avisos
+function demoCalendario() {
+  const d = n => addDias(HOY, n), cvs = (CULT?.Soja || []).filter(c => /^\s*(gm\s*)?[56][.,]/i.test(String(c.gm_ciclo || '').replace(/^GM\s*/i, ''))).slice(0, 6).map(c => c.nombre);
+  const noms = cvs.length >= 4 ? cvs : ['Cultivar A (GM 5.5)', 'Cultivar B (GM 5.8)', 'Cultivar C (GM 6.0)', 'Cultivar D (GM 6.2)', 'Cultivar E (GM 6.4)', 'Cultivar F (GM 6.5)'];
+  const tratamientos = noms.map((n, i) => ({cod: 'T' + (i + 1), nombre: n, testigo: false, productos: []})), rnd = mulberry(4242), parcelas = [];
+  for (let b = 1; b <= 4; b++) tratamientos.map(t => t.cod).sort(() => rnd() - 0.5).forEach((c, i) => parcelas.push({parcela: b * 100 + i + 1, bloque: b, trat: c, valores: {}, sub: {}}));
+  const ids = ['plantas_m', 'emerg_pct', 'dias_flor', 'sev_roya', 'altura_cm', 'alt_insercion', 'vuelco', 'dias_madurez', 'rend_kg', 'pmg'].filter(id => MET.agricola.some(v => v.id === id));
+  const T = {id: 'DEMO-AG-03', rubro: 'agricola', titulo: 'Cultivares de soja GM 5 a 6,5 · zafra 2026/27 (en curso)', cultivo: 'Soja', tipo: (RUBD.agricola.tipos.find(t => /cultivar/i.test(t.n)) || {}).n || 'Cultivares', campana: '2026/27',
+    lugar: 'Hohenau, Itapúa', owner: 'marta', equipo: 'eq1', bloques: 4, ejemplo: true, dron: false, creado: new Date().toISOString(),
+    parcela: {forma: 'agricola', hileras: 4, dist: 0.45, largo: 5, util: 2, ancho: 1.8, area_m2: 9, area_util_m2: 3.6, texto: '4 hileras a 0,45 m × 5 m; se cosechan 2 hileras sin 0,5 m de cabecera'},
+    objetivo: 'Comparar el comportamiento de cultivares de soja de ciclo medio en la zafra 2026/27. Ejemplo para ver el calendario de evaluaciones y los avisos a los operadores (datos hipotéticos).',
+    tratamientos, parcelas, variables: ids.map(id => varDef('agricola', id)).filter(Boolean), asig: {}, trabajo: {ana: 'parcelas', luis: 'parcelas'}, compartido: {}, notas: [], cambios: [],
+    ficha: {siembra: d(-26), emergencia: d(-20), zona: 'Región Oriental · Sur', epoca: 'Zafra', siembra_sist: 'Siembra directa', antecesor: 'Trigo', humedad: 13, densidad: 14},
+    plan: {ciclo: 'medio', obs: {VE: d(-20)}},
+    aplicaciones: [{id: 1, tipo: 'Siembra o plantación', fecha: d(-26), estado: 'realizada', trats: 'todos', producto: 'Semilla tratada e inoculada', dosis: '14 semillas/m', estadio: 'Siembra', resp: 'ana'},
+      {id: 2, tipo: 'Fertilización', fecha: d(-26), estado: 'realizada', trats: 'todos', producto: 'Fertilizante 0-20-20', dosis: '200 kg/ha', estadio: 'En la línea', resp: 'ana'}]};
+  parcelas.forEach(p => { T.asig[p.parcela] = p.bloque <= 2 ? 'ana' : 'luis'; if (p.bloque <= 2 && T.variables.some(v => v.id === 'plantas_m')) { const a = +(11 + rnd() * 3).toFixed(1), b2 = +(11 + rnd() * 3).toFixed(1); p.sub.plantas_m = [a, b2]; p.valores.plantas_m = +((a + b2) / 2).toFixed(1); } });
+  const mv = momentosSugeridos(T, fenDe(FEN, 'agricola', 'Soja'), T.variables.filter(v => !v.entrada && v.tipo !== 'texto').map(v => v.id));
+  if (Object.keys(mv).length) { T.momVar = mv; T.variables = T.variables.filter(v => !mv[v.id]); armarCortes(T); }
+  return T;
+}
+const TRIALS = [ensayoRico(E0), ...EJ.map(ensayoSimple), demoCalendario()];
 const byId = id => TRIALS.find(T => T.id === id);
 byId('DEMO-AG-01').notas.push({nivel: 'bloque', ref: 'S1|1', texto: 'Bloque 1 junto a la cortina de árboles: sombra por la tarde en las primeras parcelas.', autor: 'marta', fecha: '02/12 11:30'});
 byId('DEMO-FO-01').notas.push({nivel: 'tratamiento', ref: 'CL5', texto: 'Material de semilla con más fallas y rebrotes desparejos.', autor: 'carlos', fecha: '20/08 15:00'});
@@ -309,7 +342,7 @@ function rolEn(T, u = S.user) {
 }
 const ROLNOM = {dueño: 'Dueño', gerente: 'Gerente', operador: 'Operador', lector: 'Observador', editor: 'Editor'};
 const puede = {
-  diseno: T => ['dueño', 'gerente', 'editor'].includes(rolEn(T)),
+  diseno: (T, u = S.user) => ['dueño', 'gerente', 'editor'].includes(rolEn(T, u)),
   asignar: T => ['dueño', 'gerente'].includes(rolEn(T)),
   revisar: T => ['dueño', 'gerente'].includes(rolEn(T)),
   datos: (T, p) => { const r = rolEn(T); return ['dueño', 'gerente', 'editor'].includes(r) || (r === 'operador' && tieneOp(T, p, S.user.id)); },
@@ -385,7 +418,8 @@ function progreso(T) { const vars = T.variables.filter(v => !auto(v) && v.tipo !
 function irInicio() {
   const R = RUBROS[S.rubro], u = S.user, lista = visibles(S.rubro), op = u.perfil === 'operador', obs = u.perfil === 'observador';
   let h = `<div class="row" style="justify-content:space-between"><div style="display:grid;gap:4px"><span class="chip neu" style="justify-self:start">${R.nombre}</span><h1>${op ? 'Mis tareas' : obs ? 'Ensayos que observás' : 'Mis ensayos'}</h1></div>
-    <div class="row"><button class="btn" id="btn-recibir">📥 Recibir archivo</button>${op || obs ? '' : '<button class="btn primary" id="btn-nuevo">+ Nuevo ensayo</button>'}</div></div>`;
+    <div class="row">${cultivosConCatalogo(S.rubro).length ? '<button class="btn" id="btn-cultivares">🌱 Cultivares y épocas</button>' : ''}<button class="btn" id="btn-recibir">📥 Recibir archivo</button>${op || obs ? '' : '<button class="btn primary" id="btn-nuevo">+ Nuevo ensayo</button>'}</div></div>`;
+  if (!obs) h += avisosCard(S.rubro);
   if (op) {
     const tareas = lista.map(T => ({T, ps: T.parcelas.filter(p => tieneOp(T, p.parcela, u.id))}));
     h += tareas.length ? tareas.map(({T, ps}) => { const pend = ps.filter(p => pendientes(T, p).length);
@@ -421,9 +455,12 @@ function irInicio() {
   }
   $('#s-inicio').innerHTML = bannerInstalar() + h;
   pantalla('inicio');
+  revisarAvisos();
   pintarPedidosEns();
 }
 $('#s-inicio').addEventListener('click', async e => {
+  if (await clicAvisos(e)) return;
+  if (e.target.closest('#btn-cultivares')) return verCultivares(S.rubro);
   if (e.target.closest('[data-ped-lal], [data-ped-visto], [data-ped-desc]')) return clickPedidoEns(e);
   const n = e.target.closest('#btn-nuevo, #btn-nuevo-2'); if (n) return nuevoEnsayo();
   if (e.target.closest('#btn-recibir')) return recibirArchivo();
@@ -590,7 +627,9 @@ function fichaCard(T) {
   const campo = d => { const v = val(d);
     if (!ed) return v === '' || v == null ? '' : `<dt>${esc(d.campo)}</dt><dd>${esc(d.tipo === 'fecha' ? fechaTxt(v) : v)}</dd>`;
     const inp = d.tipo === 'lista' ? `<select data-ficha="${d.id}"><option value="">—</option>${d.opciones.map(o => `<option ${o === v ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`
-      : d.tipo === 'fecha' ? `<input type="date" data-ficha="${d.id}" value="${esc(v)}">` : d.tipo === 'numero' ? `<input type="number" step="any" data-ficha="${d.id}" value="${esc(v)}">` : `<input type="text" data-ficha="${d.id}" value="${esc(v)}">`;
+      : d.tipo === 'fecha' ? `<input type="date" data-ficha="${d.id}" value="${esc(v)}">` : d.tipo === 'numero' ? `<input type="number" step="any" data-ficha="${d.id}" value="${esc(v)}">`
+      : ['cultivar', 'forrajera'].includes(d.id) && cultsDe(T.rubro, T.cultivo).length ? `<input type="text" data-ficha="${d.id}" value="${esc(v)}" list="dl-cv-${d.id}"><datalist id="dl-cv-${d.id}">${cultsDe(T.rubro, T.cultivo).map(c => `<option value="${esc(c.nombre)}">${esc([c.empresa, c.gm_ciclo, c.tecnologia].filter(Boolean).join(' · '))}</option>`).join('')}</datalist>${(c => c ? `<span class="note">${esc([c.empresa, c.gm_ciclo, c.tecnologia].filter(Boolean).join(' · '))}</span>` : '')(buscaCv(T.rubro, T.cultivo, v))}`
+      : `<input type="text" data-ficha="${d.id}" value="${esc(v)}">`;
     return `<label class="f">${esc(d.campo)}${inp}${d.ayuda ? `<span class="note">${esc(d.ayuda)}</span>` : ''}</label>`; };
   const llenos = F.filter(d => { const v = val(d); return v !== '' && v != null; }).length;
   return `<details class="card" ${ed && llenos < 3 ? 'open' : ''}><summary style="cursor:pointer"><b>Ficha del ensayo · ${esc(RUBROS[T.rubro].nombre.toLowerCase())}</b> <span class="note">(${llenos} de ${F.length} datos)</span></summary>
@@ -602,7 +641,9 @@ function fichaTipoHtml(rubro, tipo, cultivo, abierta) {
   return `<details class="card ficha-tipo" ${abierta ? 'open' : ''} style="gap:8px"><summary style="cursor:pointer"><b>Qué pide este ensayo${td ? ': ' + esc(td.n) : ''}${cd ? ' en ' + esc(cd.n) : ''}</b></summary>
     ${td?.descripcion ? `<p style="margin:0">${esc(td.descripcion)}</p>` : ''}
     <dl class="kv">${fila('Testigos', td?.testigos)}${td ? fila('Bloques mínimos', String(td.bloques_min)) : ''}${fila('Unidad experimental', td?.unidad_experimental)}${fila('Diseño', td?.diseno)}${fila('Cuándo evaluar', td?.momentos)}${fila('Análisis', td?.analisis)}${fila('Norma', td?.normativa)}
-      ${cd ? fila('Árbol', cd.arbol) + fila('Pastura', cd.pastura) + fila(rubro === 'silvopastoril' ? 'Sistema' : 'Nombre científico', cd.cientifico) + fila('Fenología', cd.fenologia) + fila('Parcela típica', cd.parcelaTxt) + (cd.humedad != null ? fila('Humedad base del rendimiento', cd.humedad + ' %') : '') : ''}</dl>
+      ${cd ? fila('Árbol', cd.arbol) + fila('Pastura', cd.pastura) + fila(rubro === 'silvopastoril' ? 'Sistema' : 'Nombre científico', cd.cientifico) + fila('Fenología', cd.fenologia) + fila('Parcela típica', cd.parcelaTxt) + (cd.humedad != null ? fila('Humedad base del rendimiento', cd.humedad + ' %') : '') : ''}
+      ${(F => F ? fila('Época de siembra', (F.epocas || []).map(e => `${e.epoca || ''}${e.region ? ' (' + e.region + ')' : ''}${e.desde ? ': ' + fechaTxt('2000-' + e.desde).slice(0, 5) + ' a ' + fechaTxt('2000-' + e.hasta).slice(0, 5) : ''}`).join('; ')) + fila('Norma SENAVE de la especie', F.senave?.norma ? F.senave.norma + (F.senave.ensayo ? ' · ' + Object.values(F.senave.ensayo).filter(Boolean).join(' · ') : '') : '')
+        + fila('Calendario', (F.estadios || []).length ? `${F.escala || ''}: ${(F.evaluaciones || []).filter(ev => tipoOk(ev.tipos, tipo)).length} evaluaciones por estadio${Object.keys(F.por_aplicacion || {}).some(k => tipoOk([k], tipo)) ? ' más las de los días después de cada aplicación' : ''}; la app avisa a los operadores cuándo toca cada una` : '') : '')(fenDe(FEN, rubro, cultivo))}</dl>
     ${cd?.notas ? `<p class="note" style="margin:0">${esc(cd.notas)}</p>` : ''}</details>`;
 }
 function camposParcela(p, rubro) {
@@ -672,7 +713,7 @@ function renderNuevo() {
     h += `<h3>${silvo ? 'Parcela (unidad experimental)' : 'Parcela'}</h3>${cd?.parcelaTxt ? `<p class="note" style="margin:0">Parcela típica para ${esc(cd.n)}: ${esc(cd.parcelaTxt)}</p>` : ''}
       <div class="grid3">${camposParcela(p, S.rubro)}</div><p class="note" style="margin:0" id="nv-area">${esc(A.txt)}: ${fmt(A.area, A.area > 1000 ? 0 : 1)} m² por parcela${A.util !== A.area ? `, ${fmt(A.util, 1)} m² útiles` : ''}.</p>
       ${silvo ? `<label class="f">Posiciones de muestreo del forraje, la luz y el suelo (una por renglón)<textarea id="nv-pos" rows="4">${esc((p.posiciones || []).join('\n'))}</textarea><span class="note">Las mediciones marcadas “por posición” se cargan en cada una (subparcelas) y se analizan en parcelas divididas. El testigo a pleno sol conviene como un tratamiento más, sin árboles, con las muestras en los mismos puntos.</span></label>` : ''}
-      <h3>Tratamientos y bloques</h3><div class="grid2"><label class="f">Un tratamiento por renglón (el primero es el testigo)<textarea id="nv-trats" rows="6">${esc(NV.trats)}</textarea>${td?.testigos ? `<span class="note">Testigos para ${esc(td.n.toLowerCase())}: ${esc(td.testigos)}</span>` : ''}</label>
+      <h3>Tratamientos y bloques</h3><div class="grid2"><label class="f">Un tratamiento por renglón (el primero es el testigo)<textarea id="nv-trats" rows="6">${esc(NV.trats)}</textarea>${td?.testigos ? `<span class="note">Testigos para ${esc(td.n.toLowerCase())}: ${esc(td.testigos)}</span>` : ''}${cultsDe(S.rubro, NV.cultivo).length ? '<button type="button" class="btn small" id="nv-cv-cat" style="justify-self:start">🌱 Elegir cultivares del catálogo</button>' : ''}</label>
       <div style="display:grid;gap:10px;align-content:start"><label class="f">Bloques (repeticiones)<input type="number" id="nv-bloques" min="2" max="40" step="1" value="${NV.bloques}"></label>
       <div><span class="chip ${okB ? 'ok' : 'warn'}">${okB ? '✓' : '!'}</span> ${trs.length} tratamientos × ${NV.bloques} bloques = ${trs.length * NV.bloques} parcelas · ${gl} gl de error ${okB ? '(suficiente)' : `(conviene ${gl < gm ? `≥ ${gm} gl` : ''}${gl < gm && NV.bloques < bmin ? ' y ' : ''}${NV.bloques < bmin ? `al menos ${bmin} bloques` : ''}: sumá bloques)`}</div>
       <div class="note">Diseño: bloques completos al azar${silvo ? ' con las posiciones como subparcelas (parcelas divididas)' : ''}. El croquis se sortea al crear el ensayo.${T_CORTES.includes(S.rubro) ? ' Las fechas de corte se cargan después, en “Mediciones”.' : ''}</div></div></div>`;
@@ -721,6 +762,8 @@ $('#s-nuevo').addEventListener('change', e => {
 });
 $('#s-nuevo').addEventListener('click', e => {
   if (e.target.closest('#nv-cancel')) return irInicio();
+  if (e.target.closest('#nv-cv-cat')) return verCultivares(S.rubro, NV.cultivo, sel => { const ya = NV.trats.split('\n').map(x => x.trim()).filter(Boolean), tes = /cultivar|rncc|vcu/i.test(NV.tipo) ? [] : ya.slice(0, 1);
+    NV.trats = [...new Set([...tes, ...sel])].join('\n'); NV.tocado.trats = true; renderNuevo(); toast(`${sel.length} cultivares cargados como tratamientos${/cultivar|rncc|vcu/i.test(NV.tipo) ? '; sumá los testigos que pide la norma' : ''}`); });
   if (e.target.closest('#nv-prev')) { NV.paso--; renderNuevo(); }
   if (e.target.closest('#nv-next')) {
     if (NV.paso === 1 && !NV.titulo.trim()) { NV.titulo = NV.modo === 'lal' ? `Lado a lado en ${NV.cultivo}${NV.productor ? ' · ' + NV.productor : ''}` : `${NV.tipo} en ${String(NV.cultivo).split(' (')[0]}`; }
@@ -732,7 +775,9 @@ $('#s-nuevo').addEventListener('click', e => {
 function prepararRepetidas(T) {
   if (T_CORTES.includes(T.rubro)) { T.porCorte = T.variables.filter(v => v.porCorte).map(v => v.id); T.variables = T.variables.filter(v => !v.porCorte); T.cortes = []; }
   if (T.rubro === 'silvopastoril' && T.posiciones?.length) { T.porPos = T.variables.filter(v => v.porPosicion).map(v => v.id); T.variables = T.variables.filter(v => !v.porPosicion); }
-  if (T.porCorte || T.porPos) armarCortes(T);
+  const mv = momentosSugeridos(T, fenDe(FEN, T.rubro, T.cultivo), T.variables.filter(v => !auto(v) && v.tipo !== 'texto' && !v.entrada).map(v => v.id));
+  if (Object.keys(mv).length) { T.momVar = mv; T.variables = T.variables.filter(v => !mv[v.id]); }
+  if (T.porCorte || T.porPos || T.momVar) armarCortes(T);
 }
 async function crearEnsayo() {
   if (NV.modo === 'lal') return crearLal();
@@ -1448,6 +1493,169 @@ function guardarPos(T, panel) {
   if (keep.length < antes) T.parcelas.forEach(p => Object.keys(p.valores).forEach(id => { const m = id.match(/_p(\d+)$/); if (m && +m[1] > keep.length) { delete p.valores[id]; delete p.sub[id]; } }));
   armarCortes(T); toast('Posiciones guardadas'); return true;
 }
+/* ---------- calendario de evaluaciones (estadios del cultivo, normas SENAVE, días después de cada aplicación) ---------- */
+const EST_PLAN = {hecha: ['ok', '✓ Hecha'], ahora: ['warn', 'Toca ahora'], atrasada: ['bad', 'Atrasada'], proxima: ['acc', 'Próxima'], futura: ['neu', 'Más adelante'], fuera: ['neu', 'No está en el ensayo'], sin_fecha: ['neu', 'Sin fecha']};
+const nomVar = (T, id, it) => T.variables.find(v => v.id === id)?.nombre || varDef(T.rubro, id)?.nombre || (it?.nueva?.id === id ? it.nueva.nombre : null) || id;
+const parcelasDeUsuario = (T, u = S.user) => rolEn(T, u) === 'operador' ? T.parcelas.filter(p => tieneOp(T, p.parcela, u.id)) : T.parcelas;
+// Calcula el plan del ensayo; de paso guarda los días entre momentos de cada medición repetida (para el AACPE)
+function planDe(T, ps) {
+  const F = fenDe(FEN, T.rubro, T.cultivo); if (!F || esLal(T) && !F) return null;
+  const items = itemsPlan(T, F, {hoy: HOY, parcelas: ps || T.parcelas}), ref = fechaRef(T, F);
+  if (T.momVar) { let cambio = false; Object.entries(T.momVar).forEach(([b, lab]) => { const f = lab.map((_, k) => items.find(it => it.fecha && it.dest.some(d => d.id === `${b}_m${k + 1}`))?.fecha);
+    if (f.every(Boolean)) { const t = f.map(x => difDias(x, f[0])); if (JSON.stringify(t) !== JSON.stringify(T.momDias?.[b])) { (T.momDias = T.momDias || {})[b] = t; cambio = true; } } });
+    if (cambio) { recalc(T); guardarPronto(); } }
+  return {F, items, ref, est: estadiosDe(T, F), ciclo: cicloDe(T, F)};
+}
+// Mediciones del calendario que el ensayo no tiene: una fila por medición, con sus momentos
+function fueraHTML(T, fuera, ed) {
+  const G = new Map(); fuera.forEach(it => it.dest.filter(d => d.falta === 'medicion').forEach(d => { if (!G.has(d.base)) G.set(d.base, {base: d.base, it, senave: false, mom: []});
+    const g = G.get(d.base); if (it.por === 'senave') g.senave = true; if (!g.mom.includes(it.etiqueta)) g.mom.push(it.etiqueta); }));
+  const L = [...G.values()].sort((a, b) => b.senave - a.senave);
+  return `<div class="tw"><table><tbody>${L.map(g => `<tr><td><b>${esc(nomVar(T, g.base, g.it))}</b>${g.senave ? ' <span class="chip warn">SENAVE</span>' : ''}<br><span class="note">${g.mom.length} ${g.mom.length === 1 ? 'momento' : 'momentos'}: ${esc(g.mom.slice(0, 6).join(', '))}${g.mom.length > 6 ? '…' : ''}</span></td>
+    <td>${ed ? `<button class="btn small" data-pl-agregar="${esc(g.base)}">+ Agregar al ensayo</button>` : ''}</td></tr>`).join('')}</tbody></table></div>`;
+}
+function itemPlanHTML(T, it, ed) {
+  const [c, t] = EST_PLAN[it.estado] || ['neu', it.estado], vars = it.dest.map(d => {
+    const n = esc(nomVar(T, d.id || d.base, it));
+    if (d.falta === 'medicion') return `<span class="note">${n}</span>${ed ? ` <button class="btn small" data-pl-agregar="${esc(d.base)}" title="Agregar esta medición al ensayo">+ Agregar</button>` : ''}`;
+    if (d.falta === 'momento') return `${n} <span class="note">(${esc(it.etiqueta)})</span>${ed ? ` <button class="btn small" data-pl-mom="${esc(d.base)}|${esc(it.etiqueta)}" title="Agregar este momento de evaluación">+ Momento</button>` : ''}`;
+    return `<b>${n}</b>`; }).join('<br>');
+  return `<tr class="pl-${it.estado}"><td>${it.fecha ? fechaTxt(it.fecha) + (it.tentativa ? ' <span class="note">(aplicación planificada)</span>' : '') : '—'}<br><span class="note">${it.fecha ? (d => d === 0 ? 'hoy' : d > 0 ? 'en ' + d + ' días' : 'hace ' + -d + ' días')(difDias(it.fecha, HOY)) : ''}</span></td>
+    <td><b>${esc(it.etiqueta)}</b>${it.estNom && it.estNom !== it.etiqueta ? `<br><span class="note">${esc(it.estNom)}${it.obs ? ' · observado' : ''}</span>` : ''}</td>
+    <td>${vars || '—'}<br><span class="note">${esc(it.que || '')}</span></td>
+    <td>${it.por === 'senave' ? `<span class="chip warn" title="${esc(it.norma || 'Norma SENAVE')}">SENAVE</span>` : '<span class="chip neu">Recomendada</span>'}</td>
+    <td><span class="chip ${c}">${t}</span>${it.parcial ? '<br><span class="note">a medias</span>' : ''}</td></tr>`;
+}
+function planCard(T, compacto) {
+  const PL = planDe(T); if (!PL) return '';
+  const ed = puede.diseno(T), op = rolEn(T) && rolEn(T) !== 'lector', {F, items, ref, est} = PL, fc = RUBD[T.rubro].ficha.find(x => x.id === (ref?.campo || (F.referencia === 'plantacion' ? 'plantacion' : F.referencia === 'trasplante' ? 'trasplante' : 'siembra')));
+  const vivos = items.filter(i => !['hecha', 'futura', 'fuera'].includes(i.estado)), hechas = items.filter(i => i.estado === 'hecha'), fut = items.filter(i => i.estado === 'futura'), fuera = items.filter(i => i.estado === 'fuera');
+  const ep = epocaDe(F, ref?.fecha), sen = F.senave;
+  if (compacto) { const prox = items.filter(i => ['atrasada', 'ahora', 'proxima'].includes(i.estado)).slice(0, 4);
+    return `<div class="card"><div class="row" style="justify-content:space-between"><h3>Próximas evaluaciones</h3><button class="btn small" data-ir="medir">Ver el calendario</button></div>
+      ${!ref ? `<p class="note" style="margin:0">Cargá la fecha de ${esc(fc?.campo?.toLowerCase() || 'siembra')} en la ficha del ensayo para calcular las fechas de cada estadio.</p>` : prox.length ? `<div class="tw"><table><tbody>${prox.map(it => itemPlanHTML(T, it, false)).join('')}</tbody></table></div>` : '<p class="note" style="margin:0">Nada pendiente para las próximas dos semanas.</p>'}</div>`; }
+  return `<div class="card" id="plan-card"><div class="row" style="justify-content:space-between"><h3>Calendario de evaluaciones</h3><span class="note">${esc(F.escala || '')}</span></div>
+    <p class="note" style="margin:0">${ref ? `Fechas estimadas desde la ${esc(ref.que)} del <b>${fechaTxt(ref.fecha)}</b>${F.ciclos?.length > 1 ? `, ciclo ${esc(PL.ciclo)}` : ''}; se corrigen solas cuando registrás un estadio observado.` : `<b>Falta la fecha de ${esc(fc?.campo?.toLowerCase() || 'siembra')}</b>: cargala en Planificación → Ficha del ensayo para calcular las fechas.`} ${items.some(i => i.por === 'senave') ? `Lo marcado <span class="chip warn">SENAVE</span> lo exige la norma ${esc(sen?.norma || 'SENAVE de la especie')}; lo demás se recomienda para que el ensayo sea completo.` : 'Esta especie no tiene norma SENAVE de ensayos: todo lo del calendario se recomienda para que el ensayo sea completo.'}${F._ref ? ` <b>Calendario de referencia de ${esc(F._ref)}</b> (elegí la especie exacta en Planificación para usar la suya).` : ''}</p>
+    ${ep.ep.length ? `<p class="note" style="margin:0">Época de siembra: ${ep.ep.map(e => `${esc(e.epoca || '')}${e.region ? ' (' + esc(e.region) + ')' : ''} ${e.desde ? fechaTxt('2000-' + e.desde).slice(0, 5) + ' a ' + fechaTxt('2000-' + e.hasta).slice(0, 5) : ''}`).join(' · ')}${ep.dentro === false ? ' · <b class="chip bad">la siembra quedó fuera de época</b>' : ep.dentro ? ' · <span class="chip ok">dentro de época</span>' : ''}</p>` : ''}
+    ${op && est.length ? `<div class="row" style="align-items:end">${(F.ciclos || []).length > 1 && ed ? `<label class="f">Ciclo del cultivar<select id="pl-ciclo">${F.ciclos.map(c => `<option ${c === PL.ciclo ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></label>` : ''}
+      <label class="f">Estadio observado en el campo<select id="pl-est">${est.map(e => `<option value="${esc(e.cod)}">${esc(e.cod)} · ${esc(e.nombre)}${e.fecha ? ' (' + (e.obs ? 'obs. ' : 'est. ') + fechaTxt(e.fecha) + ')' : ''}</option>`).join('')}</select></label>
+      <label class="f">Fecha<input type="date" id="pl-fecha" value="${HOY}"></label><button class="btn small primary" id="pl-obs">Registrar estadio</button></div>` : ''}
+    <div class="tw"><table><thead><tr><th>Fecha</th><th>Momento</th><th>Qué medir</th><th>Por</th><th>Estado</th></tr></thead><tbody>${vivos.slice(0, 20).map(it => itemPlanHTML(T, it, ed)).join('') || '<tr><td colspan="5" class="note">Nada pendiente por ahora.</td></tr>'}</tbody></table></div>
+    ${vivos.length > 20 ? `<details><summary class="note" style="cursor:pointer">Ver ${vivos.length - 20} pendientes más</summary><div class="tw"><table><tbody>${vivos.slice(20).map(it => itemPlanHTML(T, it, ed)).join('')}</tbody></table></div></details>` : ''}
+    ${fut.length ? `<details><summary class="note" style="cursor:pointer">Más adelante (${fut.length})</summary><div class="tw"><table><tbody>${fut.slice(0, 60).map(it => itemPlanHTML(T, it, ed)).join('')}</tbody></table></div>${fut.length > 60 ? `<p class="note">… y ${fut.length - 60} evaluaciones más adelante (se muestran a medida que se acercan).</p>` : ''}</details>` : ''}
+    ${fuera.length ? `<details ${fuera.some(i => i.por === 'senave') && new Set(fuera.flatMap(i => i.dest.map(d => d.base))).size <= 12 ? 'open' : ''}><summary class="note" style="cursor:pointer">Mediciones del calendario que no están en el ensayo (${new Set(fuera.flatMap(i => i.dest.filter(d => d.falta === 'medicion').map(d => d.base))).size})${fuera.some(i => i.por === 'senave') ? ' · incluye exigidas por SENAVE' : ''}</summary>${fueraHTML(T, fuera, ed)}</details>` : ''}
+    ${hechas.length ? `<details><summary class="note" style="cursor:pointer">Ya hechas (${hechas.length})</summary><div class="tw"><table><tbody>${hechas.map(it => itemPlanHTML(T, it, ed)).join('')}</tbody></table></div></details>` : ''}
+    ${est.length ? `<details><summary class="note" style="cursor:pointer">Estadios del cultivo (${esc(F.escala || '')})</summary><div class="tw"><table><thead><tr><th>Estadio</th><th>Descripción</th><th class="num">Días</th><th>Fecha</th></tr></thead><tbody>${est.map(e => `<tr><td><b>${esc(e.cod)}</b> ${esc(e.nombre)}</td><td class="note">${esc(e.desc || '')}</td><td class="num">${e.dia ?? '—'}</td><td>${e.fecha ? fechaTxt(e.fecha) + (e.obs ? ' <span class="chip ok">observado</span>' : '') : '—'}</td></tr>`).join('')}</tbody></table></div></details>` : ''}
+    ${sen?.norma ? `<details><summary class="note" style="cursor:pointer">Requisitos de la norma <b>${esc(sen.norma)}</b> para el ensayo</summary><p class="note" style="margin:6px 0 0">${sen.url ? `<a href="${esc(sen.url)}" target="_blank" rel="noopener">Ver la norma</a> · ` : ''}${sen.ensayo ? esc(Object.values(sen.ensayo).filter(Boolean).join(' · ')) : ''}</p></details>` : ''}</div>`;
+}
+// Acciones del calendario (en Mediciones y en Planificación)
+function clicPlan(T, e) {
+  const ag = e.target.closest('[data-pl-agregar]'), mo = e.target.closest('[data-pl-mom]');
+  if (e.target.closest('#pl-obs')) { const c = $('#pl-est').value, f = $('#pl-fecha').value; if (!c || !f) return true;
+    (T.plan = T.plan || {}).obs = {...(T.plan.obs || {}), [c]: f}; T.cambios.unshift({fecha: ahora(), usuario: S.user.id, parcela: '—', variable: `Estadio ${c} observado`, antes: null, despues: fechaTxt(f), estado: puede.diseno(T) ? 'aprobado' : 'pendiente'});
+    guardarPronto(); toast(`Estadio ${c} registrado el ${fechaTxt(f)}: las fechas siguientes se corrigieron`); rehacerPaso(); revisarAvisos(); return true; }
+  if (ag) { const id = ag.dataset.plAgregar, m = varDef(T.rubro, id) || nuevaDePlan(T, id); if (!m || T.variables.some(v => v.id === id)) return true;
+    const mv = momentosSugeridos(T, fenDe(FEN, T.rubro, T.cultivo), [id]); T.variables.push(m);
+    if (mv[id]) { (T.momVar = T.momVar || {})[id] = mv[id]; T.variables = T.variables.filter(x => x.id !== id); armarCortes(T); } else recalc(T);
+    guardarPronto(); toast(`${m.nombre} agregada al ensayo${mv[id] ? ' en ' + mv[id].length + ' momentos' : ''}`); rehacerPaso(); return true; }
+  if (mo) { const [b, l] = mo.dataset.plMom.split('|'); T.momVar[b] = [...T.momVar[b], l]; armarCortes(T); guardarPronto(); toast(`Momento “${l}” agregado`); rehacerPaso(); return true; }
+  return false;
+}
+function cambioPlan(T, e) { if (e.target.id !== 'pl-ciclo') return false; (T.plan = T.plan || {}).ciclo = e.target.value; guardarPronto(); rehacerPaso(); return true; }
+// Medición que pide el calendario y que todavía no está en el catálogo del rubro
+function nuevaDePlan(T, id) { const F = fenDe(FEN, T.rubro, T.cultivo), ev = (F?.evaluaciones || []).find(x => x.var_nueva?.id === id); if (!ev) return null;
+  const n = ev.var_nueva; return {id: n.id, nombre: n.nombre, unidad: n.unidad || '', tipo: n.tipo || 'numero', dec: n.dec ?? 1, sub: n.sub ?? 1, min: n.min ?? 0, max: n.max ?? 100, metodo: n.metodo || ev.que || '', momento: ev.estadio, fuente: ev.fuente || ''}; }
+/* ---------- avisos: qué hay que medir (para cada persona, en sus parcelas) ---------- */
+function tocaParcela(T, p) {
+  const PL = esLal(T) ? null : planDe(T, [p]); if (!PL) return '';
+  const it = PL.items.filter(i => ['ahora', 'atrasada'].includes(i.estado) && i.dest.some(d => d.id && (p.valores[d.id] == null || p.valores[d.id] === '')));
+  return it.length ? `<div class="callout" style="margin:0">🔔 <b>Toca medir en esta parcela:</b> ${it.map(i => `${i.dest.filter(d => d.id && (p.valores[d.id] == null || p.valores[d.id] === '')).map(d => esc(nomVar(T, d.id))).join(', ')} <span class="note">(${esc(i.etiqueta)}${i.estado === 'atrasada' ? ', atrasada' : ''}${i.por === 'senave' ? ', SENAVE' : ''})</span>`).join('; ')}</div>` : '';
+}
+function avisosDe(u = S.user, rubro = null) {
+  const out = []; if (!u) return out;
+  TRIALS.forEach(T => { const r = rolEn(T, u); if (!r || r === 'lector' || esLal(T) || rubro && T.rubro !== rubro) return;
+    const ps = parcelasDeUsuario(T, u); if (!ps.length) return; let PL; try { PL = planDe(T, ps); } catch (e) { console.warn(e); return; } if (!PL) return;
+    const reciente = !PL.ref || difDias(HOY, PL.ref.fecha) <= 200; // ensayos de campañas terminadas no avisan
+    PL.items.filter(i => ['ahora', 'proxima'].includes(i.estado) || i.estado === 'atrasada' && difDias(HOY, i.fecha) <= 45 || i.estado === 'fuera' && i.por === 'senave' && reciente && puede.diseno(T, u)).forEach(it => out.push({T, it})); });
+  return out.sort((a, b) => (a.it.fecha || '9').localeCompare(b.it.fecha || '9'));
+}
+function avisosCard(rubro) {
+  const L = avisosDe(S.user, rubro); const porT = new Map(); L.forEach(x => { if (!porT.has(x.T)) porT.set(x.T, []); porT.get(x.T).push(x.it); });
+  const nAhora = L.filter(x => ['ahora', 'atrasada'].includes(x.it.estado)).length, perm = 'Notification' in window ? Notification.permission : 'no';
+  const btn = perm === 'no' ? '<span class="note">Este navegador no muestra avisos del sistema.</span>' : perm === 'denied' ? '<span class="note">Los avisos del sistema están bloqueados en este navegador (se habilitan desde el candado de la barra de direcciones).</span>'
+    : META.avisos && perm === 'granted' ? '<span class="chip ok">🔔 Avisos activados en este equipo</span> <button class="btn small" id="av-probar">Probar</button> <button class="btn small" id="av-off">Desactivar</button>' : '<button class="btn small primary" id="av-on">🔔 Activar avisos en este equipo</button>';
+  return `<div class="card" id="avisos-card"><div class="row" style="justify-content:space-between"><h3>🔔 Para medir${nAhora ? ` <span class="chip warn">${nAhora} ahora</span>` : ''}</h3>${btn}</div>
+    ${porT.size ? [...porT.entries()].map(([T, its]) => `<div class="task" style="grid-template-columns:1fr auto;gap:6px"><div><b>${esc(T.titulo)}</b> <span class="note">${T.id}</span>
+      <ul style="margin:4px 0 0;padding-left:18px">${its.slice(0, 5).map(it => `<li><span class="chip ${EST_PLAN[it.estado][0]}">${it.estado === 'fuera' ? 'Falta en el ensayo' : EST_PLAN[it.estado][1]}</span> ${it.fecha ? fechaTxt(it.fecha) + ' · ' : ''}<b>${esc(it.etiqueta)}</b>: ${it.dest.map(d => esc(nomVar(T, d.id || d.base, it))).join(', ')}${it.por === 'senave' ? ' <span class="chip warn">SENAVE</span>' : ''}</li>`).join('')}${its.length > 5 ? `<li class="note">y ${its.length - 5} más</li>` : ''}</ul></div>
+      <button class="btn small" data-abrir="${T.id}" data-paso="medir">Ver calendario</button></div>`).join('')
+      : '<p class="note" style="margin:0">Nada para medir en las próximas dos semanas. Las fechas salen de la fecha de siembra (o plantación) de la ficha de cada ensayo y de los estadios que se registran en el campo.</p>'}
+    <p class="note" style="margin:0">Con los avisos activados, este equipo muestra una notificación cuando una evaluación entra en fecha (con la app abierta o instalada; en Android, también cerrada si el navegador lo permite).</p></div>`;
+}
+const URL_AVISOS = new URL('avisos-programados.json', document.baseURI).href;
+let tAvisos = null;
+// Muestra las notificaciones nuevas y deja programadas las próximas para el service worker
+async function revisarAvisos() {
+  clearTimeout(tAvisos); tAvisos = setTimeout(revisarAvisos, 30 * 60000);
+  if (!S.user || !META.avisos || !('Notification' in window) || Notification.permission !== 'granted') return;
+  const L = avisosDe(S.user).filter(x => x.it.fecha), ya = META.avisados = META.avisados || {}, nuevos = new Map(), prog = [];
+  L.forEach(({T, it}) => { const key = `${S.user.id}|${T.id}|${it.key}|${it.fecha}`;
+    const linea = `${it.etiqueta}: ${it.dest.map(d => nomVar(T, d.id || d.base, it)).join(', ')}${it.por === 'senave' ? ' (SENAVE)' : ''}`;
+    if (['ahora', 'atrasada'].includes(it.estado) && !ya[key]) { if (!nuevos.has(T)) nuevos.set(T, []); nuevos.get(T).push([key, linea]); }
+    else if (it.estado === 'proxima') prog.push({key, fecha: addDias(it.fecha, -1), titulo: `Mañana toca medir · ${T.titulo}`, cuerpo: linea}); });
+  let reg = null; try { reg = await navigator.serviceWorker?.ready; } catch (e) {}
+  for (const [T, ls] of nuevos) { const titulo = `Toca medir · ${T.titulo}`, cuerpo = ls.map(x => x[1]).slice(0, 4).join('\n') + (ls.length > 4 ? `\n… y ${ls.length - 4} más` : '');
+    try { if (reg?.showNotification) await reg.showNotification(titulo, {body: cuerpo, tag: 'ens-' + T.id, icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', data: {url: location.href.split('#')[0]}}); else new Notification(titulo, {body: cuerpo, icon: 'icons/icon-192.png'}); } catch (e) { console.warn(e); }
+    ls.forEach(([k]) => ya[k] = HOY); }
+  if (nuevos.size) guardarPronto();
+  try { const c = await caches.open('ensayos-avisos'); const prev = await (await c.match(URL_AVISOS))?.json().catch(() => null);
+    await c.put(URL_AVISOS, new Response(JSON.stringify({items: prog, hechos: (prev?.hechos || []).slice(-300)}), {headers: {'Content-Type': 'application/json'}}));
+    if (reg?.periodicSync) { const st = await navigator.permissions?.query({name: 'periodic-background-sync'}).catch(() => null); if (!st || st.state === 'granted') await reg.periodicSync.register('avisos-ensayos', {minInterval: 6 * 3600000}).catch(() => {}); } } catch (e) {}
+}
+async function clicAvisos(e) {
+  if (e.target.closest('#av-on')) { const r = await Notification.requestPermission().catch(() => 'denied'); META.avisos = r === 'granted'; guardarPronto();
+    toast(r === 'granted' ? 'Avisos activados en este equipo' : 'No se dio el permiso para los avisos'); irInicio(); revisarAvisos(); return true; }
+  if (e.target.closest('#av-off')) { META.avisos = false; guardarPronto(); toast('Avisos desactivados'); irInicio(); return true; }
+  if (e.target.closest('#av-probar')) { try { const reg = await navigator.serviceWorker?.ready; const t = 'Ensayos de Campo', b = 'Así se ven los avisos de lo que toca medir.';
+    if (reg?.showNotification) await reg.showNotification(t, {body: b, icon: 'icons/icon-192.png', tag: 'prueba'}); else new Notification(t, {body: b}); } catch (er) { toast('No se pudo mostrar el aviso'); } return true; }
+  return false;
+}
+/* ---------- cultivares del mercado (datos, rendimientos de ensayos públicos) y épocas de siembra ---------- */
+const nCult = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+function cultsDe(rubro, cultivo) { if (!CULT || !cultivo) return []; if (CULT[cultivo]) return CULT[cultivo];
+  const c = nCult(cultivo).split(' (')[0], k = Object.keys(CULT).find(k => nCult(k) === nCult(cultivo)) || Object.keys(CULT).find(k => nCult(k).split(' (')[0] === c) || Object.keys(CULT).find(k => c.startsWith(nCult(k).split(' (')[0]) || nCult(k).startsWith(c));
+  return k ? CULT[k] : []; }
+const cultivosConCatalogo = rubro => (RUBD[rubro]?.cultivos || []).map(c => c.n).filter(n => cultsDe(rubro, n).length);
+const buscaCv = (rubro, cultivo, nombre) => { const n = nCult(nombre); if (!n) return null; return cultsDe(rubro, cultivo).find(c => nCult(c.nombre) === n) || cultsDe(rubro, cultivo).find(c => n.includes(nCult(c.nombre)) || nCult(c.nombre).includes(n)) || null; };
+const rendTxt = c => (c.rendimientos || []).map(r => `${fmt(r.kg_ha ?? r.valor, 0)} ${esc(r.unidad || 'kg/ha')}${r.ensayo ? ' · ' + esc(r.ensayo) : ''}${r.fuente ? ` <a href="${esc(r.fuente)}" target="_blank" rel="noopener">fuente</a>` : ''}`).join('<br>');
+function cvFila(c, pick) {
+  return `<tr>${pick ? `<td><input type="checkbox" data-cv-pick="${esc(c.nombre)}"></td>` : ''}<td><b>${esc(c.nombre)}</b><br><span class="note">${esc(c.empresa || '')}</span></td><td>${esc(c.gm_ciclo || '')}</td><td>${esc(c.tecnologia || '')}<br><span class="note">${esc(c.tipo || '')}</span></td>
+    <td class="note">${esc([c.zona, c.epoca].filter(Boolean).join(' · '))}</td><td class="note">${esc(c.caracteristicas || '')}</td><td class="note">${rendTxt(c) || '—'}</td><td class="note">${esc(c.rncc || '')}${c.fuente ? `<br><a href="${esc(c.fuente)}" target="_blank" rel="noopener">fuente</a>` : ''}</td></tr>`;
+}
+// Catálogo de cultivares y épocas de siembra del rubro. Con alElegir, permite tildar cultivares (para los tratamientos).
+function verCultivares(rubro, cultivo, alElegir) {
+  const lista = cultivosConCatalogo(rubro), ini = cultsDe(rubro, cultivo).length ? cultivo : lista[0];
+  if (!ini) return toast('Todavía no hay cultivares cargados para este rubro');
+  const M = modal(`<div class="row" style="justify-content:space-between"><h2>🌱 Cultivares y épocas de siembra</h2><button class="btn small" data-cerrar>✕</button></div>
+    <div class="row" style="align-items:end"><label class="f">Cultivo<select id="cv-cult">${lista.map(c => `<option ${c === ini ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></label><label class="f">Buscar<input type="search" id="cv-q" placeholder="Nombre, empresa, GM, tecnología…"></label></div>
+    <div id="cv-cuerpo"></div>${alElegir ? '<div class="row" style="justify-content:flex-end"><button class="btn primary" id="cv-usar">Usar los tildados como tratamientos</button></div>' : ''}
+    <p class="note" style="margin:0">Datos de las semilleras, del Registro Nacional de Cultivares Comerciales (SENAVE) y de redes de ensayos publicadas. Los rendimientos son de ensayos identificados (campaña y lugar) o el potencial declarado por la empresa; sirven de referencia, no reemplazan el ensayo propio.</p>`, 1200);
+  const pinta = () => { const c = M.querySelector('#cv-cult').value, q = nCult(M.querySelector('#cv-q').value), cs = cultsDe(rubro, c).filter(x => !q || nCult(Object.values(x).filter(v => typeof v === 'string').join(' ')).includes(q));
+    const F = fenDe(FEN, rubro, c), ep = F?.epocas || [];
+    M.querySelector('#cv-cuerpo').innerHTML = `${ep.length ? `<div class="callout" style="margin:0"><b>Épocas de siembra de ${esc(c)}:</b> ${ep.map(e => `${esc(e.epoca || '')}${e.region ? ' · ' + esc(e.region) : ''}: ${e.desde ? fechaTxt('2000-' + e.desde).slice(0, 5) + ' a ' + fechaTxt('2000-' + e.hasta).slice(0, 5) : ''}${e.optima ? ' (óptima ' + esc(e.optima) + ')' : ''}${e.nota ? ` <span class="note">${esc(e.nota)}</span>` : ''}`).join('; ')}</div>` : ''}
+      <div class="tw"><table><thead><tr>${alElegir ? '<th></th>' : ''}<th>Cultivar</th><th>GM o ciclo</th><th>Tecnología</th><th>Zona y época</th><th>Características</th><th>Rendimientos de referencia</th><th>Registro</th></tr></thead><tbody>${cs.map(x => cvFila(x, !!alElegir)).join('') || '<tr><td colspan="8" class="note">Sin resultados.</td></tr>'}</tbody></table></div>`; };
+  M.querySelector('#cv-cult').onchange = pinta; M.querySelector('#cv-q').oninput = pinta; pinta();
+  M.addEventListener('click', e => { if (!e.target.closest('#cv-usar')) return; const sel = [...M.querySelectorAll('[data-cv-pick]:checked')].map(i => i.dataset.cvPick);
+    if (!sel.length) return toast('Tildá al menos un cultivar'); alElegir(sel, M.querySelector('#cv-cult').value); M.cerrar(); });
+  return M;
+}
+// Datos de referencia de los cultivares que se evalúan como tratamientos
+function cvTratCard(T) {
+  const ls = T.tratamientos.map(t => [t, buscaCv(T.rubro, T.cultivo, t.nombre)]).filter(x => x[1]); if (!ls.length) return '';
+  return `<details class="card" ${/cultivar|rncc|vcu/i.test(T.tipo) ? 'open' : ''}><summary style="cursor:pointer"><b>🌱 Datos de los cultivares evaluados</b> <span class="note">(${ls.length} del catálogo)</span></summary>
+    <div class="tw"><table><thead><tr><th>Trat.</th><th>Cultivar</th><th>GM o ciclo</th><th>Tecnología</th><th>Zona y época</th><th>Características</th><th>Rendimientos de referencia</th><th>Registro</th></tr></thead><tbody>
+    ${ls.map(([t, c]) => cvFila(c, false).replace('<tr>', `<tr><td><b>${t.cod}</b></td>`)).join('')}</tbody></table></div>
+    <p class="note" style="margin:0">Referencias publicadas por las semilleras y redes de ensayos; el resultado de este ensayo es el que vale para tu zona.</p></details>`;
+}
 function agregarCorte(T) {
   if (!T.uniformizacion) { const u = $('#cu-fecha')?.value; if (!u) { $('#nc-msg').textContent = 'Falta la fecha del corte de uniformización.'; return false; } T.uniformizacion = u; }
   const f = $('#nc-fecha').value, prev = T.cortes.length ? T.cortes[T.cortes.length - 1].fecha : T.uniformizacion, d = Math.round((Date.parse(f) - Date.parse(prev)) / 86400000);
@@ -1531,6 +1739,7 @@ RENDER.plan = T => {
   const parc = pa.texto || (pa.ancho ? `${fmt(pa.ancho, 1)} × ${fmt(pa.largo, 1)} m` : pa.forma === 'arboles' ? `${pa.filas} × ${pa.columnas} árboles a ${pa.e1} × ${pa.e2} m` : pa.forma === 'hileras' ? `${pa.hileras} hileras × ${pa.dist} m × ${pa.largo} m` : '');
   P().innerHTML = `<section class="panel"><h2>Planificación</h2>${T.ejemplo ? '<div class="callout" id="ej-aviso"><b>Ensayo de ejemplo.</b> Los datos son hipotéticos y sirven para mostrar cómo funciona la app; no representan resultados reales de los productos o cultivares nombrados.</div>' : ''}
     ${comoVa(T)}
+    ${esLal(T) ? '' : planCard(T, true)}
     ${T.objetivo ? `<div class="card"><h3>Objetivo</h3><p style="margin:0">${esc(T.objetivo)}</p></div>` : ''}
     <div class="grid2"><div class="card"><h3>Datos del ensayo</h3><dl class="kv">
       <dt>Código</dt><dd>${T.id}</dd><dt>Rubro</dt><dd>${RUBROS[T.rubro].nombre}</dd><dt>Tipo</dt><dd>${esc(T.tipo)}</dd><dt>Cultivo</dt><dd>${esc(T.cultivo)}</dd>
@@ -1572,7 +1781,7 @@ RENDER.plan = T => {
     toast('Datos guardados'); abrir(T, 'plan'); };
   P().onchange = e => { if (e.target.dataset.fotoIn != null) return subirFotos(e.target, T, null);
     const fc = e.target.dataset.ficha; if (fc) { const def = RUBD[T.rubro].ficha.find(x => x.id === fc), v = def?.tipo === 'numero' ? (e.target.value === '' ? null : +e.target.value) : e.target.value.trim(); T.ficha = T.ficha || {};
-      if ((T.ficha[fc] ?? '') !== (v ?? '')) { T.cambios.unshift({fecha: ahora(), usuario: S.user.id, parcela: '—', variable: 'Ficha: ' + (def?.campo || fc), antes: T.ficha[fc] ?? null, despues: v, estado: 'aprobado'}); T.ficha[fc] = v; if (fc === 'plantacion' || fc === 'ff') recalc(T); toast('Ficha guardada'); } return; }
+      if ((T.ficha[fc] ?? '') !== (v ?? '')) { T.cambios.unshift({fecha: ahora(), usuario: S.user.id, parcela: '—', variable: 'Ficha: ' + (def?.campo || fc), antes: T.ficha[fc] ?? null, despues: v, estado: 'aprobado'}); T.ficha[fc] = v; if (fc === 'plantacion' || fc === 'ff') recalc(T); toast('Ficha guardada'); if (['siembra', 'trasplante', 'plantacion', 'emergencia'].includes(fc)) { RENDER.plan(T); revisarAvisos(); } } return; }
     if (e.target.id !== 'op-dron') return; T.dron = e.target.checked;
     if (T.dron && !T.variables.some(v => v.origen === 'dron')) MET[T.rubro].filter(m => m.origen === 'dron').slice(0, 2).forEach(m => T.variables.push(structuredClone(m)));
     T.cambios.unshift({fecha: ahora(), usuario: S.user.id, parcela: '—', variable: 'Imágenes de dron', antes: T.dron ? 'No' : 'Sí', despues: T.dron ? 'Sí' : 'No', estado: 'aprobado'});
@@ -1600,7 +1809,7 @@ RENDER.trat = T => {
         <td>${p ? esc(p.prod) + (p.momento === 'secuencial' ? ' <span class="chip acc">secuencial</span>' : '') : '<span class="note">—</span>'}</td><td class="num">${p ? (p.reg || (row ? row[catIdx.reg] : '')) : ''}</td><td>${p ? esc(row ? row[catIdx.pa] : p.pa || '') : ''}</td>
         <td class="num" style="white-space:nowrap">${p ? (ed ? `<input type="number" step="any" min="0" data-dosis="${t.cod}|${i}" value="${p.dosis}"> <select data-uni="${t.cod}|${i}">${[...new Set([p.unidad, ...UNIDADES])].map(u => `<option ${u === p.unidad ? 'selected' : ''}>${esc(u)}</option>`).join('')}</select>` : fmt(p.dosis, 2) + ' ' + esc(p.unidad)) : ''}</td>
         <td>${p ? `<span class="chip ${k}">${l}</span>` : ''}</td>${ed ? `<td>${p ? `<button class="btn small" data-qp="${t.cod}|${i}" title="Quitar producto">✕</button>` : ''}</td>` : ''}</tr>`; }).join(''); }).join('');
-  P().innerHTML = `<section class="panel"><h2>Tratamientos y dosis</h2>${aviso(T, 'Los tratamientos los define el gerente; acá podés consultar productos y dosis.')}
+  P().innerHTML = `<section class="panel"><h2>Tratamientos y dosis</h2>${aviso(T, 'Los tratamientos los define el gerente; acá podés consultar productos y dosis.')}${cvTratCard(T)}
     <div class="tw"><table id="t-trat"><thead><tr><th>Trat.</th><th>Descripción</th><th>Producto</th><th class="num">N° reg.</th><th>Principio activo</th><th class="num">Dosis</th><th>Registro SENAVE</th>${ed ? '<th></th>' : ''}</tr></thead><tbody>${filas}</tbody></table></div>
     ${ed ? `<div class="row"><button class="btn" id="btn-imp-trat">📷 Leer productos de una foto o Excel</button><span class="note">Lee una planilla de tratamientos (foto o archivo) y propone los productos con sus dosis para revisar.</span></div>` : ''}
     <div class="card"><h3>Buscar en el listado SENAVE</h3><div class="row"><input type="search" id="q-prod" value="${esc(busq)}" placeholder="Nombre comercial, principio activo o N° de registro" style="flex:1;min-width:220px"><span class="note" id="q-count"></span></div>
@@ -2114,6 +2323,7 @@ RENDER.medir = T => {
   const ed = puede.diseno(T), disponibles = [...MET[T.rubro], ...CUSTOM.filter(c => c.rubro === T.rubro)].filter(m => !T.variables.some(v => v.id === m.id) && !(T.porCorte || []).includes(m.id) && !(T.porPos || []).includes(m.id) && (T.dron || m.origen !== 'dron'));
   P().innerHTML = `<section class="panel"><h2>Mediciones</h2>
     <p class="lead">Qué se mide en este ensayo y cómo. Cada medición trae su método precargado; ${ed ? 'podés elegir otro método, escribir el tuyo o crear un indicador propio.' : 'el método lo define el responsable del ensayo.'}</p>
+    ${esLal(T) ? '' : planCard(T)}
     ${T.cortes ? cortesCard(T, ed) : ''}
     ${T.posiciones?.length ? posCard(T, ed) : ''}
     <div class="card">${vis(T).filter(esPrimera).map(v => `<div class="varc"><div><b>${esc(nomBase(T, v))}</b> ${v.unidad ? `<span class="note">(${esc(v.unidad)})</span>` : ''} ${v.origen === 'dron' ? '<span class="chip dron">dron</span>' : ''}${v.corte || v.pos ? `<span class="chip acc">${repTxt(T, v)}</span>` : ''}${v.origen === 'calc' ? '<span class="chip neu">se calcula sola</span>' : ''}${v.propio ? '<span class="chip hypo">indicador propio</span>' : ''}
@@ -2140,22 +2350,26 @@ RENDER.medir = T => {
         <button class="btn primary" type="submit" style="justify-self:start">Crear y agregar al ensayo</button></form></div>` : ''}</section>`;
   const panel = P();
   panel.onclick = e => {
+    if (clicPlan(T, e)) return;
     const q = e.target.closest('[data-quitar]'), a = e.target.closest('[data-agregar]'), em = e.target.closest('[data-editm]'), gm = e.target.closest('[data-guardarm]');
     if (e.target.closest('#btn-corte')) { if (agregarCorte(T)) RENDER.medir(T); return; }
     if (e.target.closest('#btn-pos-add')) { T.posiciones.push(`Posición ${T.posiciones.length + 1}`); T.posPeso = null; armarCortes(T); RENDER.medir(T); return; }
     if (e.target.closest('#btn-pos-guardar')) { if (guardarPos(T, panel)) RENDER.medir(T); return; }
     if (q) { const v = T.variables.find(x => x.id === q.dataset.quitar);
-      if (v?.base) { T.porCorte = (T.porCorte || []).filter(b => b !== v.base); T.porPos = (T.porPos || []).filter(b => b !== v.base); T.variables = T.variables.filter(x => x.base !== v.base); armarCortes(T); } else { T.variables = T.variables.filter(x => x.id !== q.dataset.quitar); recalc(T); } RENDER.medir(T); }
+      if (v?.calc === 'aacpe') { (T.noAacpe = T.noAacpe || []).push(v.base); armarCortes(T); }
+      else if (v?.base) { T.porCorte = (T.porCorte || []).filter(b => b !== v.base); T.porPos = (T.porPos || []).filter(b => b !== v.base); if (T.momVar) delete T.momVar[v.base]; T.variables = T.variables.filter(x => x.base !== v.base); armarCortes(T); } else { T.variables = T.variables.filter(x => x.id !== q.dataset.quitar); recalc(T); } RENDER.medir(T); }
     if (a) { const m = [...MET[T.rubro], ...CUSTOM].find(x => x.id === a.dataset.agregar);
       if ((m.porCorte && T.cortes) || (m.porPosicion && T.posiciones?.length)) { if (m.porCorte && T.cortes) (T.porCorte = T.porCorte || []).push(m.id); if (m.porPosicion && T.posiciones?.length) (T.porPos = T.porPos || []).push(m.id); armarCortes(T);
         toast(`${m.nombre} agregada${m.porPosicion && T.posiciones?.length ? ' en cada posición' : ''}${m.porCorte && T.cortes ? (T.cortes.length ? ' y en cada corte' : ' a los próximos cortes') : ''}`); }
-      else { T.variables.push(structuredClone(m)); recalc(T); toast(`${m.nombre} agregada`); } RENDER.medir(T); }
+      else { const mv = momentosSugeridos(T, fenDe(FEN, T.rubro, T.cultivo), [m.id]);
+        if (mv[m.id]) { T.variables.push(structuredClone(m)); (T.momVar = T.momVar || {})[m.id] = mv[m.id]; T.variables = T.variables.filter(x => x.id !== m.id); armarCortes(T); toast(`${m.nombre} agregada en ${mv[m.id].length} momentos (${mv[m.id].join(', ')})`); }
+        else { T.variables.push(structuredClone(m)); recalc(T); toast(`${m.nombre} agregada`); } } RENDER.medir(T); }
     if (em) { medirAbierto = medirAbierto === em.dataset.editm ? null : em.dataset.editm; RENDER.medir(T); }
     if (gm) { const v = T.variables.find(x => x.id === gm.dataset.guardarm), met = panel.querySelector(`[data-mtxt="${v.id}"]`).value.trim() || v.metodo, sub = Math.max(1, +panel.querySelector(`[data-msub="${v.id}"]`).value || 1);
       (v.base ? T.variables.filter(x => x.base === v.base) : [v]).forEach(x => { x.metodo = met; if (!x.entrada) x.sub = sub; });
       if (!v.base) v.momento = panel.querySelector(`[data-mmom="${v.id}"]`).value.trim(); medirAbierto = null; toast('Método guardado'); RENDER.medir(T); }
   };
-  panel.onchange = e => { const al = e.target.dataset.alt; if (al) panel.querySelector(`[data-mtxt="${al}"]`).value = e.target.value; if (e.target.id === 'ci-tipo') $('#ci-esc-l').hidden = e.target.value !== 'escala'; };
+  panel.onchange = e => { if (cambioPlan(T, e)) return; const al = e.target.dataset.alt; if (al) panel.querySelector(`[data-mtxt="${al}"]`).value = e.target.value; if (e.target.id === 'ci-tipo') $('#ci-esc-l').hidden = e.target.value !== 'escala'; };
   const f = $('#f-indic'); if (f) f.onsubmit = e => { e.preventDefault(); const tipo = $('#ci-tipo').value, esc_ = $('#ci-esc').value.split('\n').map(s => s.trim()).filter(Boolean);
     const v = {id: 'p' + Date.now(), nombre: $('#ci-nombre').value.trim(), unidad: $('#ci-unidad').value.trim(), tipo, dec: tipo === 'conteo' || tipo === 'escala' ? 0 : 2, sub: Math.max(1, +$('#ci-sub').value || 1),
       min: tipo === 'escala' ? 1 : +$('#ci-min').value, max: tipo === 'escala' ? esc_.length : +$('#ci-max').value, metodo: $('#ci-met').value.trim(), propio: true, rubro: T.rubro, autor: S.user.id};
@@ -2470,6 +2684,11 @@ async function bloquesInforme(T) {
   { const ff = fichaFilas(T); if (ff.length) B.push({h2: 'Datos del sitio y del manejo'}, {tabla: {cab: ['Dato', 'Valor'], anchos: [3600, 5400], filas: ff}}); }
   { const td = tipoDef(T.rubro, T.tipo); if (td?.normativa || td?.analisis) B.push({p: `${td.analisis ? 'Análisis previsto para este tipo de ensayo: ' + td.analisis.replace(/\.+$/, '') + '. ' : ''}${td.normativa ? 'Norma de referencia: ' + td.normativa : ''}`}); }
   B.push({h2: 'Tratamientos'}, {tabla: {cab: ['Trat.', 'Descripción', 'Producto', 'Reg. SENAVE', 'Dosis'], anchos: [800, 2800, 2600, 1200, 1700], filas: T.tratamientos.flatMap(t => (t.productos.length ? t.productos : [null]).map((p, i) => [i ? '' : t.cod, i ? '' : t.nombre + (t.testigo ? ' (testigo)' : ''), p ? p.prod + (p.momento === 'secuencial' ? ' (secuencial)' : '') : '—', p?.reg || '', p ? `${fmt(p.dosis, 2)} ${p.unidad}` : ''])) }});
+  { const PL = esLal(T) ? null : planDe(T); if (PL?.items.length) { const ESTX = {hecha: 'Hecha', ahora: 'Toca ahora', atrasada: 'Atrasada', proxima: 'Próxima', futura: 'Pendiente', fuera: 'No incluida', sin_fecha: 'Sin fecha'};
+    B.push({h2: 'Calendario de evaluaciones'}, {p: `Evaluaciones por estadio (${PL.F.escala || 'escala del cultivo'})${PL.F.senave?.norma ? ', exigidas por la norma SENAVE ' + PL.F.senave.norma + ' o recomendadas' : ' recomendadas'} para este tipo de ensayo, y a los días después de cada aplicación. ${PL.ref ? `Fechas estimadas desde la ${PL.ref.que} del ${fechaTxt(PL.ref.fecha)} y corregidas con los estadios observados.` : 'Falta la fecha de siembra para estimar las fechas.'}`},
+      {tabla: {cab: ['Fecha', 'Momento', 'Mediciones', 'Por', 'Estado'], anchos: [1100, 1500, 3800, 1200, 1100], filas: PL.items.map(it => [fechaTxt(it.fecha) || '—', it.etiqueta + (it.estNom && it.estNom !== it.etiqueta ? ' · ' + it.estNom : ''), it.dest.map(d => nomVar(T, d.id || d.base, it)).join(', '), it.por === 'senave' ? 'SENAVE' : 'Recomendada', ESTX[it.estado] || it.estado])}}); }
+    const cvs = T.tratamientos.map(t => [t, buscaCv(T.rubro, T.cultivo, t.nombre)]).filter(x => x[1]);
+    if (cvs.length) B.push({h2: 'Cultivares evaluados: datos de referencia'}, {tabla: {cab: ['Trat.', 'Cultivar', 'Empresa', 'GM o ciclo', 'Tecnología', 'Rendimientos de referencia'], anchos: [700, 1500, 1500, 1200, 1500, 3000], filas: cvs.map(([t, c]) => [t.cod, c.nombre, c.empresa || '', c.gm_ciclo || '', c.tecnologia || '', (c.rendimientos || []).map(r => `${fmt(r.kg_ha ?? r.valor, 0)} ${r.unidad || 'kg/ha'} (${r.ensayo || ''})`).join('; ')])}}); }
   B.push({h2: 'Variables y métodos de medición'}, {tabla: {cab: ['Variable', 'Unidad', 'Cómo se midió', 'Momento'], anchos: [2200, 1100, 4400, 1400], filas: vis(T).filter(esPrimera).map(v => [nomBase(T, v) + (v.corte || v.pos ? ` (${repTxt(T, v)})` : ''), v.unidad || '', v.metodo + (v.sub > 1 ? ` (${v.sub} submuestras por parcela)` : ''), v.corte ? 'Cada corte' : v.momento || ''])}});
   (await fotoAereaBloques(T.__vista ? Object.getPrototypeOf(T) : T, T)).forEach(x => B.push(x));
   if (esRed(T)) B.push({h2: 'Lugares'}, {tabla: {cab: ['Lugar', 'Ubicación', 'Operador', 'Parcelas', 'Avance'], num: [3, 4], anchos: [1800, 3000, 2000, 1000, 1000], filas: T.sitios.map(x => { const ps = T.parcelas.filter(p => p.sitio === x.id); return [x.nombre, x.lugar || '', (x.ops || []).map(u => USERS[u]?.nombre || u).join(', '), ps.length, Math.round(avance(T, ps) * 100) + ' %']; })}});
@@ -2556,6 +2775,7 @@ async function exportarExcel(T) {
       res.push([v.nombre, v.unidad || '', r(R.a?.media), r(R.b?.media), ...(C ? [r(R.c?.media)] : []), r(R.dif), r(R.pct), R.ok ? (R.igual ? 'Igual' : R.mejorA ? 'Mejor ' + A.cod : 'Mejor ' + B.cod) : 'Faltan datos', R.prueba ? (R.prueba.tipo === 'pareada' ? 't pareada' : 'Welch (puntos, orientativo)') : '', r(R.prueba?.p), ...(C ? [r(R.efA), r(R.efB)] : []), r(R.umbral), r(R.margen), R.txt || '']); });
     if (T.parcelas.some(p => p.geo)) hojas.push({nombre: 'Franjas', filas: [['Franja', 'Lado', 'Producto', 'Superficie (m²)', 'Lat 1', 'Lon 1', 'Lat 2', 'Lon 2', 'Lat 3', 'Lon 3', 'Lat 4', 'Lon 4'], ...[...T.parcelas].sort((a, b) => a.parcela - b.parcela).map(p => [etiq(T, p), p.trat, prodTxt(ladoDe(T, p.trat)), p.geo ? Math.round(areaM2(p.geo)) : '', ...(p.geo ? p.geo.slice(0, 4).flatMap(([lo, la]) => [+la.toFixed(7), +lo.toFixed(7)]) : [])])]}); }
   hojas.push({nombre: esLal(T) ? 'Comparación' : 'Resultados', filas: res});
+  { const PL = esLal(T) ? null : planDe(T); if (PL?.items.length) hojas.push({nombre: 'Calendario', filas: [['Fecha', 'Momento', 'Estadio', 'Mediciones', 'Qué', 'Por', 'Norma', 'Estado'], ...PL.items.map(it => [fechaTxt(it.fecha), it.etiqueta, it.estNom || '', it.dest.map(d => nomVar(T, d.id || d.base, it)).join(', '), it.que || '', it.por === 'senave' ? 'SENAVE' : 'Recomendada', it.norma || PL.F.senave?.norma || '', it.estado])]}); }
   const usadas = PULV.filter(q => apsDe(T).some(a => a.equipo?.id === q.id));
   if (usadas.length) hojas.push({nombre: 'Pulverizadoras', filas: [['Nombre', 'Tipo', 'Marca o modelo', 'Tanque (L)', 'Picos', 'Separación (cm)', 'Altura de barra (cm)', 'Ancho de trabajo (m)', 'Boquilla', 'Tamaño ISO', 'Presión (bar)', 'Velocidad (km/h)', 'Caudal por pico (L/min)', 'CV entre picos (%)', 'Volumen (L/ha)', 'Fecha de calibración', 'Caudales medidos (L/min)', 'Observaciones'],
     ...usadas.map(q => { const c = calcPulv(q); return [q.nombre, q.tipo, q.marca || '', q.tanque ?? '', c.picos, q.sep ?? '', q.altura ?? '', c.ancho != null ? +c.ancho.toFixed(2) : '', boqTxt(q), q.boqISO || '', q.presion ?? '', q.vel ?? '', c.q != null ? +c.q.toFixed(3) : '', c.cv != null ? +c.cv.toFixed(1) : '', c.vol != null ? Math.round(c.vol) : '', fechaTxt(q.fechaCal), (q.caudales || []).join('; '), q.obs || '']; })]});
@@ -2865,7 +3085,7 @@ function abrirDrawer(pn) {
       const l34 = [l3, l4].filter(Boolean).join(' ');
       return l1 || l2 || l34 ? `<div class="ultima">${[l1, l2, l34].filter(Boolean).join('<br>')}</div>` : ''; })()}
     ${!ed ? `<div class="chip neu" style="justify-self:start">${rolEn(T) === 'lector' ? 'Solo lectura' : 'Parcela no asignada a vos: solo lectura'}</div>` : ''}</header>
-    <div class="body"><div style="display:grid;gap:6px"><h3>Resultados</h3>${T.cortes?.length ? '<div class="seg" id="seg-corte-dr"></div>' : ''}</div>${filtroCorte(T, vis(T)).map(medida).join('') || '<p class="note">El ensayo no tiene mediciones definidas.</p>'}
+    <div class="body"><div style="display:grid;gap:6px"><h3>Resultados</h3>${tocaParcela(T, p)}${T.cortes?.length ? '<div class="seg" id="seg-corte-dr"></div>' : ''}</div>${filtroCorte(T, vis(T)).map(medida).join('') || '<p class="note">El ensayo no tiene mediciones definidas.</p>'}
       <div style="display:grid;gap:8px"><div class="row" style="justify-content:space-between"><h3>Fotos de la parcela</h3>${rolEn(T) !== 'lector' ? fotoBtn(pn) : ''}</div><div class="fotos" data-fotos="${pn}"></div></div>
       <div data-fa-p="${pn}" hidden style="display:grid;gap:6px"></div>
       <div style="display:grid;gap:8px"><h3>Notas</h3><div class="seg" id="seg-nota"></div><div id="notas-list"></div>
@@ -3125,6 +3345,12 @@ const TOUR = [
     go: () => enEjemplo('trat'), el: () => $('#btn-imp-trat')},
   {g: 'El ensayo', t: 'Dosificación por parcela', d: 'Calcula cuánto producto y caldo preparar para cada parcela, para todas las repeticiones (con 20 % de sobrante) y por mochila, según el volumen de caldo por hectárea.',
     go: () => enEjemplo('trat'), el: () => cardDe($('#t-dosis'))},
+  {g: 'En el campo', t: 'Calendario de evaluaciones', d: 'Cada cultivo trae sus estadios (por ejemplo Fehr y Caviness en soja) y qué se mide en cada uno: lo que exige la norma SENAVE de la especie (marcado SENAVE) y lo recomendado para el tipo de ensayo, más las evaluaciones a los días de cada aplicación. Las fechas salen de la fecha de siembra y se corrigen al registrar el estadio observado.',
+    go: () => enEjemplo('medir', byId('DEMO-AG-03')), el: () => $('#plan-card')},
+  {g: 'En el campo', t: 'Avisos de lo que toca medir', d: 'En el inicio, cada persona ve lo que le toca medir en sus parcelas esta semana y lo atrasado. Con “Activar avisos”, el celular o la PC muestra una notificación cuando una evaluación entra en fecha.',
+    go: () => { comoUsuario('marta', 'agricola'); cerrarDrawer(); irInicio(); }, el: () => $('#avisos-card')},
+  {g: 'En el campo', t: 'Cultivares y épocas de siembra', d: 'Catálogo de los cultivares del mercado con su empresa, grupo de madurez o ciclo, tecnología y rendimientos de ensayos publicados, y las épocas de siembra por región. Desde el asistente se eligen como tratamientos de un ensayo de cultivares.',
+    go: () => { comoUsuario('marta', 'agricola'); cerrarDrawer(); irInicio(); }, el: () => $('#btn-cultivares')},
   {g: 'En el campo', t: 'Aplicaciones y manejo', d: 'Registro con fecha de todo lo que se aplica o se hace: aplicaciones de los tratamientos, siembra, fertilización, controles y cosecha. El resumen muestra lo realizado, lo planificado y lo próximo.',
     go: () => enEjemplo('aplic'), el: () => $('.kpis')},
   {g: 'En el campo', t: 'Condiciones de aplicación', d: 'Al registrar una pulverización se cargan temperatura, humedad y viento, y la app avisa si quedaron fuera de lo permitido por la Ley 3742/09 (más de 32 °C, menos de 60 % de humedad o viento mayor a 10 km/h), como en esta segunda aplicación.',
